@@ -1,0 +1,549 @@
+Folder and file tree for: C:\Users\Lobo\Desktop\BAR CMS DJANGO
+========================================
+
++-- BAR CMS DJANGO
++-- .vscode
+|   +-- launch.json
+|   \-- settings.json
++-- app
+|   +-- accounting
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- assets
+|   |   +-- migrations
+|   |   |   +-- __init__.py
+|   |   |   +-- 0001_initial.py
+|   |   |   +-- 0002_remove_collection_visibility_asset_appears_on_and_more.py
+|   |   |   +-- 0003_remove_asset_is_secret_alter_asset_text_content.py
+|   |   |   \-- 0004_alter_asset_kind.py
+|   |   +-- templatetags
+|   |   |   +-- __init__.py
+|   |   |   \-- assets_tags.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- forms.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- automation
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- bands
+|   |   +-- migrations
+|   |   |   +-- __init__.py
+|   |   |   +-- 0001_initial.py
+|   |   |   +-- 0002_band_last_performed_on.py
+|   |   |   \-- 0003_alter_band_compensation_type.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- forms.py
+|   |   +-- models.py
+|   |   +-- public_urls.py
+|   |   +-- public_views.py
+|   |   +-- sitemaps.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- blog
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- public_urls.py
+|   |   +-- public_views.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- cms
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- comms
+|   |   +-- migrations
+|   |   |   +-- __init__.py
+|   |   |   +-- 0001_initial.py
+|   |   |   \-- 0002_draft_remove_label_comms_label_unique_and_more.py
+|   |   +-- services
+|   |   |   +-- audience.py
+|   |   |   \-- send_internal.py
+|   |   +-- templatetags
+|   |   |   \-- comms_tags.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- forms.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   +-- views_compose.py
+|   |   +-- views_inbox.py
+|   |   \-- views_threads.py
+|   +-- core
+|   |   +-- templatetags
+|   |   |   +-- __init__.py
+|   |   |   +-- dictutils.py
+|   |   |   \-- getitem.py
+|   |   +-- __init__.py
+|   |   +-- apps.py
+|   |   +-- asgi.py
+|   |   +-- celery_app.py
+|   |   +-- context_processors.py
+|   |   +-- export_project_markdown.py
+|   |   +-- middleware.py
+|   |   +-- settings.py
+|   |   +-- site_config.py
+|   |   +-- urls.py
+|   |   +-- views.py
+|   |   \-- wsgi.py
+|   +-- door
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- events
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- public_urls.py
+|   |   +-- public_views.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- inventory
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- maps
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- menu
+|   |   +-- migrations
+|   |   |   +-- __init__.py
+|   |   |   +-- 0001_initial.py
+|   |   |   +-- 0002_seed.py
+|   |   |   +-- 0002_seed_defaults.py
+|   |   |   +-- 0003_demo_item.py
+|   |   |   +-- 0003_seed_demo_non_alcoholic.py
+|   |   |   +-- 0004_alter_itemvariant_abv.py
+|   |   |   +-- 0005_merge_0003_demo_item_0004_alter_itemvariant_abv.py
+|   |   |   \-- 0006_item_allergens_note_alter_category_kind_and_more.py
+|   |   +-- templatetags
+|   |   |   +-- __init__.py
+|   |   |   \-- menu_extras.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- forms.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   +-- urls_cms.py
+|   |   +-- urls_public.py
+|   |   \-- views.py
+|   +-- merch
+|   |   +-- migrations
+|   |   |   +-- __init__.py
+|   |   |   +-- 0001_initial.py
+|   |   |   \-- 0002_alter_category_options_alter_productvariant_stock_and_more.py
+|   |   +-- __init__.py
+|   |   +-- forms.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   +-- urls_public.py
+|   |   \-- views.py
+|   +-- pages
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   +-- urls_public.py
+|   |   +-- views.py
+|   |   \-- views_public.py
+|   +-- pos
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- public
+|   |   +-- menu
+|   |   |   +-- __init__.py
+|   |   |   +-- urls.py
+|   |   |   \-- views.py
+|   |   +-- templates
+|   |   |   \-- public
+|   |   |       \-- menu
+|   |   |           +-- category.html
+|   |   |           \-- index.html
+|   |   \-- __init__.py
+|   +-- publicthemes
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- templates
+|   |   |   \-- public
+|   |   |       \-- events
+|   |   |           +-- detail.html
+|   |   |           \-- list.html
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   \-- models.py
+|   +-- setup
+|   |   +-- management
+|   |   |   \-- commands
+|   |   |       +-- create_dev_admin.py
+|   |   |       +-- export_project_markdown.py
+|   |   |       \-- find_unused_files.py
+|   |   +-- migrations
+|   |   |   +-- __init__.py
+|   |   |   +-- 0001_initial.py
+|   |   |   +-- 0002_remove_sitesettings_membership_currency_and_more.py
+|   |   |   +-- 0003_sitesettings_acc_accessible_wc_and_more.py
+|   |   |   +-- 0004_rename_acc_hearing_loop_sitesettings_awareness_team_available_and_more.py
+|   |   |   +-- 0005_alter_visibilityrule_key.py
+|   |   |   +-- 0006_alter_visibilityrule_key.py
+|   |   |   \-- 0007_sitesettings_publish_opening_times.py
+|   |   +-- templatetags
+|   |   |   +-- __init__.py
+|   |   |   \-- setup_tags.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- context_processors.py
+|   |   +-- forms.py
+|   |   +-- helpers.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   +-- views.py
+|   |   \-- views_alias.py
+|   +-- shifts
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- social
+|   |   +-- migrations
+|   |   |   \-- __init__.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- models.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- static
+|   |   +-- assets
+|   |   |   +-- assets.css
+|   |   |   \-- assets.js
+|   |   +-- cms
+|   |   |   +-- address_autocomplete.js
+|   |   |   +-- cms.css
+|   |   |   \-- cms.js
+|   |   +-- comms
+|   |   |   +-- inbox.css
+|   |   |   +-- inbox.js
+|   |   |   \-- README.txt
+|   |   +-- icons
+|   |   |   +-- bandcamp.svg
+|   |   |   +-- email.svg
+|   |   |   +-- facebook.svg
+|   |   |   +-- globe.svg
+|   |   |   +-- home.svg
+|   |   |   +-- icons.rar
+|   |   |   +-- instagram.svg
+|   |   |   +-- linkedin.svg
+|   |   |   +-- mastodon.svg
+|   |   |   +-- phone.svg
+|   |   |   +-- soundcloud.svg
+|   |   |   +-- spotify.svg
+|   |   |   +-- tiktok.svg
+|   |   |   +-- twitter.svg
+|   |   |   \-- youtube.svg
+|   |   +-- merch
+|   |   |   \-- shop.css
+|   |   \-- publicthemes
+|   |       \-- themes
+|   |           +-- brick.css
+|   |           +-- classic.css
+|   |           +-- midnight.css
+|   |           +-- neonpunk.css
+|   |           +-- tealglass.css
+|   |           +-- theme_a.css
+|   |           +-- theme_b.css
+|   |           \-- theme_c.css
+|   +-- templates
+|   |   +-- accounting
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- assets
+|   |   |   +-- partials
+|   |   |   |   +-- _collection_tree.html
+|   |   |   |   +-- _grid.html
+|   |   |   |   +-- _list.html
+|   |   |   |   +-- block_collection.html
+|   |   |   |   \-- block_item.html
+|   |   |   +-- widgets
+|   |   |   |   +-- checkbox_pill_option.html
+|   |   |   |   \-- checkbox_pills.html
+|   |   |   +-- form_collection.html
+|   |   |   +-- form_link.html
+|   |   |   +-- form_upload.html
+|   |   |   \-- index.html
+|   |   +-- automation
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- bands
+|   |   |   +-- confirm_delete.html
+|   |   |   +-- form.html
+|   |   |   +-- index.html
+|   |   |   +-- public_detail.html
+|   |   |   \-- public_list.html
+|   |   +-- blog
+|   |   |   +-- form.html
+|   |   |   +-- index.html
+|   |   |   \-- public_list.html
+|   |   +-- cms
+|   |   |   +-- partials
+|   |   |   |   \-- nav_item.html
+|   |   |   +-- account.html
+|   |   |   +-- base_cms.html
+|   |   |   +-- dashboard.html
+|   |   |   \-- nav.html
+|   |   +-- comms
+|   |   |   +-- partials
+|   |   |   |   +-- attachment_row.html
+|   |   |   |   \-- message_item.html
+|   |   |   +-- _filters.html
+|   |   |   +-- compose_internal.html
+|   |   |   +-- drafts.html
+|   |   |   +-- inbox.html
+|   |   |   \-- thread_detail.html
+|   |   +-- door
+|   |   |   +-- 1.html
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- events
+|   |   |   +-- form.html
+|   |   |   +-- index.html
+|   |   |   +-- public_detail.html
+|   |   |   \-- public_list.html
+|   |   +-- inventory
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- maps
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- menu
+|   |   |   +-- cms
+|   |   |   +-- partials
+|   |   |   |   \-- _category_tree.html
+|   |   |   +-- _category_tree.html
+|   |   |   +-- categories_list.html
+|   |   |   +-- category_delete_confirm.html
+|   |   |   +-- category_form.html
+|   |   |   +-- item_confirm_delete.html
+|   |   |   +-- item_form.html
+|   |   |   +-- items_list.html
+|   |   |   +-- manage.html
+|   |   |   +-- settings.html
+|   |   |   \-- tags_list.html
+|   |   +-- merch
+|   |   |   +-- _category_form.html
+|   |   |   +-- _category_form_success.html
+|   |   |   +-- _category_options.html
+|   |   |   +-- _category_tree.html
+|   |   |   +-- _product_card.html
+|   |   |   +-- category_form.html
+|   |   |   +-- confirm_delete.html
+|   |   |   +-- manage.html
+|   |   |   \-- product_form.html
+|   |   +-- pages
+|   |   |   +-- about.html
+|   |   |   +-- contact.html
+|   |   |   +-- form.html
+|   |   |   +-- home.html
+|   |   |   \-- index.html
+|   |   +-- pos
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- public
+|   |   |   +-- includes
+|   |   |   |   \-- address.html
+|   |   |   +-- menu
+|   |   |   |   +-- partials
+|   |   |   |   |   \-- _public_category.html
+|   |   |   |   +-- _tree.html
+|   |   |   |   \-- index.html
+|   |   |   +-- merch
+|   |   |   |   +-- detail.html
+|   |   |   |   \-- index.html
+|   |   |   +-- about.html
+|   |   |   +-- archive.html
+|   |   |   +-- base_public.html
+|   |   |   +-- blog.html
+|   |   |   +-- contact.html
+|   |   |   +-- events.html
+|   |   |   +-- gallery.html
+|   |   |   +-- home.html
+|   |   |   +-- menu.html
+|   |   |   +-- merch_category.html
+|   |   |   +-- merch_detail.html
+|   |   |   +-- merch_index.html
+|   |   |   +-- music.html
+|   |   |   +-- page_detail.html
+|   |   |   +-- posts.html
+|   |   |   +-- README.txt
+|   |   |   +-- shows.html
+|   |   |   +-- store.html
+|   |   |   \-- videos.html
+|   |   +-- publicthemes
+|   |   |   \-- demo.html
+|   |   +-- registration
+|   |   |   +-- logged_out.html
+|   |   |   +-- login.html
+|   |   |   +-- password_change_done.html
+|   |   |   +-- password_change_form.html
+|   |   |   +-- password_reset_complete.html
+|   |   |   +-- password_reset_confirm.html
+|   |   |   +-- password_reset_done.html
+|   |   |   \-- password_reset_form.html
+|   |   +-- setup
+|   |   |   +-- partials
+|   |   |   |   \-- _countries_options.html
+|   |   |   +-- form.html
+|   |   |   +-- index.html
+|   |   |   +-- settings_home.html
+|   |   |   +-- setup.html
+|   |   |   +-- site_settings.html
+|   |   |   +-- visibility_edit.html
+|   |   |   +-- visibility_list.html
+|   |   |   \-- visibility_picker.html
+|   |   +-- shifts
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- social
+|   |   |   +-- form.html
+|   |   |   \-- index.html
+|   |   +-- users
+|   |   |   +-- badges_confirm_delete.html
+|   |   |   +-- badges_form.html
+|   |   |   +-- badges_list.html
+|   |   |   +-- first_run_setup.html
+|   |   |   +-- form.html
+|   |   |   +-- group_hierarchy.html
+|   |   |   +-- index.html
+|   |   |   +-- onboarding.html
+|   |   |   +-- onboarding_done.html
+|   |   |   +-- policies.html
+|   |   |   \-- profile.html
+|   |   \-- base_public.html
+|   +-- users
+|   |   +-- migrations
+|   |   |   +-- __init__.py
+|   |   |   +-- 0001_initial.py
+|   |   |   +-- 0002_alter_badgedefinition_options_remove_userprofile_age_and_more.py
+|   |   |   +-- 0003_groupmeta.py
+|   |   |   \-- 0004_alter_fieldpolicy_options_alter_userprofile_options_and_more.py
+|   |   +-- __init__.py
+|   |   +-- admin.py
+|   |   +-- apps.py
+|   |   +-- forms.py
+|   |   +-- helpers.py
+|   |   +-- middleware.py
+|   |   +-- models.py
+|   |   +-- signals.py
+|   |   +-- urls.py
+|   |   \-- views.py
+|   +-- __init__.py
+|   \-- export_project_markdown.py
++-- caddy
+|   \-- Caddyfile
++-- config
+|   \-- site.json
++-- media
+|   +-- assets
+|   |   +-- audio_equipment
+|   |   |   \-- acme_flaming.png
+|   |   +-- fonts
+|   |   |   +-- Digita_ftiGYKQ.ttf
+|   |   |   +-- Digitag.ttf
+|   |   |   +-- Digitag_uXqv0CX.ttf
+|   |   |   +-- LastResort.ttf
+|   |   |   +-- LastResort_nXsAZkn.ttf
+|   |   |   +-- Outstanding.ttf
+|   |   |   \-- Outstanding_bVTcURA.ttf
+|   |   +-- img
+|   |   |   \-- acme_flaming.png
+|   |   +-- music
+|   |   |   \-- 1._Self_Destructive_Anthem.mp3
+|   |   \-- vid
+|   |       \-- trick_or_treat.mp4
+|   \-- bands
+|       +-- bubble.png
+|       +-- bubble_IbxEcYh.png
+|       +-- Fur__Fury.png
+|       +-- oh_my-logo.jpg
+|       \-- schriftzug_transparent.png
++-- scripts
+|   +-- dev_windows.bat
+|   \-- dev_windows.ps1
++-- .env
++-- .env.sample
++-- .timetracker
++-- @THe#HaRdeR2THEy!come&
++-- 1.html
++-- db.sqlite3
++-- docker-compose.yml
++-- Dockerfile
++-- folder_tree.txt
++-- manage.py
++-- PROJECT_METADATA.md
++-- README.md
++-- requirements.txt
++-- setup.ps
++-- tree.bat
++-- Untitled-1.svg
+\-- Untitled-2.svg

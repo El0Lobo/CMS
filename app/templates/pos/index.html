@@ -1,0 +1,23 @@
+{% extends "cms/base_cms.html" %}
+{% block title %}Register (POS) · CMS{% endblock %}
+{% block content %}
+<h1>Register (POS)</h1>
+<div class="toolbar">
+  <a class="btn" href="/cms/pos/create/">+ New</a>
+  <input placeholder="Search (not wired yet)" style="padding:.5rem;border-radius:8px;border:1px solid var(--line);background:#0f1419;color:#e9f1f2;width:240px">
+</div>
+{% if rows %}
+<table class="tbl">
+  <thead><tr><th>tab</th><th>items</th><th>total</th><th>status</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr onclick="window.location='/cms/pos/{{ r.slug }}/edit/'" style="cursor:pointer">
+      <td>{{ r.tab }}</td><td>{{ r.items }}</td><td>{{ r.total }}</td><td>{{ r.status }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <div class="empty">Nothing here yet. Click “New”.</div>
+{% endif %}
+{% endblock %}

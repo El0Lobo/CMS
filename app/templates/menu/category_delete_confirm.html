@@ -1,0 +1,10 @@
+{% extends 'cms/base_cms.html' %}
+{% block content %}
+<h1>Delete category</h1>
+<p>Really delete “{{ obj.name }}” and all its subcategories and items?</p>
+<form method="post">
+  {% csrf_token %}
+  <button class="btn btn-danger">Yes, delete</button>
+  <a class="btn btn-secondary" href="{% url 'menu:manage' %}">Cancel</a>
+</form>
+{% endblock %}

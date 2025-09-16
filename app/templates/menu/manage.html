@@ -1,0 +1,90 @@
+{% extends 'cms/base_cms.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+
+  #menuAccordion .btn-outline-secondary,
+  #menuAccordion .btn-secondary,
+
+  #menuAccordion a.btn[href*="edit"] {
+    background-color: #0d6dfd7a;   /* blue */
+
+    color: #fff;
+  }
+  #menuAccordion .btn-outline-secondary:hover,
+  #menuAccordion .btn-secondary:hover,
+  #menuAccordion .btn-outline-secondary:focus,
+  #menuAccordion .btn-secondary:focus,
+  #menuAccordion a.btn[href*="edit"]:hover,
+  #menuAccordion a.btn[href*="edit"]:focus {
+    background-color: #0b5ed7;   /* darker blue */
+    border-color: #0a58ca;
+    color: #fff;
+  }
+  #menuAccordion .btn-outline-primary:hover{
+    background-color: #028f8a8d;   /* darker blue */
+    color: #fff;
+  }
+    #menuAccordion .btn-outline-success:hover{
+    background-color: #028f8a8d;   /* darker blue */
+    color: #fff;
+  }
+  /* Delete = red, including hover/focus */
+  #menuAccordion .btn-danger,
+  #menuAccordion a.btn[href*="delete"] {
+    background-color: #dc35467b;
+    color: #fff;
+  }
+  #menuAccordion .btn-danger:hover,
+  #menuAccordion .btn-danger:focus,
+  #menuAccordion a.btn[href*="delete"]:hover,
+  #menuAccordion a.btn[href*="delete"]:focus {
+    background-color: #bb2d3b;   /* darker red */
+    border-color: #b02a37;
+    color: #fff;
+  }
+</style>
+
+<h1>Menu</h1>
+
+<div class="accordion" id="menuAccordion">
+  <!-- Drinks -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingDrinks">
+      <label class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDrinks" aria-expanded="true" aria-controls="collapseDrinks">
+        Drinks
+      </label>
+    </h2>
+    <div id="collapseDrinks" class="accordion-collapse collapse show" aria-labelledby="headingDrinks" data-bs-parent="#menuAccordion">
+      <div class="accordion-body">
+        {% if drinks_root %}
+          <div class="mb-2"></div>
+          {% include 'menu/_category_tree.html' with node=drinks_root %}
+        {% else %}
+          <div class="alert alert-warning">Root “Drinks” missing. Run migrations.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Food -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingFood">
+      <label class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFood" aria-expanded="false" aria-controls="collapseFood">
+        Food
+      </label>
+    </h2>
+    <div id="collapseFood" class="accordion-collapse collapse" aria-labelledby="headingFood" data-bs-parent="#menuAccordion">
+      <div class="accordion-body">
+        {% if food_root %}
+          <div class="mb-2"></div>
+          {% include 'menu/_category_tree.html' with node=food_root %}
+        {% else %}
+          <div class="alert alert-warning">Root “Food” missing. Run migrations.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "public/base_public.html" %}
+{% block title %}Videos — {{ site_settings.org_name }}{% endblock %}
+{% block content %}
+<h2>Videos</h2>
+<div class="grid grid-2">
+  {% for video in videos %}
+    <div class="card">
+      <h3 style="margin:0">{{ video.title }}</h3>
+      {% if video.embed_html %}
+        {{ video.embed_html|safe }}
+      {% elif video.url %}
+        <p><a href="{{ video.url }}">Watch</a></p>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p class="muted">No videos yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

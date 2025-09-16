@@ -1,0 +1,31 @@
+{% extends "public/base_public.html" %}
+{% block title %}{{ site_settings.org_name|default:"Home" }}{% endblock %}
+{% block content %}
+<section class="grid grid-2">
+  <div class="card">
+    <h2>Welcome</h2>
+    <p>
+      {% if site_settings.mode == 'VENUE' %}
+        Explore upcoming <a href="/events/">events</a>, see our <a href="/menu/">menu</a>, and browse the <a href="/gallery/">gallery</a>.
+      {% elif site_settings.mode == 'BAND' %}
+        Check our latest <a href="/shows/">shows</a>, stream <a href="/music/">music</a>, and watch <a href="/videos/">videos</a>.
+      {% else %}
+        Read the <a href="/posts/">blog</a>, or learn more <a href="/about/">about</a> the author.
+      {% endif %}
+    </p>
+  </div>
+  <div class="card">
+    <h2>Find us</h2>
+    {% if site_settings.geo_lat and site_settings.geo_lng %}
+      <p class="muted">Lat: {{ site_settings.geo_lat }}, Lng: {{ site_settings.geo_lng }}</p>
+    {% endif %}
+    {% if site_settings.address_street %}
+      <p>{{ site_settings.address_street }} {{ site_settings.address_number }}<br>
+      {{ site_settings.address_postal_code }} {{ site_settings.address_city }}<br>
+      {{ site_settings.address_country }}</p>
+    {% else %}
+      <p class="muted">Set your address in Setup → Address to show it here.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

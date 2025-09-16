@@ -1,0 +1,39 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Bar OS{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'publicthemes/themes/classic.css' %}">
+  <style>
+    .wrap{max-width:1080px;margin:0 auto;padding:1rem}
+    header,footer{padding:.75rem 0}
+    nav a{margin-right:.5rem;text-decoration:none}
+    nav a.active{font-weight:700;text-decoration:underline}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <nav>
+      {# Dynamic pages from SiteSettings.required_pages #}
+      {% for p in public_pages %}
+        <a href="{{ p.url }}" class="{% if request.path == p.url %}active{% endif %}">{{ p.title }}</a>{% if not forloop.last %} · {% endif %}
+      {% empty %}
+        {# Fallback if none configured yet #}
+        <a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a> ·
+        <a href="/about/" class="{% if request.path == '/about/' %}active{% endif %}">About</a> ·
+        <a href="/contact/" class="{% if request.path == '/contact/' %}active{% endif %}">Contact</a>
+      {% endfor %}
+
+      {# Keep any fixed extras you like: #}
+      · <a href="/theme-demo/" class="{% if request.path == '/theme-demo/' %}active{% endif %}">Theme Demo</a>
+      · <a href="/accounts/login/">CMS Login</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="wrap">© Bar OS Starter</footer>
+</body>
+</html>

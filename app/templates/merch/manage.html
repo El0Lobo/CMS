@@ -1,0 +1,75 @@
+{% extends "cms/base_cms.html" %}
+{% block content %}
+
+<style>
+  /* Scope to the merch manage page */
+  #merchManage .btn-outline-secondary,
+  #merchManage .btn-secondary,
+  #merchManage a.btn[href*="edit"] {
+    background-color: #0d6dfd7a; /* blue */
+    color: #fff;
+  }
+  #merchManage .btn-outline-secondary:hover,
+  #merchManage .btn-secondary:hover,
+  #merchManage .btn-outline-secondary:focus,
+  #merchManage .btn-secondary:focus,
+  #merchManage a.btn[href*="edit"]:hover,
+  #merchManage a.btn[href*="edit"]:focus {
+    background-color: #0b5ed7;   /* darker blue */
+    border-color: #0a58ca;
+    color: #fff;
+  }
+
+  #merchManage .btn-outline-primary:hover,
+  #merchManage .btn-outline-success:hover {
+    background-color: #028f8a8d; /* teal-ish hover */
+    color: #fff;
+  }
+
+  /* Delete = red, including hover/focus */
+  #merchManage .btn-danger,
+  #merchManage a.btn[href*="delete"] {
+    background-color: #dc35467b;
+    color: #fff;
+  }
+  #merchManage .btn-danger:hover,
+  #merchManage .btn-danger:focus,
+  #merchManage a.btn[href*="delete"]:hover,
+  #merchManage a.btn[href*="delete"]:focus {
+    background-color: #bb2d3b;   /* darker red */
+    border-color: #b02a37;
+    color: #fff;
+  }
+
+  /* Keep groups from breaking onto new lines */
+  #merchManage .btn-group { white-space: nowrap; }
+  #merchManage .btn-group form { display: inline-block; margin: 0; }
+  #merchManage .btn-group .btn { white-space: nowrap; }
+  /* Visually fuse buttons across <a> and <form> boundaries */
+  #merchManage .btn-group > a.btn + a.btn,
+  #merchManage .btn-group > a.btn + form .btn,
+  #merchManage .btn-group > form .btn + a.btn,
+  #merchManage .btn-group > form .btn + form .btn {
+    margin-left: -1px;
+  }
+</style>
+
+<div id="merchManage">
+  <h1 class="mb-3">Merch</h1>
+
+  <div class="d-flex gap-2 mb-3">
+    <a class="btn btn-primary" href="{% url 'merch:product_create' %}">+ New Product</a>
+    <a class="btn btn-outline-primary" href="{% url 'merch:category_new' %}">+ New Category</a>
+  </div>
+
+  {% if top_categories %}
+    {% for cat in top_categories %}
+      {% include "merch/_category_tree.html" with node=cat %}
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info">
+      No categories yet. Click <strong>+ New Category</strong> to create one.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

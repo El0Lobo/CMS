@@ -1,0 +1,48 @@
+{% with node as c %}
+  <div class="card mb-2">
+    <div class="card-body py-2 d-flex align-items-center justify-content-between">
+      <div>
+        <strong>{{ c.name }}</strong>
+        {% if c.parent %}
+          <span class="text-muted"> · depth {{ c.depth }}</span>
+        {% endif %}
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'menu:category_create_sub' c.slug %}">+ Subcategory</a>
+        <a class="btn btn-sm btn-outline-success" href="{% url 'menu:item_create_here' c.slug %}">+ Item here</a>
+        <a class="btn btn-sm btn-secondary" href="{% url 'menu:category_edit' c.slug %}">Edit</a>
+        {% if c.parent %}
+          <a class="btn btn-sm btn-danger" href="{% url 'menu:category_delete' c.slug %}">Delete</a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if c.items.all %}
+      <ul class="list-group list-group-flush">
+        {% for i in c.items.all %}
+          <li class="list-group-item d-flex align-items-center justify-content-between">
+            <div>
+              {{ i.name }}
+              {% if i.featured %}<span class="badge bg-warning text-dark">Featured</span>{% endif %}
+              {% if i.is_sold_out %}<span class="badge bg-danger">Sold out</span>{% endif %}
+              {% if i.is_new %}<span class="badge bg-info text-dark">New</span>{% endif %}
+              {% if i.description %}<div class="text-muted small">{{ i.description }}</div>{% endif %}
+            </div>
+            <div class="d-flex gap-2">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'menu:item_edit' i.slug %}">Edit</a>
+              <a class="btn btn-sm btn-danger" href="{% url 'menu:item_delete' i.slug %}">Delete</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if c.children.exists %}
+      <div class="p-2">
+        {% for child in c.children.all %}
+          {% include 'menu/_category_tree.html' with node=child %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endwith %}

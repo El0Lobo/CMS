@@ -1,0 +1,74 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_settings.org_name|default:"Bar OS" }}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'publicthemes/themes/classic.css' %}">
+  <style>
+    .wrap{max-width:1080px;margin:0 auto;padding:1rem}
+    header,footer{padding:.75rem 0}
+    nav a{margin-right:.5rem;text-decoration:none}
+    nav a.active{font-weight:700;text-decoration:underline}
+    .hero{padding:2rem 0;border-bottom:1px solid rgba(0,0,0,.1);margin-bottom:1rem}
+    .grid{display:grid;gap:1rem}
+    .grid-2{grid-template-columns: 1fr 1fr}
+    .card{border:1px solid rgba(0,0,0,.1);border-radius:.5rem;padding:1rem}
+    .muted{color:rgba(0,0,0,.65);font-size:.9rem}
+    .pill{display:inline-block;padding:.25rem .5rem;border:1px solid; border-radius:999px; font-size:.8rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <nav>
+      {% for p in public_pages %}
+        <a href="{{ p.url }}" class="{% if request.path == p.url %}active{% endif %}">{{ p.title }}</a>{% if not forloop.last %} · {% endif %}
+      {% empty %}
+        <a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+      {% endfor %}
+      · <a href="/accounts/login/">CMS Login</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1 style="margin:0">{{ site_settings.org_name|default:"Your Place" }}</h1>
+    <div class="muted">
+      © {{ site_settings.org_name|default:"Bar OS Starter" }} · {{ now|date:"Y" }}
+      <br>
+      {% if site_settings.contact_email %}Email: <a href="mailto:{{ site_settings.contact_email }}">{{ site_settings.contact_email }}</a>{% endif %}
+      {% if site_settings.contact_phone %}<br>Phone: <a href="tel:{{ site_settings.contact_phone }}">{{ site_settings.contact_phone }}</a>{% endif %}
+
+      {# 🔽 show the address parts you actually have #}
+      {% include "public/includes/address.html" %}
+    </div>
+    </section>
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="wrap">
+    <div class="grid grid-2">
+      <div class="muted">
+      © {{ site_settings.org_name|default:"Bar OS Starter" }} · {{ ""|date:"Y" }}
+        <br>
+        {% if site_settings.contact_email %}Email: <a href="mailto:{{ site_settings.contact_email }}">{{ site_settings.contact_email }}</a>{% endif %}
+        {% if site_settings.contact_phone %}<br>Phone: <a href="tel:{{ site_settings.contact_phone }}">{{ site_settings.contact_phone }}</a>{% endif %}
+      </div>
+      <div style="text-align:right">
+        {% if site_settings.website_url %}<a href="{{ site_settings.website_url }}">Website</a> · {% endif %}
+        {% if site_settings.social_facebook %}<a href="{{ site_settings.social_facebook }}">Facebook</a> · {% endif %}
+        {% if site_settings.social_instagram %}<a href="{{ site_settings.social_instagram }}">Instagram</a> · {% endif %}
+        {% if site_settings.social_twitter %}<a href="{{ site_settings.social_twitter }}">Twitter</a> · {% endif %}
+        {% if site_settings.social_tiktok %}<a href="{{ site_settings.social_tiktok }}">TikTok</a> · {% endif %}
+        {% if site_settings.social_youtube %}<a href="{{ site_settings.social_youtube }}">YouTube</a> · {% endif %}
+        {% if site_settings.social_spotify %}<a href="{{ site_settings.social_spotify }}">Spotify</a> · {% endif %}
+        {% if site_settings.social_soundcloud %}<a href="{{ site_settings.social_soundcloud }}">SoundCloud</a> · {% endif %}
+        {% if site_settings.social_bandcamp %}<a href="{{ site_settings.social_bandcamp }}">Bandcamp</a> · {% endif %}
+        {% if site_settings.social_linkedin %}<a href="{{ site_settings.social_linkedin }}">LinkedIn</a> · {% endif %}
+        {% if site_settings.social_mastodon %}<a rel="me" href="{{ site_settings.social_mastodon }}">Mastodon</a>{% endif %}
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

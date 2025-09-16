@@ -1,0 +1,126 @@
+from datetime import date
+
+from django.conf import settings
+from django.contrib.auth.models import Group
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+User = settings.AUTH_USER_MODEL
+
+
+class BadgeDefinition(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    emoji = models.CharField(max_length=8, blank=True, help_text=_("Optional short emoji label (e.g. '🍺')"))
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{(self.emoji + ' ') if self.emoji else ''}{self.name}"
+
+
+class FieldPolicy(models.Model):
+    class Visibility(models.TextChoices):
+        ADMIN_ONLY = "ADMIN_ONLY", _("Admins only")
+        STAFF_ONLY = "STAFF_ONLY", _("Staff users")
+        AUTHENTICATED = "AUTHENTICATED", _("All logged-in users")
+        PUBLIC = "PUBLIC", _("Public/Anyone")
+
+    field_name = models.CharField(
+        max_length=100,
+        unique=True,  # unique_together on a single field is redundant—use unique=True
+        help_text=_("e.g. 'phone', 'address', 'birth_date', 'email', 'role_title'"),
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.AUTHENTICATED,
+    )
+
+    class Meta:
+        verbose_name_plural = "field policies"
+
+    def __str__(self):
+        return f"{self.field_name} → {self.visibility}"
+
+
+class GroupMeta(models.Model):
+    """
+    Stores precedence for each auth Group. Lower rank = higher priority (1 is top).
+    """
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name="meta")
+    rank = models.PositiveIntegerField(default=1000, help_text=_("Lower = higher priority"))
+
+    class Meta:
+        ordering = ["rank", "group__name"]
+
+    def __str__(self):
+        return f"{self.group.name} (rank {self.rank})"
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+
+    # Identity
+    legal_name = models.CharField(max_length=200, blank=True)
+    chosen_name = models.CharField(max_length=200, blank=True)
+    pronouns = models.CharField(max_length=64, blank=True, help_text=_("e.g. she/her, he/him, they/them"))
+    birth_date = models.DateField(null=True, blank=True)  # replaces 'age'
+
+    # Contact
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=64, blank=True)
+    address = models.TextField(blank=True)
+
+    # Role/Duties
+    role_title = models.CharField(max_length=120, blank=True, help_text=_("Free-text role label, e.g. 'Bar lead'"))
+    duties = models.TextField(blank=True)
+    primary_group = models.ForeignKey(
+        Group,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="primary_members",
+    )
+
+    # Badges
+    badges = models.ManyToManyField(BadgeDefinition, blank=True)
+
+    # Onboarding flags
+    force_password_change = models.BooleanField(default=True)
+    has_selected_visibility = models.BooleanField(default=False)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["user__username"]
+        permissions = (
+            # Attach the custom permission here instead of using a dummy model.
+            ("can_impersonate", "Can impersonate other users"),
+        )
+
+    def __str__(self):
+        # Prefer chosen_name, then legal_name, else user's username
+        if self.chosen_name:
+            return self.chosen_name
+        if self.legal_name:
+            return self.legal_name
+        # self.user is a User instance; get a stable string
+        try:
+            return self.user.get_username()
+        except Exception:
+            return str(self.user_id)
+
+    @property
+    def age_years(self):
+        """Compute age from birth_date; returns int or None."""
+        if not self.birth_date:
+            return None
+        today = date.today()
+        years = today.year - self.birth_date.year
+        if (today.month, today.day) < (self.birth_date.month, self.birth_date.day):
+            years -= 1
+        return years

@@ -1,0 +1,1 @@
+{% extends 'cms/base_cms.html' %}{% block content %}<h1>Menu Settings</h1><p>Click to (re)seed default unit groups and categories (Drinks → Alcoholic / Non-alcoholic, Food, Snacks).</p><form method='post'>{% csrf_token %}<button class='btn btn-warning'>Seed / Update defaults</button></form>{% endblock %}

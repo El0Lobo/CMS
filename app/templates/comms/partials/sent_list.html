@@ -1,0 +1,5 @@
+{% for th in sent_threads %}
+  <li><a href="{% url 'comms:thread_detail' th.id %}">{{ th.subject|default:"(no subject)" }}</a></li>
+{% empty %}
+  <p>No sent</p>
+{% endfor %}

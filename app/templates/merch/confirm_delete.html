@@ -1,0 +1,14 @@
+{% extends "cms/base_cms.html" %}
+{% block content %}
+<h1>Confirm delete</h1>
+<form method="post">
+  {% csrf_token %}
+  {% if product %}
+    <p>Delete product “{{ product.name }}”?</p>
+  {% elif category %}
+    <p>Delete category “{{ category.name }}”?</p>
+  {% endif %}
+  <button class="btn btn-danger">Yes, delete</button>
+  <a class="btn btn-secondary" href="{% url 'merch:manage' %}">Cancel</a>
+</form>
+{% endblock %}

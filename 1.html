@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hessenhallen (Messe Gießen) — Zäune, Tore, 10 m-Puffer, ÖPNV, Notfälle & POIs</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css">
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+<!-- Turf.js for 10 m buffer -->
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
+<!-- Optional 2.5D buildings -->
+<script src="https://cdn.osmbuildings.org/classic/0.2.2b/OSMBuildings-Leaflet.js"></script>
+
+<style>
+  html,body{height:100%;margin:0}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial}
+  header{padding:10px 16px;background:#111;color:#fff}
+  header h1{margin:0;font-size:18px}
+  header .sub{opacity:.85;font-size:12px}
+  #shell{display:grid;grid-template-rows:auto 1fr auto;height:100%}
+  #main{display:grid;grid-template-columns:1fr 420px;min-height:0}
+  #map{height:calc(100vh - 120px)}
+  aside{border-left:1px solid #ddd;overflow:auto;padding:12px}
+  h2{font-size:14px;margin:6px 0 10px}
+  .hint{font-size:11px;color:#666}
+
+  .layers-legend{position:absolute;top:12px;right:12px;z-index:600;background:#fff;border-radius:8px;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);padding:8px 10px;font-size:12px;max-width:380px}
+  .legend-wrap > .head{display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}
+  .legend-wrap > .body{margin-top:6px}
+  .lg-group{border:1px solid #eee;border-radius:8px;margin:6px 0;overflow:hidden}
+  .lg-group .g-head{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fafafa;cursor:pointer}
+  .lg-group .g-caret{display:inline-block;transition:transform .18s ease}
+  .lg-group.open .g-caret{transform:rotate(90deg)}
+  .lg-group .g-check{margin-left:auto}
+  .lg-group .g-body{padding:8px 10px;border-top:1px solid #eee;display:none}
+  .lg-group.open .g-body{display:block}
+  .layers-legend label{display:flex;align-items:center;gap:8px;margin:3px 0}
+  .layers-legend select{font-size:12px}
+  .sw{width:14px;height:14px;border-radius:3px;border:1px solid #888;display:inline-block}
+  .sw-messe{background:rgba(30,144,255,.25);border-color:#1e90ff}
+  .sw-fence{background:repeating-linear-gradient(90deg,#555,#008c21 6px,transparent 6px,transparent 12px);border-color:#555}
+  .sw-buffer{background:rgba(255,0,0,.12);border-color:#ff0000}
+  .sw-park{background:rgba(39,174,96,.35);border-color:#27ae60}
+  .sw-meadow{background:rgba(46,204,113,.25);border-color:#2ecc71}
+  .sw-construct{background:rgba(241,196,15,.25);border-color:#f1c40f}
+
+  /* Transparent divIcon (no white boxes) */
+  .no-bg-icon{background:transparent;border:none}
+
+  /* Small colored icons (size controlled via CSS vars set by JS) */
+  :root{ --pin-size:14px; --pin-font:11px }
+  .pin{width:var(--pin-size);height:var(--pin-size);display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;font-size:var(--pin-font);line-height:1}
+  .pin::after{display:block}
+  .pin.entrance{color:#2ecc71}
+  .pin.entrance::after{content:'\1F6AA'} /* 🚪 */
+  .pin.gate{color:#2ecc71}
+  .pin.gate::after{content:'\1F6AA'}
+  .pin.barrier{color:#e53935}
+  .pin.barrier::after{content:'\26D4'} /* ⛔ */
+  .pin.police{color:#1abc9c}
+  .pin.police::after{content:'\1F437'} /* 👮 */
+  .pin.toilet{color:#f39c12}
+  .pin.toilet::after{content:'\1F6BB'} /* 🚻 */
+  .pin.fountain{color:#00bcd4}
+  .pin.fountain::after{content:'\1F6B0'} /* 🚰 */
+  .pin.trash{color:#6d6d6d}
+  .pin.trash::after{content:'\1F5D1'} /* 🗑️ */
+  .pin.emergency{color:#e53935}
+  .pin.emergency::after{content:'\26D1'} /* ⛑️ */
+  /* Emergency subtypes */
+  .pin.em-first_aid{color:#2ecc71}
+  .pin.em-first_aid::after{content:'\271A'} /* ✚ */
+  .pin.em-defibrillator{color:#e53935}
+  .pin.em-defibrillator::after{content:'\26A1'} /* ⚡ */
+  .pin.em-fire_hydrant{color:#e53935}
+  .pin.em-fire_hydrant::after{content:'\1F9EF'} /* 🧯 */
+  .pin.em-phone{color:#e53935}
+  .pin.em-phone::after{content:'\260E'} /* ☎ */
+  .pin.em-assembly_point{color:#e53935}
+  .pin.em-assembly_point::after{content:'\1F465'} /* 👥 */
+  .pin.em-siren{color:#e53935}
+  .pin.em-siren::after{content:'\1F6A8'} /* 🚨 */
+  .pin.em-access_point{color:#e53935}
+  .pin.em-access_point::after{content:'\27A1'} /* ➡ */
+  .pin.em-rescue_station{color:#e53935}
+  .pin.em-rescue_station::after{content:'\1F691'} /* 🚑 */
+  .pin.em-rescue_box{color:#e53935}
+  .pin.em-rescue_box::after{content:'\1F4E6'} /* 📦 */
+  .pin.hospital{color:#c62828}
+  .pin.hospital::after{content:'\271A'} /* 🏥 */
+  .pin.pt{color:#3f51b5}
+  .pin.pt::after{content:'\1F68C'} /* 🚌 generic PT */
+  .pin.bus{color:#3f51b5}
+  .pin.bus::after{content:'\1F68C'} /* 🚌 */
+  .pin.tram{color:#9c27b0}
+  .pin.tram::after{content:'\1F68B'} /* 🚊 */
+  .pin.train{color:#795548}
+  .pin.train::after{content:'\1F684'} /* 🚆 */
+  .pin.social{color:#9c27b0}
+  .pin.social::after{content:'\1F91D'} /* 🤝 */
+  .pin.park{color:#27ae60}
+  .pin.park::after{content:'\1F333'} /* 🌳 */
+  .pin.meadow{color:#2ecc71}
+  .pin.meadow::after{content:'\1F33F'} /* 🌿 */
+
+  .zoom-toggle{position:absolute;top:12px;left:12px;z-index:650;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .info-card{border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:10px}
+  .info-card h3{margin:0 0 6px;font-size:14px}
+
+  /* Right sidebar: custom collapsibles */
+  .cats .cat{border:1px solid #eee;border-radius:8px;margin-bottom:8px;background:#fff;overflow:hidden}
+  .cats .cat-h{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;font-weight:600}
+  .cats .caret{display:inline-block;transition:transform .18s ease}
+  .cats .cat.open .caret{transform:rotate(90deg)}
+  .cats .count{font-size:11px;color:#666;margin-left:auto}
+  .cats .list{max-height:0;transition:max-height .22s ease;overflow:hidden;border-top:1px solid #eee}
+  .cats .cat.open .list{max-height:420px}
+  .poi-item{padding:8px 10px;border-bottom:1px dashed #eee;cursor:pointer}
+  .poi-item:last-child{border-bottom:none}
+  .poi-item .title{font-weight:600}
+  .poi-item .desc{font-size:12px;color:#444}
+  .poi-item .addr{font-size:11px;color:#666}
+
+  footer{padding:8px 16px;background:#fafafa;color:#555;font-size:12px}
+  @media (max-width:900px){#main{grid-template-columns:1fr}#map{height:60vh}aside{border-left:none;border-top:1px solid #ddd}}
+</style>
+</head>
+<body>
+<div id="shell">
+  <header>
+    <h1>Hessenhallen (Messe Gießen) — Zäune, Tore, 10 m-Puffer, ÖPNV, Notfälle & POIs</h1>
+    <div class="sub">POIs zuerst im aktuellen Ausschnitt, dann Gießen im Hintergrund. Gruppen-Schalter im Legendenmenü.</div>
+  </header>
+
+  <div id="main">
+    <div style="position:relative;">
+      <div id="map"></div>
+      <div id="layersLegend" class="layers-legend"></div>
+    </div>
+    <aside>
+      <div class="section info-card" id="messeInfo">
+        <h3>Hessenhallen (wird geladen …)</h3>
+        <div class="hint">Amenity/Adresse/Betreiber/Website aus OSM</div>
+      </div>
+
+      <div class="section">
+        <h2>POIs im aktuellen Ausschnitt</h2>
+        <div class="hint" id="scopeHint">Nur aktive Kategorien, live gefiltert auf den Kartenausschnitt.</div>
+        <div id="poiCats" class="cats"></div>
+      </div>
+
+      
+
+      <div class="section">
+        <h2>Routing</h2>
+        <div class="hint">Zwei Punkte anklicken. Backend:
+          <select id="osrmSelect">
+            <option value="https://router.project-osrm.org">OSRM Demo (Test)</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    Karten & Daten: © OpenStreetMap-Mitwirkende • Leaflet • Turf • OSM Buildings • Leaflet Routing Machine/OSRM.
+  </footer>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const CENTER = [50.58631, 8.66146];
+const GIESSEN_BOUNDS_FALLBACK = [[50.54,8.57],[50.65,8.75]];
+const OVERPASS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter"
+];
+const CACHE_TTL = 1000*60*60*24;
+const FALLBACK_MESSE_POLY = [[50.58760,8.65970],[50.58760,8.66300],[50.58480,8.66300],[50.58480,8.65970]];
+
+/* ===== MAP ===== */
+const map = L.map('map',{center:CENTER, zoom:17, minZoom:12, maxZoom:20});
+const base = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom: 20,
+  maxNativeZoom: 19,
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+/* optional 2.5D (do not add to map by default) */
+let osmb=null; try{ osmb=new OSMBuildings().load('https://{s}.data.osmbuildings.org/0.2/59fcc2e8/tile/{z}/{x}/{y}.json'); }catch{}
+
+/* ===== LAYERS ===== */
+const layerMesse = L.layerGroup().addTo(map);
+const layerMesseFences = L.layerGroup().addTo(map);
+const layerMesseEntr = L.layerGroup().addTo(map);
+const layerBuffer = L.layerGroup();
+const layerBufferBarriers = L.layerGroup().addTo(map);
+
+const layerConstructionPolys = L.layerGroup().addTo(map);
+const layerConstructionLines = L.layerGroup().addTo(map);
+
+const poiLayers = {
+  police:    L.layerGroup().addTo(map),
+  toilets:   L.layerGroup().addTo(map),
+  water:     L.layerGroup().addTo(map),
+  trash:     L.layerGroup().addTo(map),
+  notfall:   L.layerGroup().addTo(map), // Notfälle (amenity=first_aid + emergency=*)
+  hospitals: L.layerGroup().addTo(map),
+  social:    L.layerGroup().addTo(map),
+  parks:     L.layerGroup().addTo(map), // polygons when available
+  meadows:   L.layerGroup().addTo(map), // polygons when available
+  ptStops:   L.layerGroup().addTo(map)  // ÖPNV stops
+};
+
+/* ===== ICONS (no white boxes) ===== */
+// Icon sizing (change here to scale all icons)
+const ICON_SIZE = 30;      // outer box px
+const ICON_FONT = 28;      // glyph size px
+function applyIconSizeVars(){
+  try{
+    document.documentElement.style.setProperty('--pin-size', ICON_SIZE+'px');
+    document.documentElement.style.setProperty('--pin-font', ICON_FONT+'px');
+  }catch{}
+}
+function noBgIcon(html){
+  const s = ICON_SIZE;
+  const a = Math.round(s/2);
+  return L.divIcon({className:'no-bg-icon', html, iconSize:[s,s], iconAnchor:[a,a]});
+}
+const ICONS = {
+  entrance:  noBgIcon('<span class="pin entrance"></span>'),
+  gate:      noBgIcon('<span class="pin gate"></span>'),
+  barrier:   noBgIcon('<span class="pin barrier"></span>'),
+  police:    noBgIcon('<span class="pin police"></span>'),
+  toilet:    noBgIcon('<span class="pin toilet"></span>'),
+  water:     noBgIcon('<span class="pin fountain"></span>'),
+  trash:     noBgIcon('<span class="pin trash"></span>'),
+  emergency: noBgIcon('<span class="pin emergency"></span>'),
+  hospital:  noBgIcon('<span class="pin hospital"></span>'),
+  pt:        noBgIcon('<span class="pin pt"></span>'),
+  social:    noBgIcon('<span class="pin social"></span>')
+};
+
+/* ===== DOM refs ===== */
+const messeInfoBox = document.getElementById('messeInfo');
+const poiCatsEl = document.getElementById('poiCats');
+const scopeHint = document.getElementById('scopeHint');
+
+/* logs removed */
+/* ===== small helpers ===== */
+function addrString(tags){
+  const s = tags['addr:street'], n = tags['addr:housenumber'];
+  return [s,n].filter(Boolean).join(' ');
+}
+function ensureCenter(el){
+  if (el.type==='node') return [el.lat,el.lon];
+  const c = el.center || (el.bounds ? {lat:(el.bounds.minlat+el.bounds.maxlat)/2, lon:(el.bounds.minlon+el.bounds.maxlon)/2} : null);
+  return c ? [c.lat,c.lon] : null;
+}
+function polyOf(el){
+  return Array.isArray(el.geometry) && el.geometry.length>=3 ? el.geometry.map(p=>[p.lat,p.lon]) : null;
+}
+
+/* ===== Overpass helpers ===== */
+function k(q){ return 'osmcache:'+q; }
+function readCache(q){ try{const r=localStorage.getItem(k(q)); if(!r) return null; const o=JSON.parse(r); if(Date.now()-o.t>CACHE_TTL) return null; return o.d;}catch{return null} }
+function writeCache(q,d){ try{localStorage.setItem(k(q),JSON.stringify({t:Date.now(),d}))}catch{} }
+async function overpass(q){
+  const c=readCache(q); if(c) return {json:c, endpoint:'cache'};
+  const body='data='+encodeURIComponent(q);
+  let lastErr=null, used=null;
+  for (const ep of OVERPASS){
+    try{
+      const r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const j=await r.json(); writeCache(q,j); used=ep; return {json:j, endpoint:used};
+    }catch(e){ lastErr=e; }
+  }
+  throw lastErr;
+}
+function polyStr(cs){ return cs.map(p=>`${p[0]} ${p[1]}`).join(' '); }
+
+/* ===== Queries ===== */
+function qGiessenBounds(){ return `[out:json][timeout:40];rel["boundary"="administrative"]["name"="Gießen"];out bb;`; }
+
+function qHessenhallen(){ return `
+[out:json][timeout:90];
+(
+  relation["amenity"="exhibition_centre"]["name"="Hessenhallen"](around:2500,${CENTER[0]},${CENTER[1]});
+  way["amenity"="exhibition_centre"]["name"="Hessenhallen"](around:2500,${CENTER[0]},${CENTER[1]});
+);
+out ids tags center bb; out geom;`; }
+
+function qFencesEntrancesInside(poly){ return `
+[out:json][timeout:120];
+(
+  way["barrier"~"^(fence|wall)$"](poly:"${poly}");
+  node["barrier"="gate"](poly:"${poly}");
+  node["entrance"](poly:"${poly}");
+  way["entrance"](poly:"${poly}");
+);
+out ids tags geom center;`; }
+
+function qBarriersInBuffer(poly){ return `
+[out:json][timeout:120];
+(
+  node["barrier"](poly:"${poly}");
+  way["barrier"~"^(fence|wall)$"](poly:"${poly}");
+);
+out ids tags geom center;`; }
+
+/* POIs: per BBOX (fast startup) */
+function qPOIsBBox(south, west, north, east){ return `
+[out:json][timeout:180];
+(
+  /* Safety & Emergency */
+  node["amenity"="police"](${south},${west},${north},${east});
+  way ["amenity"="police"](${south},${west},${north},${east});
+  node["amenity"="first_aid"](${south},${west},${north},${east});
+  way ["amenity"="first_aid"](${south},${west},${north},${east});
+  node["emergency"~"^(defibrillator|phone|assembly_point|fire_hydrant|siren|access_point|lifeguard|rescue_box|rescue_station)$"](${south},${west},${north},${east});
+  way ["emergency"~"^(defibrillator|phone|assembly_point|fire_hydrant|siren|access_point|lifeguard|rescue_box|rescue_station)$"](${south},${west},${north},${east});
+  node["amenity"="hospital"](${south},${west},${north},${east});
+  way ["amenity"="hospital"](${south},${west},${north},${east});
+  node["healthcare"="hospital"](${south},${west},${north},${east});
+  way ["healthcare"="hospital"](${south},${west},${north},${east});
+
+  /* Water & Sanitation */
+  node["amenity"="toilets"]["access"!="private"](${south},${west},${north},${east});
+  way ["amenity"="toilets"]["access"!="private"](${south},${west},${north},${east});
+  node["amenity"="drinking_water"](${south},${west},${north},${east});
+  way ["amenity"="drinking_water"](${south},${west},${north},${east});
+  node["amenity"="waste_basket"](${south},${west},${north},${east});
+  way ["amenity"="waste_basket"](${south},${west},${north},${east});
+
+  /* Social */
+  node["amenity"="social_facility"](${south},${west},${north},${east});
+  way ["amenity"="social_facility"](${south},${west},${north},${east});
+
+  /* Parks & Meadows */
+  node["leisure"="park"](${south},${west},${north},${east});
+  way ["leisure"="park"](${south},${west},${north},${east});
+  relation["leisure"="park"](${south},${west},${north},${east});
+  way ["landuse"="meadow"](${south},${west},${north},${east});
+  relation["landuse"="meadow"](${south},${west},${north},${east});
+
+  /* ÖPNV stops */
+  node["highway"="bus_stop"](${south},${west},${north},${east});
+  node["public_transport"~"^(platform|stop_position)$"](${south},${west},${north},${east});
+  node["railway"~"^(tram_stop|halt|stop|station)$"](${south},${west},${north},${east});
+  way ["railway"="platform"](${south},${west},${north},${east});
+  way ["public_transport"="platform"](${south},${west},${north},${east});
+
+  /* Construction */
+  way ["landuse"="construction"](${south},${west},${north},${east});
+  relation["landuse"="construction"](${south},${west},${north},${east});
+  way ["building"="construction"](${south},${west},${north},${east});
+  relation["building"="construction"](${south},${west},${north},${east});
+  way ["highway"="construction"](${south},${west},${north},${east});
+);
+out ids tags center geom;`; }
+
+/* POIs: whole city (background fill) */
+function qPOIsGiessenArea(){ return `
+[out:json][timeout:300];
+area["name"="Gießen"]["boundary"="administrative"]["admin_level"~"^(7|8)$"]->.a;
+(
+  /* Safety & Emergency */
+  node(area.a)["amenity"="police"]; way(area.a)["amenity"="police"];
+  node(area.a)["amenity"="first_aid"]; way(area.a)["amenity"="first_aid"];
+  node(area.a)["emergency"~"^(defibrillator|phone|assembly_point|fire_hydrant|siren|access_point|lifeguard|rescue_box|rescue_station)$"];
+  way (area.a)["emergency"~"^(defibrillator|phone|assembly_point|fire_hydrant|siren|access_point|lifeguard|rescue_box|rescue_station)$"];
+  node(area.a)["amenity"="hospital"]; way(area.a)["amenity"="hospital"];
+  node(area.a)["healthcare"="hospital"]; way(area.a)["healthcare"="hospital"];
+
+  /* Water & Sanitation */
+  node(area.a)["amenity"="toilets"]["access"!="private"]; way(area.a)["amenity"="toilets"]["access"!="private"];
+  node(area.a)["amenity"="drinking_water"]; way(area.a)["amenity"="drinking_water"];
+  node(area.a)["amenity"="waste_basket"]; way(area.a)["amenity"="waste_basket"];
+
+  /* Social */
+  node(area.a)["amenity"="social_facility"]; way(area.a)["amenity"="social_facility"];
+
+  /* Parks & Meadows */
+  node(area.a)["leisure"="park"]; way(area.a)["leisure"="park"]; relation(area.a)["leisure"="park"];
+  way(area.a)["landuse"="meadow"]; relation(area.a)["landuse"="meadow"];
+
+  /* ÖPNV stops */
+  node(area.a)["highway"="bus_stop"];
+  node(area.a)["public_transport"~"^(platform|stop_position)$"];
+  node(area.a)["railway"~"^(tram_stop|halt|stop|station)$"];
+  way (area.a)["railway"="platform"];
+  way (area.a)["public_transport"="platform"];
+
+  /* Construction */
+  way (area.a)["landuse"="construction"]; relation(area.a)["landuse"="construction"];
+  way (area.a)["building"="construction"]; relation(area.a)["building"="construction"];
+  way (area.a)["highway"="construction"];
+);
+out ids tags center geom;`; }
+
+/* ===== STATE ===== */
+let giessenBounds = null;     // only declared once
+let messePolygon  = null;
+let messeBuffer   = null;
+let currentFocus  = 'messe';
+
+const poiStore = new Map(); // all fetched elements
+let poiFeatures = {
+  police:[], toilets:[], water:[], trash:[],
+  notfall:[], hospitals:[], social:[],
+  parks:[], meadows:[], ptStops:[]
+};
+let constructionPolygons = []; // {name, poly}
+let constructionLines    = []; // {name, line}
+
+/* emergency subfilter */
+// Multi-filters: empty = all
+let emergencyFilters=[]; // e.g., ['first_aid','defibrillator']
+let ptFilters=[];       // e.g., ['bus','tram','train']
+/* approx address cache by OSM key ("type/id") -> string */
+const addrApproxCache = new Map();
+/* queue/throttle for address approximation */
+const addrQueue = [];
+let addrBusy = false;
+
+/* ===== MESSE INFO ===== */
+function setMesseInfo(tags, center){
+  const fallbackAddr = ['An der Hessenhalle','11','35398','Gießen','DE'].join(', ');
+  const a = addrString(tags);
+  const op = tags.operator || 'Messe Gießen';
+  const website = tags.website || 'https://www.messe-giessen.de/';
+  document.getElementById('messeInfo').innerHTML = `
+    <h3>${tags.name || 'Hessenhallen'}</h3>
+    <div>Amenity: <code>exhibition_centre</code></div>
+    <div>Betreiber: ${op}</div>
+    <div>Adresse: ${a || fallbackAddr}</div>
+    <div>Website: <a href="${website}" target="_blank" rel="noopener">${website}</a></div>
+    ${center?`<div class="hint">Zentrum: <code>${center.lat.toFixed(5)}, ${center.lon.toFixed(5)}</code></div>`:''}
+  `;
+}
+
+/* ===== DRAW: Messe & Buffer ===== */
+function drawMessePolygon(poly){
+  layerMesse.clearLayers();
+  L.polygon(poly,{color:'#1e90ff',weight:2,fill:true,fillColor:'#1e90ff',fillOpacity:.25}).addTo(layerMesse);
+}
+function drawInsideFencesEntrances(data){
+  layerMesseFences.clearLayers(); layerMesseEntr.clearLayers();
+  (data.elements||[]).forEach(el=>{
+    const t=el.tags||{};
+    if (el.type==='way' && (t.barrier==='fence'||t.barrier==='wall')){
+      const latlngs=(el.geometry||[]).map(p=>[p.lat,p.lon]);
+      L.polyline(latlngs,{color:'#555',weight:3,opacity:.95,dashArray:'8,6'}).addTo(layerMesseFences)
+        .bindPopup(`<strong>${t.barrier==='wall'?'Wand':'Zaun'}</strong>${t.height?'<br>Höhe: '+t.height:''}`);
+    }
+    if ((el.type==='node' && (t.entrance || t.barrier==='gate')) || (el.type==='way' && t.entrance)){
+      const c = el.type==='node' ? [el.lat,el.lon] : (el.center ? [el.center.lat,el.center.lon] : null);
+      if (!c) return;
+      const isGate = t.barrier==='gate';
+      const label = t.entrance ? `Eingang (${t.entrance})` : (isGate?'Tor (gate)':'Eingang');
+      L.marker(c,{icon:isGate?ICONS.gate:ICONS.entrance}).addTo(layerMesseEntr)
+        .bindPopup(`<strong>${label}</strong>${t.name?'<br>'+t.name:''}`);
+    }
+  });
+}
+function computeBuffer(polyLatLng, meters=10){
+  const ring = polyLatLng.map(p=>[p[1],p[0]]);
+  const gj = turf.polygon([ring.concat([ring[0]])]);
+  const buf = turf.buffer(gj, meters, {units:'meters'});
+  return buf.geometry.coordinates[0].map(c=>[c[1],c[0]]);
+}
+function drawBufferAndBarriers(bufferPoly, data){
+  layerBuffer.clearLayers(); layerBufferBarriers.clearLayers();
+  L.polygon(bufferPoly,{color:'#ff0000',weight:2,fill:true,fillColor:'#ff0000',fillOpacity:.12}).addTo(layerBuffer).bindPopup('10 m-Puffer');
+  (data.elements||[]).forEach(el=>{
+    const t=el.tags||{};
+    if (el.type==='way' && (t.barrier==='fence'||t.barrier==='wall')){
+      const latlngs=(el.geometry||[]).map(p=>[p.lat,p.lon]);
+      L.polyline(latlngs,{color:'#7a7a7a',weight:3,opacity:.8,dashArray:'6,6'}).addTo(layerBufferBarriers)
+        .bindPopup(`<strong>${t.barrier==='wall'?'Wand':'Zaun'}</strong>${t.height?'<br>Höhe: '+t.height:''}`);
+    } else if (el.type==='node' && t.barrier){
+      const c=[el.lat,el.lon];
+      const isGate = t.barrier==='gate';
+      L.marker(c,{icon:isGate?ICONS.gate:ICONS.barrier}).addTo(layerBufferBarriers)
+        .bindPopup(`<strong>${isGate?'Tor (gate)':'Barriere'}</strong><br><code>barrier=${t.barrier}</code>${t.name?'<br>'+t.name:''}`);
+    }
+  });
+}
+
+/* ===== NORMALIZE from store ===== */
+function mergePOIs(elements){ (elements||[]).forEach(el=>{ poiStore.set(`${el.type}/${el.id}`, el); }); }
+
+function normalizePOIsFromStore(){
+  poiFeatures = {police:[], toilets:[], water:[], trash:[], notfall:[], hospitals:[], social:[], parks:[], meadows:[], ptStops:[]};
+  constructionPolygons = [];
+  constructionLines = [];
+
+  poiStore.forEach((el,key)=>{
+    const t=el.tags||{};
+
+    /* Construction polygons & lines */
+    if (t.landuse==='construction' || t.building==='construction'){
+      const poly = polyOf(el);
+      if (poly) constructionPolygons.push({name:t.name||'Baustelle', poly});
+      return;
+    }
+    if (t.highway==='construction'){
+      const line = Array.isArray(el.geometry) && el.geometry.length>=2 ? el.geometry.map(p=>[p.lat,p.lon]) : null;
+      if (line) constructionLines.push({name:t.name||'Baustelle (Straße)', line});
+      return;
+    }
+
+    /* Parks & Meadows (prefer polygons) */
+    if (t.leisure==='park' || t.landuse==='meadow'){
+      const poly = polyOf(el);
+      const c = ensureCenter(el);
+      const rec = {idkey:key, name:t.name||'', lat:c?c[0]:null, lon:c?c[1]:null, poly, tags:t};
+      if (t.leisure==='park') poiFeatures.parks.push(rec);
+      else poiFeatures.meadows.push(rec);
+      return;
+    }
+
+    /* Generic center for point-like features */
+    const c = ensureCenter(el);
+    const rec = {
+      idkey:key,
+      name:t.name||'',
+      desc:t.description||'',
+      addr:addrString(t),
+      lat:c?c[0]:null, lon:c?c[1]:null, tags:t
+    };
+
+    /* Safety & Emergency */
+    if (t.amenity==='police'){ poiFeatures.police.push(rec); return; }
+    if (t.amenity==='first_aid'){ poiFeatures.notfall.push({...rec, kind:'first_aid'}); return; }
+    if (t.emergency && /^(defibrillator|phone|assembly_point|fire_hydrant|siren|access_point|lifeguard|rescue_box|rescue_station)$/.test(t.emergency)){
+      poiFeatures.notfall.push({...rec, kind:`emergency=${t.emergency}`}); return;
+    }
+    if (t.amenity==='hospital' || t.healthcare==='hospital'){ poiFeatures.hospitals.push(rec); return; }
+
+    /* Water & Sanitation */
+    if (t.amenity==='toilets'){ poiFeatures.toilets.push(rec); return; }
+    if (t.amenity==='drinking_water'){ poiFeatures.water.push(rec); return; }
+    if (t.amenity==='waste_basket'){ poiFeatures.trash.push(rec); return; }
+
+    /* Social */
+    if (t.amenity==='social_facility'){ poiFeatures.social.push(rec); return; }
+
+    /* ÖPNV stops */
+    if (t.highway==='bus_stop' || t.public_transport==='platform' || t.public_transport==='stop_position' ||
+        /^(tram_stop|halt|stop|station)$/.test(t.railway||'') || t.railway==='platform'){
+      // classify mode
+      let mode='train';
+      if (t.highway==='bus_stop' || t.bus==='yes') mode='bus';
+      else if (t.railway==='tram_stop' || t.tram==='yes') mode='tram';
+      else if (/^(halt|stop|station)$/.test(t.railway||'')) mode='train';
+      poiFeatures.ptStops.push({...rec, ptMode:mode}); return;
+    }
+  });
+}
+
+/* ===== Emergency filter match ===== */
+function matchesEmergencyFilter(rec){
+  if (!emergencyFilters || emergencyFilters.length===0) return true;
+  // rec.kind is either 'first_aid' or 'emergency=xxx'
+  const k = rec.kind || '';
+  return emergencyFilters.some(f => f==='first_aid' ? k==='first_aid' : k===`emergency=${f}`);
+}
+
+/* ===== DRAW LAYERS ===== */
+function drawPOIMarkersAndPolys(){
+  // clear
+  Object.values(poiLayers).forEach(l=>l.clearLayers());
+  layerConstructionPolys.clearLayers(); layerConstructionLines.clearLayers();
+
+  // construction
+  constructionPolygons.forEach(r=>{
+    L.polygon(r.poly,{color:'#f1c40f',weight:1,fillColor:'#f1c40f',fillOpacity:.25}).addTo(layerConstructionPolys)
+      .bindPopup(`<strong>Baustelle</strong>${r.name?'<br>'+r.name:''}`);
+  });
+  constructionLines.forEach(r=>{
+    L.polyline(r.line,{color:'#f1c40f',weight:3,opacity:.9,dashArray:'6,6'}).addTo(layerConstructionLines)
+      .bindPopup(`<strong>Baustelle (Straße)</strong>${r.name?'<br>'+r.name:''}`);
+  });
+
+  // markers helper: address = typed or approximated
+  const addrLine = r => {
+    const a = r.addr || addrApproxCache.get(r.idkey) || '';
+    return a ? `<br><span class="addr">${a}</span>` : '';
+  };
+  const descOrType = (cat,r,defaultLabel) => {
+    const hasName = r.name && r.name.trim();
+    const d = r.desc && r.desc.trim();
+    if (hasName && d) return `<div class="desc">${d}</div>`;
+    if (!hasName && d) return `<div class="desc">${d}</div>`;
+    if (!hasName && !d) return `<div class="desc">${defaultLabel}</div>`;
+    return ''; // has name only
+  };
+
+  // markers
+  poiFeatures.police.forEach(r=>{
+    if (r.lat==null) return;
+    L.marker([r.lat,r.lon],{icon:ICONS.police})
+      .addTo(poiLayers.police)
+      .bindPopup(`<strong>${r.name||'Polizei'}</strong>${addrLine(r)}`);
+    // 100m zone around every police station
+    L.circle([r.lat,r.lon], {radius:100, color:'#1abc9c', weight:1, fillColor:'#1abc9c', fillOpacity:.08})
+      .addTo(poiLayers.police);
+  });
+
+  poiFeatures.toilets.forEach(r=> r.lat!=null && L.marker([r.lat,r.lon],{icon:ICONS.toilet})
+    .addTo(poiLayers.toilets)
+    .bindPopup(`<strong>${r.name||'WC'}</strong>${addrLine(r)}`));
+
+  poiFeatures.water.forEach(r=> r.lat!=null && L.marker([r.lat,r.lon],{icon:ICONS.water})
+    .addTo(poiLayers.water)
+    .bindPopup(`<strong>${r.name||'Trinkwasser'}</strong>${addrLine(r)}`));
+
+  poiFeatures.trash.forEach(r=> r.lat!=null && L.marker([r.lat,r.lon],{icon:ICONS.trash})
+    .addTo(poiLayers.trash)
+    .bindPopup(`<strong>${r.name||'Mülleimer'}</strong>${addrLine(r)}`));
+
+  const emergencyIconFor = (r)=>{
+    const k = r.kind || '';
+    let cls = 'emergency';
+    if (k==='first_aid') cls = 'em-first_aid';
+    else if (k.startsWith('emergency=')){
+      const v = k.split('=')[1];
+      const allowed = ['defibrillator','fire_hydrant','phone','assembly_point','siren','access_point','rescue_station','rescue_box'];
+      if (allowed.includes(v)) cls = 'em-'+v;
+    }
+    return noBgIcon(`<span class=\"pin ${cls}\"></span>`);
+  };
+  poiFeatures.notfall.filter(matchesEmergencyFilter).forEach(r=> r.lat!=null && L.marker([r.lat,r.lon],{icon:emergencyIconFor(r)})
+    .addTo(poiLayers.notfall)
+    .bindPopup(`<strong>${r.name||'Notfälle'}</strong>${r.kind?'<br><code>'+r.kind+'</code>':''}${addrLine(r)}`));
+
+  poiFeatures.hospitals.forEach(r=> r.lat!=null && L.marker([r.lat,r.lon],{icon:ICONS.hospital})
+    .addTo(poiLayers.hospitals)
+    .bindPopup(`<strong>${r.name||'Krankenhaus'}</strong>${addrLine(r)}`));
+
+  poiFeatures.social.forEach(r=> r.lat!=null && L.marker([r.lat,r.lon],{icon:ICONS.social})
+    .addTo(poiLayers.social)
+    .bindPopup(`<strong>${r.name||'Soziale Einrichtung'}</strong>${addrLine(r)}`));
+
+  const matchesPT = (r)=>{ if (!ptFilters || ptFilters.length===0) return true; return ptFilters.includes(r.ptMode||'train'); };
+  const ptIconFor = (r)=>{ const cls = (r.ptMode==='bus')?'bus':(r.ptMode==='tram')?'tram':'train'; return noBgIcon(`<span class=\"pin ${cls}\"></span>`); };
+  poiFeatures.ptStops.filter(matchesPT).forEach(r=> r.lat!=null && L.marker([r.lat,r.lon],{icon:ptIconFor(r)})
+    .addTo(poiLayers.ptStops)
+    .bindPopup(`<strong>${r.name||'ÖPNV-Haltestelle'}</strong>${addrLine(r)}`));
+
+  // parks: polygon preferred
+  poiFeatures.parks.forEach(r=>{
+    if (Array.isArray(r.poly) && r.poly.length>=3){
+      L.polygon(r.poly,{color:'#27ae60',weight:1,fillColor:'#27ae60',fillOpacity:.35})
+        .addTo(poiLayers.parks)
+        .bindPopup(`<strong>${r.name||'Park'}</strong>`);
+    } else if (r.lat!=null && r.lon!=null){
+      L.marker([r.lat,r.lon],{icon:noBgIcon('<span class="pin park"></span>')})
+        .addTo(poiLayers.parks)
+        .bindPopup(`<strong>${r.name||'Park'}</strong>`);
+    }
+  });
+
+  // meadows: polygon preferred
+  poiFeatures.meadows.forEach(r=>{
+    if (Array.isArray(r.poly) && r.poly.length>=3){
+      L.polygon(r.poly,{color:'#2ecc71',weight:1,fillColor:'#2ecc71',fillOpacity:.25})
+        .addTo(poiLayers.meadows)
+        .bindPopup(`<strong>${r.name||'Wiese'}</strong>`);
+    } else if (r.lat!=null && r.lon!=null){
+      L.marker([r.lat,r.lon],{icon:noBgIcon('<span class="pin meadow"></span>')})
+        .addTo(poiLayers.meadows)
+        .bindPopup(`<strong>${r.name||'Wiese'}</strong>`);
+    }
+  });
+}
+
+/* ===== Approximate addresses via Overpass (nearest named street) ===== */
+function qNearestStreet(lat,lon){ return `
+[out:json][timeout:25];
+way(around:50,${lat},${lon})["highway"]["name"];
+out tags center 1;`; }
+
+async function processAddrQueue(){
+  if (addrBusy) return;
+  addrBusy = true;
+  while (addrQueue.length){
+    const item = addrQueue.shift(); // {idkey, lat, lon}
+    const cacheKey = item.idkey;
+    if (addrApproxCache.has(cacheKey)) continue;
+    try{
+      const res = await overpass(qNearestStreet(item.lat,item.lon));
+      const el = (res.json.elements||[])[0];
+      const name = el?.tags?.name || '';
+      if (name) addrApproxCache.set(cacheKey, name);
+    }catch(e){
+      // ignore
+    }
+    await new Promise(r=>setTimeout(r,300)); // throttle
+  }
+  addrBusy = false;
+  // redraw side + markers to reflect any new addresses
+  drawPOIMarkersAndPolys();
+  updatePOISidebar();
+}
+
+function queueAddressApprox(){
+  // gather candidates with missing addr (cap to avoid huge queues)
+  const pushIf = r=>{
+    if (!r) return;
+    if (!r.addr && r.lat!=null && r.lon!=null && !addrApproxCache.has(r.idkey)){
+      addrQueue.push({idkey:r.idkey, lat:r.lat, lon:r.lon});
+    }
+  };
+  ['police','toilets','water','trash','notfall','hospitals','social','ptStops'].forEach(cat=>{
+    (poiFeatures[cat]||[]).forEach(pushIf);
+  });
+  if (addrQueue.length) processAddrQueue();
+}
+
+/* ===== Sidebar list (custom collapsibles, caret icon) ===== */
+function makeCatBlock(key, title, items, onFocusItem){
+  const cat = document.createElement('div'); cat.className='cat';
+  const header = document.createElement('div'); header.className='cat-h';
+  const caret = document.createElement('span'); caret.className='caret'; caret.textContent='▶';
+  const label = document.createElement('span'); label.textContent = title;
+  const count = document.createElement('span'); count.className='count'; count.textContent = `(${items.length})`;
+  header.appendChild(caret); header.appendChild(label); header.appendChild(count);
+  const list = document.createElement('div'); list.className='list';
+
+  items.forEach(r=>{
+    const row = document.createElement('div'); row.className='poi-item';
+    // title/desc logic
+    const hasName = r.name && r.name.trim();
+    const d = r.desc && r.desc.trim();
+    let titleText = hasName ? r.name : (d ? d : title);
+    let descHtml = '';
+    if (hasName && d) descHtml = `<div class="desc">${d}</div>`;
+    row.innerHTML = `<div class="title">${titleText}</div>${descHtml}${
+      (r.addr || addrApproxCache.get(r.idkey)) ? `<div class="addr">${r.addr || addrApproxCache.get(r.idkey)}</div>` : ''
+    }`;
+    row.addEventListener('click', ()=> onFocusItem(r));
+    list.appendChild(row);
+  });
+
+  header.addEventListener('click', ()=>{
+    const open = cat.classList.toggle('open');
+    caret.textContent = open ? '▼' : '▶';
+  });
+
+  cat.appendChild(header); cat.appendChild(list);
+  return cat;
+}
+
+function updatePOISidebar(){
+  const bounds = map.getBounds();
+  const labels = {
+    police:'Polizei', toilets:'WCs', water:'Trinkwasser', trash:'Mülleimer',
+    notfall:'Notfälle', hospitals:'Krankenhäuser', social:'Soziale Einrichtung',
+    parks:'Parks', meadows:'Wiesen', ptStops:'ÖPNV-Haltestellen'
+  };
+
+  // only show categories that are currently active (toggled on in legend)
+  const activeCats = Object.entries(layerToggles)
+    .filter(([key,meta]) => meta.type==='layer' && poiFeatures[key] && meta.cb && meta.cb.checked)
+    .map(([key]) => key);
+
+  const listable = ['police','toilets','water','trash','notfall','hospitals','social','parks','meadows','ptStops'];
+  const shownCats = activeCats.filter(c=> listable.includes(c));
+
+  // prepare filtered items per cat
+  const filt = {};
+  shownCats.forEach(cat=>{
+    const items = (poiFeatures[cat]||[]).filter(r=>{
+      if (cat==='notfall' && !matchesEmergencyFilter(r)) return false;
+      if (cat==='ptStops' && (ptFilters && ptFilters.length>0) && !ptFilters.includes(r.ptMode||'train')) return false;
+      if ((cat==='parks' || cat==='meadows')){
+        if (r.lat!=null && r.lon!=null) return bounds.contains([r.lat,r.lon]);
+        return true;
+      }
+      return r.lat!=null && r.lon!=null && bounds.contains([r.lat,r.lon]);
+    });
+    filt[cat]=items;
+  });
+
+  scopeHint.textContent = `Aktive Kategorien: ${shownCats.length?shownCats.join(', '):'keine'} — gefiltert auf aktuellen Kartenausschnitt.`;
+
+  // build sidebar — grouped visually
+  poiCatsEl.innerHTML='';
+  const groups = [
+    {name:'Sicherheit & Notfälle', cats:['police','notfall','hospitals']},
+    {name:'Wasser & Sanitär', cats:['toilets','water','trash']},
+    {name:'Natur', cats:['parks','meadows']},
+    {name:'ÖPNV', cats:['ptStops']},
+    {name:'Soziales', cats:['social']}
+  ];
+
+  groups.forEach(g=>{
+    const someVisible = g.cats.some(c=> shownCats.includes(c) && (filt[c]?.length||0)>0);
+    if (!someVisible) return;
+
+    const h = document.createElement('h3'); h.textContent = g.name;
+    h.style.margin = '10px 0 6px'; h.style.fontSize='13px';
+    poiCatsEl.appendChild(h);
+
+    g.cats.forEach(cat=>{
+      if (!shownCats.includes(cat)) return;
+      const items = filt[cat]||[];
+      if (!items.length) return;
+
+      const block = makeCatBlock(
+        cat, labels[cat]||cat, items,
+        (r)=>{
+          if ((cat==='parks'||cat==='meadows') && Array.isArray(r.poly) && r.poly.length>=3){
+            map.fitBounds(L.polygon(r.poly).getBounds().pad(0.05),{animate:true});
+          } else if (r.lat!=null && r.lon!=null){
+            map.setView([r.lat,r.lon],18,{animate:true});
+          }
+        }
+      );
+      poiCatsEl.appendChild(block);
+    });
+  });
+}
+
+/* ===== Legend with GROUP toggles + collapsible + emergency subfilter ===== */
+const layersDiv = document.getElementById('layersLegend');
+const layerToggles = {}; // filled below
+
+const GROUPS = [
+  {
+    key:'g_messe', name:'Messe & Puffer', children:[
+      {key:'messe', label:'Hessenhallen-Areal', type:'layer', layer:()=>layerMesse, legend:'<span class="sw sw-messe"></span>'},
+      {key:'messeEntr', label:'Eingänge/Tore (innen)', type:'layer', layer:()=>layerMesseEntr, legend:'<span class="pin entrance"></span>'},
+    ]
+  },
+  {
+    key:'g_oepnv', name:'ÖPNV', children:[
+      {key:'ptStops', label:'Haltestellen/Plattformen', type:'layer', layer:()=>poiLayers.ptStops, legend:'<span class="pin pt"></span>'},
+      {key:'constructionPolys', label:'Baustellen (Flächen)', type:'layer', layer:()=>layerConstructionPolys, legend:'<span class="sw sw-construct"></span>'},
+      {key:'constructionLines', label:'Baustellen (Straßen)', type:'layer', layer:()=>layerConstructionLines, legend:'<span class="sw sw-construct"></span>'}
+    
+    ]
+  },
+  {
+    key:'g_safety', name:'Sicherheit & Notfälle', children:[
+      {key:'police', label:'Polizei', type:'layer', layer:()=>poiLayers.police, legend:'<span class="pin police"></span>'},
+      // Notfälle row will get a dropdown appended after checkbox
+      {key:'notfall', label:'Notfälle', type:'layer', layer:()=>poiLayers.notfall, legend:'<span class="pin emergency"></span>'},
+      {key:'hospitals', label:'Krankenhäuser', type:'layer', layer:()=>poiLayers.hospitals, legend:'<span class="pin hospital"></span>'}
+    ]
+  },
+  {
+    key:'g_water', name:'Wasser & Sanitär', children:[
+      {key:'toilets', label:'WCs', type:'layer', layer:()=>poiLayers.toilets, legend:'<span class="pin toilet"></span>'},
+      {key:'water', label:'Trinkwasser', type:'layer', layer:()=>poiLayers.water, legend:'<span class="pin fountain"></span>'},
+      {key:'trash', label:'Mülleimer', type:'layer', layer:()=>poiLayers.trash, legend:'<span class="pin trash"></span>'}
+    ]
+  },
+  {
+    key:'g_nature', name:'Natur', children:[
+      {key:'parks', label:'Parks', type:'layer', layer:()=>poiLayers.parks, legend:'<span class="sw sw-park"></span>'},
+      {key:'meadows', label:'Wiesen', type:'layer', layer:()=>poiLayers.meadows, legend:'<span class="sw sw-meadow"></span>'}
+    ]
+  },
+  {
+    key:'g_social', name:'Soziales', children:[
+      {key:'social', label:'Soziale Einrichtung', type:'layer', layer:()=>poiLayers.social, legend:'<span class="pin social"></span>'}
+    ]
+  },
+];
+
+function buildLegend(){
+  const root = document.createElement('div'); root.className='legend-wrap';
+  // overall head (click to collapse entire legend)
+  const head = document.createElement('div'); head.className='head';
+  const caret = document.createElement('span'); caret.textContent='▶'; caret.style.transition='transform .18s';
+  const title = document.createElement('span'); title.textContent='Layer & Legende';
+  head.appendChild(caret); head.appendChild(title);
+  const body = document.createElement('div'); body.className='body';
+
+  head.addEventListener('click', ()=>{
+    const opened = body.style.display !== 'none';
+    body.style.display = opened ? 'none' : 'block';
+    caret.style.transform = opened ? 'rotate(0deg)' : 'rotate(90deg)';
+  });
+
+  root.appendChild(head); root.appendChild(body);
+
+  GROUPS.forEach(group=>{
+    const wrap = document.createElement('div'); wrap.className='lg-group open';
+
+    const gHead = document.createElement('div'); gHead.className='g-head';
+    const gCaret = document.createElement('span'); gCaret.className='g-caret'; gCaret.textContent='▶';
+    const gTitle = document.createElement('span'); gTitle.textContent = group.name;
+    const gCheckWrap = document.createElement('label'); gCheckWrap.className='g-check';
+    const gcb = document.createElement('input'); gcb.type='checkbox'; gcb.checked=true; gcb.dataset.group=group.key;
+    gCheckWrap.appendChild(gcb);
+
+    gHead.appendChild(gCaret); gHead.appendChild(gTitle); gHead.appendChild(gCheckWrap);
+
+    const gBody = document.createElement('div'); gBody.className='g-body';
+
+    group.children.forEach(ch=>{
+      const line = document.createElement('label');
+      const checkedAttr = (ch.checked === false) ? '' : 'checked';
+      line.innerHTML = `<input type="checkbox" data-layer="${ch.key}" ${checkedAttr}> ${ch.legend} ${ch.label}`;
+      gBody.appendChild(line);
+
+      const cb = line.querySelector('input[type="checkbox"]');
+      layerToggles[ch.key] = {type:'layer', layer: ch.layer(), cb, lineEl: line};
+
+      // attach emergency sub-filter select beside the Notfälle layer
+      if (ch.key==='notfall' || ch.key==='ptStops'){
+        const attachMultiCheck = (host, {options, getSel, setSel, onChange})=>{
+          const wrap = document.createElement('span'); wrap.style.marginLeft='6px'; wrap.style.position='relative';
+          const btn = document.createElement('button'); btn.type='button'; btn.textContent='alle'; btn.style.fontSize='12px';
+          // render menu at body level to avoid parent overflow clipping
+          const menu = document.createElement('div');
+          menu.style.position='fixed'; menu.style.background='#fff'; menu.style.border='1px solid #ddd';
+          menu.style.padding='6px 8px'; menu.style.boxShadow='0 2px 8px rgba(0,0,0,.12)'; menu.style.display='none';
+          menu.style.zIndex='2000'; menu.style.minWidth='160px';
+          options.forEach(opt=>{
+            const lab=document.createElement('label'); lab.style.display='flex'; lab.style.alignItems='center'; lab.style.gap='6px'; lab.style.margin='3px 0';
+            const cb=document.createElement('input'); cb.type='checkbox'; cb.value=opt.value; cb.checked=getSel().includes(opt.value);
+            lab.appendChild(cb);
+            if (opt.iconClass){ const ic=document.createElement('span'); ic.className = 'pin '+opt.iconClass; lab.appendChild(ic); }
+            lab.append(opt.label);
+            menu.appendChild(lab);
+            cb.addEventListener('change', ()=>{
+              const sel = new Set(getSel());
+              if (cb.checked) sel.add(opt.value); else sel.delete(opt.value);
+              setSel(Array.from(sel));
+              onChange();
+              renderBtn();
+            });
+          });
+          function renderBtn(){
+            const sel=getSel();
+            btn.textContent = sel.length? `${sel.length} ausgewählt` : 'alle';
+          }
+          renderBtn();
+          const placeMenu = ()=>{
+            const r = btn.getBoundingClientRect();
+            let left = Math.min(Math.max(8, r.left), window.innerWidth - 200);
+            let top = Math.min(r.bottom + 4, window.innerHeight - 10);
+            menu.style.left = left + 'px';
+            menu.style.top = top + 'px';
+          };
+          btn.addEventListener('click', (e)=>{ e.stopPropagation(); if (menu.style.display==='none'){ placeMenu(); menu.style.display='block'; } else { menu.style.display='none'; } });
+          menu.addEventListener('click', (e)=> e.stopPropagation());
+          document.addEventListener('click', ()=>{ menu.style.display='none'; });
+          window.addEventListener('scroll', ()=>{ menu.style.display='none'; }, true);
+          window.addEventListener('resize', ()=>{ menu.style.display='none'; });
+          wrap.appendChild(btn); document.body.appendChild(menu); host.appendChild(wrap);
+        };
+        if (ch.key==='notfall'){
+          attachMultiCheck(line, {
+            options:[
+              {value:'first_aid', label:'Erste Hilfe', iconClass:'em-first_aid'},
+              {value:'defibrillator', label:'AED', iconClass:'em-defibrillator'},
+              {value:'fire_hydrant', label:'Hydrant', iconClass:'em-fire_hydrant'},
+              {value:'phone', label:'Notruftelefon', iconClass:'em-phone'},
+              {value:'assembly_point', label:'Sammelplatz', iconClass:'em-assembly_point'},
+              {value:'siren', label:'Sirene', iconClass:'em-siren'},
+              {value:'access_point', label:'Zugangspunkt', iconClass:'em-access_point'},
+              {value:'rescue_station', label:'Rettungsstation', iconClass:'em-rescue_station'},
+              {value:'rescue_box', label:'Rettungsbox', iconClass:'em-rescue_box'}
+            ],
+            getSel: ()=> emergencyFilters,
+            setSel: (vals)=>{ emergencyFilters = vals; },
+            onChange: ()=>{ drawPOIMarkersAndPolys(); updatePOISidebar(); }
+          });
+        }
+        if (ch.key==='ptStops'){
+          attachMultiCheck(line, {
+            options:[
+              {value:'bus', label:'Bus', iconClass:'bus'},
+              {value:'tram', label:'Tram', iconClass:'tram'},
+              {value:'train', label:'Zug', iconClass:'train'}
+            ],
+            getSel: ()=> ptFilters,
+            setSel: (vals)=>{ ptFilters = vals; },
+            onChange: ()=>{ drawPOIMarkersAndPolys(); updatePOISidebar(); }
+          });
+        }
+      }
+    });
+
+    // group title click = collapse/expand
+    gHead.addEventListener('click', (e)=>{
+      if (e.target.tagName.toLowerCase()==='input') return; // ignore when clicking checkbox
+      const open = wrap.classList.toggle('open');
+      gCaret.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+    });
+
+    // group checkbox toggles children
+    gcb.addEventListener('change', ()=>{
+      const on = gcb.checked;
+      group.children.forEach(ch=>{
+        const meta = layerToggles[ch.key];
+        if (!meta) return;
+        meta.cb.checked = on;
+        if (on) meta.layer.addTo(map); else map.removeLayer(meta.layer);
+      });
+      updatePOISidebar();
+    });
+
+    wrap.appendChild(gHead); wrap.appendChild(gBody);
+    body.appendChild(wrap);
+  });
+
+  // extra: buildings + zoom toggle
+  const extra = document.createElement('div'); extra.style.marginTop='8px';
+  extra.innerHTML = `
+    <label><input type="checkbox" id="cb3d"> 3D-Gebäude</label>
+    <div style="margin-top:6px;"><button id="legendZoomToggle" data-zoom-toggle type="button">Zoom zu Gießen</button></div>
+  `;
+  body.appendChild(extra);
+
+  layersDiv.innerHTML=''; layersDiv.appendChild(root);
+
+  // Hook individual layer checkboxes
+  Object.values(layerToggles).forEach(meta=>{
+    const apply = ()=>{
+      meta.cb.checked ? meta.layer.addTo(map) : map.removeLayer(meta.layer);
+      updatePOISidebar();
+      // update group checkbox indeterminate/checked
+      GROUPS.forEach(g=>{
+        const gcb = layersDiv.querySelector(`input[type="checkbox"][data-group="${g.key}"]`);
+        if (!gcb) return;
+        const allOn = g.children.every(c=> layerToggles[c.key]?.cb?.checked);
+        const anyOn = g.children.some(c=> layerToggles[c.key]?.cb?.checked);
+        gcb.indeterminate = anyOn && !allOn;
+        gcb.checked = allOn;
+      });
+    };
+    meta.cb.addEventListener('change', apply);
+    apply();
+  });
+
+  const cb3dEl = document.getElementById('cb3d');
+  cb3dEl.addEventListener('change', (e)=>{
+    e.target.checked ? (osmb&&osmb.addTo&&osmb.addTo(map)) : (osmb&&osmb.remove&&osmb.remove());
+  });
+  // ensure initial state is respected (unchecked = not shown)
+  if (!cb3dEl.checked) { try{ osmb && osmb.remove && osmb.remove(); }catch{} }
+  else { try{ osmb && osmb.addTo && osmb.addTo(map); }catch{} }
+}
+buildLegend();
+applyIconSizeVars();
+
+/* ===== Focus & bounds ===== */
+function fitToMesse(){ if(messePolygon) map.fitBounds(L.polygon(messePolygon).getBounds().pad(0.08)); }
+function fitToGiessen(){ if(giessenBounds) map.fitBounds(giessenBounds); }
+
+// Zoom toggle: supports any button with [data-zoom-toggle]
+function syncZoomToggleLabels(){
+  const label = (currentFocus==='messe') ? 'Zoom zu Gießen' : 'Zoom zu Messe';
+  document.querySelectorAll('[data-zoom-toggle]').forEach(b=>{ b.textContent = label; });
+}
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-zoom-toggle]');
+  if (!btn) return;
+  if (currentFocus==='messe'){ currentFocus='giessen'; fitToGiessen(); }
+  else { currentFocus='messe'; fitToMesse(); }
+  syncZoomToggleLabels();
+});
+syncZoomToggleLabels();
+async function lockToGiessen(){
+  try{
+    const r = await overpass(qGiessenBounds());
+    const b = r.json.elements?.[0]?.bounds;
+    if (b){
+      giessenBounds = L.latLngBounds([b.minlat,b.minlon],[b.maxlat,b.maxlon]).pad(0.02);
+      map.setMaxBounds(giessenBounds); map.options.maxBoundsViscosity=1.0;
+      map.setMinZoom(map.getBoundsZoom(giessenBounds,true));
+      
+      return;
+    }
+  }catch(e){
+    
+  }
+  giessenBounds = L.latLngBounds(GIESSEN_BOUNDS_FALLBACK);
+  map.setMaxBounds(giessenBounds); map.options.maxBoundsViscosity=1.0;
+  map.setMinZoom(map.getBoundsZoom(giessenBounds,true));
+}
+
+/* ===== Hessenhallen fetch & draw ===== */
+function preferLongestPolygon(elements){
+  let best=null, count=0;
+  (elements||[]).forEach(el=>{ const g=el.geometry||[]; if(g.length>count){best=g; count=g.length;} });
+  return count>3 ? best.map(p=>[p.lat,p.lon]) : null;
+}
+async function loadMesseEverything(){
+  // Find polygon
+  try{
+    const res = await overpass(qHessenhallen());
+    
+    const els = res.json.elements||[];
+    let chosen = els.find(e=> (e.tags||{}).name==='Hessenhallen' && (e.tags||{})['amenity']==='exhibition_centre') || els[0];
+    messePolygon = preferLongestPolygon([chosen]) || preferLongestPolygon(els) || FALLBACK_MESSE_POLY;
+    drawMessePolygon(messePolygon);
+    setMesseInfo(chosen?.tags||{}, chosen?.center);
+    fitToMesse(); // zoom to Messe on load
+  }catch(e){
+    
+    messePolygon = FALLBACK_MESSE_POLY;
+    drawMessePolygon(messePolygon);
+    setMesseInfo({}, null);
+    fitToMesse();
+  }
+  // Inside features: fences + entrances
+  try{
+    const inside = await overpass(qFencesEntrancesInside(polyStr(messePolygon)));
+    
+    drawInsideFencesEntrances(inside.json);
+  }catch(e){
+    
+  }
+  // 10 m buffer: gates & barriers
+  try{
+    messeBuffer = computeBuffer(messePolygon, 10);
+    const buffQ = await overpass(qBarriersInBuffer(polyStr(messeBuffer)));
+    
+    drawBufferAndBarriers(messeBuffer, buffQ.json);
+  }catch(e){
+    
+  }
+}
+
+/* ===== POIs: initial bbox then city background ===== */
+function bboxOfMap(m){
+  const b=m.getBounds();
+  return {south:b.getSouth(), west:b.getWest(), north:b.getNorth(), east:b.getEast()};
+}
+async function loadPOIsInitialBBox(){
+  const b = bboxOfMap(map);
+  try{
+    const res = await overpass(qPOIsBBox(b.south,b.west,b.north,b.east));
+    
+    mergePOIs(res.json.elements||[]);
+    normalizePOIsFromStore();
+    drawPOIMarkersAndPolys();
+    updatePOISidebar();
+    queueAddressApprox(); // start approx for missing addresses
+  }catch(e){
+    
+  }
+}
+async function loadPOIsCityBackground(){
+  try{
+    const res = await overpass(qPOIsGiessenArea());
+    
+    mergePOIs(res.json.elements||[]);
+    normalizePOIsFromStore();
+    drawPOIMarkersAndPolys();
+    updatePOISidebar();
+    queueAddressApprox(); // continue approx with more objects
+  }catch(e){
+    console.warn('Background POI fetch failed', e);
+  }
+}
+
+/* Update POI list when the map stops moving */
+map.on('moveend', updatePOISidebar);
+
+/* ===== Routing ===== */
+let routingControl=L.Routing.control({
+  waypoints: [],
+  router: L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),
+  routeWhileDragging:true, showAlternatives:true
+}).addTo(map);
+document.getElementById('osrmSelect').addEventListener('change', e=>{
+  const base=e.target.value.replace(/\/+$/,''); routingControl.getRouter().options.serviceUrl=base+'/route/v1';
+});
+
+/* ===== Boot ===== */
+(async function init(){
+  await lockToGiessen();
+  await loadMesseEverything();          // zooms to Messe on load
+  await loadPOIsInitialBBox();          // fast: only current view
+  setTimeout(loadPOIsCityBackground, 500); // then fill full city in background
+})();
+
+/* Fit button removed (replaced by zoom toggle) */
+</script>
+</body>
+</html>

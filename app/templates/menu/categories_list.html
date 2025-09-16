@@ -1,0 +1,32 @@
+
+{% extends 'cms/base_cms.html' %}
+{% block content %}
+<h1>Menu</h1>
+<p>
+  <a class="btn btn-primary" href="{% url 'menu:category_create' %}?kind=drink">+ New top-level (Drinks)</a>
+  <a class="btn btn-secondary" href="{% url 'menu:category_create' %}?kind=food">+ New top-level (Food)</a>
+  <a class="btn btn-outline-secondary" href="{% url 'menu:settings' %}">Seed defaults</a>
+</p>
+<table class="table">
+  <thead>
+    <tr><th>Name</th><th>Kind</th><th>Unit group</th><th>Items</th><th style="width:260px;"></th></tr>
+  </thead>
+  <tbody>
+    {% for c in categories %}
+    <tr>
+      <td style="padding-left: {{ c.depth|add:'1' }}rem">{% if c.parent %}↳ {% endif %}<strong>{{ c.name }}</strong></td>
+      <td>{{ c.get_kind_display }}</td>
+      <td>{{ c.unit_group }}</td>
+      <td>{{ c.items.count }}</td>
+      <td style="display:flex; gap:.5rem;">
+        <a class="btn btn-sm btn-secondary" href="{% url 'menu:category_edit' c.slug %}">Rename / Edit</a>
+        <a class="btn btn-sm btn-primary" href="{% url 'menu:category_create' %}?parent={{ c.slug }}&kind={{ c.kind }}">+ Subcategory</a>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'menu:item_create' %}?category={{ c.slug }}">+ Item here</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No categories yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

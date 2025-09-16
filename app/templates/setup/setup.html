@@ -1,0 +1,532 @@
+{% extends "cms/base_cms.html" %}
+{% load setup_tags %}
+{% block content %}
+
+{# Wrapper carries current mode so we can show/hide blocks without JS race #}
+<div id="setup-root" data-mode="{{ current_mode|default:'venue' }}">
+
+  <h1>CMS Setup {% visibility_cog 'cms.setup.page' 'CMS Setup Page' %}</h1>
+  <p class="text-muted">Configure global settings (mode, address, socials, membership, opening times, roles).</p>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <div class="card" style="padding:12px; margin-bottom:16px;">
+      <h2>General {% visibility_cog 'cms.setup.general' 'General' %}</h2>
+      {{ form.non_field_errors }}
+      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>{{ form.mode.label_tag }} {{ form.mode }}</div>
+        <div>{{ form.org_name.label_tag }} {{ form.org_name }}</div>
+        <div>
+          {{ form.logo.label_tag }} {{ form.logo }}
+          {% if form.instance.logo %}
+            <div style="margin-top:8px;"><img src="{{ form.instance.logo.url }}" alt="Logo" style="height:64px"></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# Address (shown for venue & band) #}
+    <div class="card only-venue only-band" style="padding:12px; margin-bottom:16px;">
+      <h2>Address {% visibility_cog 'cms.setup.address' 'Address' %}</h2>
+
+      <div class="address-ui address-ui--stacked">
+        <div class="field">
+          {{ form.address_street.label_tag }}
+          {{ form.address_street }}
+        </div>
+
+        <div class="field">
+          {{ form.address_number.label_tag }}
+          {{ form.address_number }}
+        </div>
+
+        <div class="field">
+          {{ form.address_postal_code.label_tag }}
+          {{ form.address_postal_code }}
+        </div>
+
+        <div class="field">
+          {{ form.address_city.label_tag }}
+          {{ form.address_city }}
+        </div>
+
+        <div class="field">
+          <label for="country">Country or region</label>
+          <select id="country"
+                  name="{{ form.address_country.html_name }}"
+                  autocomplete="country"
+                  enterkeyhint="done">
+            <option value=""></option>
+            {% include "setup/partials/_countries_options.html" with selected=form.address_country.value %}
+          </select>
+        </div>
+
+        <div class="field" style="margin-top:.25rem">
+          <label>{{ form.address_autocomplete }} Enable address autocomplete (bring your own API)</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:12px; margin-bottom:16px;">
+      <h2>Socials & Contact {% visibility_cog 'cms.setup.socials' 'Socials' %}</h2>
+      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>{{ form.contact_email.label_tag }} {{ form.contact_email }}</div>
+        <div>{{ form.contact_phone.label_tag }} {{ form.contact_phone }}</div>
+        <div>{{ form.website_url.label_tag }} {{ form.website_url }}</div>
+        <div>{{ form.social_facebook.label_tag }} {{ form.social_facebook }}</div>
+        <div>{{ form.social_instagram.label_tag }} {{ form.social_instagram }}</div>
+        <div>{{ form.social_twitter.label_tag }} {{ form.social_twitter }}</div>
+        <div>{{ form.social_tiktok.label_tag }} {{ form.social_tiktok }}</div>
+        <div>{{ form.social_youtube.label_tag }} {{ form.social_youtube }}</div>
+        <div>{{ form.social_spotify.label_tag }} {{ form.social_spotify }}</div>
+        <div>{{ form.social_soundcloud.label_tag }} {{ form.social_soundcloud }}</div>
+        <div>{{ form.social_bandcamp.label_tag }} {{ form.social_bandcamp }}</div>
+        <div>{{ form.social_linkedin.label_tag }} {{ form.social_linkedin }}</div>
+        <div>{{ form.social_mastodon.label_tag }} {{ form.social_mastodon }}</div>
+      </div>
+      <div style="margin-top:8px;">
+        {{ form.same_as.label_tag }} {{ form.same_as }}
+      </div>
+    </div>
+
+    <div class="card only-venue only-band" style="padding:12px; margin-bottom:16px;">
+      <h2>Standards {% visibility_cog 'cms.setup.schema' 'Schema' %}</h2>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+        <div>{{ form.geo_lat.label_tag }} {{ form.geo_lat }}</div>
+        <div>{{ form.geo_lng.label_tag }} {{ form.geo_lng }}</div>
+        <div>{{ form.price_range.label_tag }} {{ form.price_range }}</div>
+      </div>
+      <div style="margin-top:8px;">
+        <label for="currency_text">Currency</label>
+        {{ form.currency_text }}
+        <datalist id="currency_list">
+          <option value="EUR"></option><option value="USD"></option><option value="GBP"></option><option value="CHF"></option>
+          <option value="JPY"></option><option value="CNY"></option><option value="CAD"></option><option value="AUD"></option>
+          <option value="SEK"></option><option value="NOK"></option><option value="DKK"></option><option value="PLN"></option>
+          <option value="CZK"></option><option value="HUF"></option><option value="RON"></option><option value="BGN"></option>
+          <option value="TRY"></option><option value="INR"></option><option value="BRL"></option><option value="MXN"></option><option value="ZAR"></option>
+        </datalist>
+        {{ form.default_currency.as_hidden }}
+        <small class="text-muted">Pick a common currency or type your own. Defaults from timezone, fallback EUR.</small>
+      </div>
+      <div style=" margin-top:12px;">
+          <label for="{{ form.maximum_attendee_capacity.id_for_label }}">Max attendee capacity</label>
+          {{ form.maximum_attendee_capacity }}
+          <small class="text-muted">Schema: <code>Event.maximumAttendeeCapacity</code> (or <code>Place.maximumAttendeeCapacity</code> for the venue overall).</small>
+      </div>
+    </div>
+
+    <div class="card only-venue" style="padding:12px; margin-bottom:16px;">
+      <h2>Policies & Accessibility {% visibility_cog 'cms.setup.policies' 'Policies' %}</h2>
+
+      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+        <div>
+          <label for="{{ form.smoking_allowed.id_for_label }}">Smoking allowed?</label>
+          {{ form.smoking_allowed }}
+          <small class="text-muted">Schema: <code>Place.smokingAllowed</code></small>
+        </div>
+        <div>
+          <label for="{{ form.pets_allowed_text.id_for_label }}">Pets</label>
+          {{ form.pets_allowed_text }}
+          <small class="text-muted">Examples: “dogs only”, “no pets”, blank = unspecified.</small>
+        </div>
+        <div>
+          <label for="{{ form.typical_age_range.id_for_label }}">Typical age range</label>
+          {{ form.typical_age_range }}
+          <small class="text-muted">Examples: “0-12”, “13+”, leave empty if not applicable.</small>
+        </div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <label for="{{ form.minors_policy_note.id_for_label }}">Kids / Minors note</label>
+        {{ form.minors_policy_note }}
+        <small class="text-muted">Example: People under 16 only in company of an adult.</small>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Accessibility & inclusivity</label>
+        <div class="grid" style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px;">
+          <label>{{ form.acc_step_free }} Step-free entrance</label>
+          <label>{{ form.acc_wheelchair }} Wheelchair accessible</label>
+          <label>{{ form.acc_accessible_wc }} Accessible restroom</label>
+          <label>{{ form.acc_visual_aid }} Visual assistance available</label>
+          <label>{{ form.acc_service_animals }} Service animals welcome</label>
+          <label>{{ form.lgbtq_friendly }} LGBTQIA+ friendly</label>
+        </div>
+        <div style="margin-top:8px;">
+          <label for="{{ form.accessibility_summary.id_for_label }}">Accessibility notes (optional)</label>
+          {{ form.accessibility_summary }}
+        </div>
+        <small class="text-muted">Stored as <code>Place.amenityFeature</code> (LocationFeatureSpecification) and/or Event notes.</small>
+      </div>
+
+      <hr style="margin:16px 0;">
+
+      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label>{{ form.awareness_team_available }} Awareness team available</label>
+          <div style="margin-top:6px;">
+            <label for="{{ form.awareness_contact.id_for_label }}">Awareness contact</label>
+            {{ form.awareness_contact }}
+            <small class="text-muted">Phone, email, URL, or instruction. Leave empty to hide.</small>
+          </div>
+          <small class="text-muted">Published via <code>Organization.contactPoint</code> with <code>contactType: "safety"</code> (only if provided).</small>
+        </div>
+      </div>
+    </div>
+
+    {# Public Pages — edit LABEL + order only; we keep slug internally #}
+    <div class="card" style="padding:12px; margin-bottom:16px;">
+      <h2>Public Pages</h2>
+      <p class="text-muted">
+        Tick to include. Use arrows to set the nav order. You can rename the label.
+        URLs keep their underlying slug. The numbers show the order of checked items.
+      </p>
+
+      <div id="pages-hidden" aria-hidden="true"></div>
+      {{ selected_pages|json_script:"selected-pages" }}
+
+      <div id="pages-grid" style="display:grid; grid-template-columns: repeat(3, minmax(200px, 1fr)); gap: 8px;">
+        {% for p in available_pages %}
+          <div class="page-item" style="border:1px solid rgba(255,255,255,.15); border-radius:6px; padding:6px 8px; background-color: rgba(175, 179, 184, 0.12);">
+            <label style="display:flex; align-items:center; gap:.5rem;">
+              <span class="order-num" style="width:2ch; text-align:right;">–</span>
+              <input type="checkbox" class="page-check" {% if p in selected_pages %}checked{% endif %} />
+              <input type="text" class="form-control form-control-sm page-title" value="{{ p }}" style="max-width: 12rem;" />
+              <span style="margin-left:auto; display:flex; gap:.25rem;">
+                <button type="button" class="btn btn-xs btn-outline-secondary up"   aria-label="Move up">↑</button>
+                <button type="button" class="btn btn-xs btn-outline-secondary down" aria-label="Move down">↓</button>
+              </span>
+            </label>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card" style="padding:12px; margin-bottom:16px;">
+      <h2>Membership {% visibility_cog 'cms.setup.membership' 'Membership' %}</h2>
+      <div>{{ form.membership_enabled }} {{ form.membership_enabled.label_tag }}</div>
+      <div>{{ form.membership_hint.label_tag }} {{ form.membership_hint }}</div>
+
+      <div id="tiers-block" style="margin-top:8px;">
+        <h3>Tiers</h3>
+        {{ tiers.management_form }}
+        <table class="table" id="tiers-table">
+          <tr><th>Name</th><th>Months</th><th>Price (minor)</th><th>Active</th><th>Actions</th></tr>
+          {% for tf in tiers %}
+            <tr class="tier-form">
+              {{ tf.id }}
+              <td>{{ tf.name }}</td>
+              <td>{{ tf.months }}</td>
+              <td>{{ tf.price_minor }}</td>
+              <td>{{ tf.active }}</td>
+              <td>
+                <span style="display:none;">{{ tf.DELETE }}</span>
+                <button type="button" class="btn btn-danger" onclick="markFormRowDeleted(this)">Delete</button>
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+        <button type="button" class="btn btn-secondary" id="add-tier">+ Add Tier</button>
+      </div>
+    </div>
+
+    {# Opening times (venue only) #}
+    <div class="card only-venue" style="padding:12px; margin-bottom:16px;">
+      <h2 style="display:flex; align-items:center; gap:.75rem;">
+        Opening Times {% visibility_cog 'cms.setup.opening' 'Opening Times' %}
+        <label style="margin-left:auto; display:flex; align-items:center; gap:.4rem; font-size:.95rem;">
+          {{ form.publish_opening_times }} Show publicly
+        </label>
+      </h2>
+
+      {{ hours.management_form }}
+      <table class="table">
+        <tr><th>Weekday</th><th>Closed</th><th>Opens</th><th>Closes</th></tr>
+        {% for hf in hours %}
+          <tr>
+            {{ hf.id }} {{ hf.weekday }}
+            <td>
+              {% with wd=hf.instance.weekday %}
+                {% if wd == 0 %}Monday{% elif wd == 1 %}Tuesday{% elif wd == 2 %}Wednesday{% elif wd == 3 %}Thursday{% elif wd == 4 %}Friday{% elif wd == 5 %}Saturday{% else %}Sunday{% endif %}
+              {% endwith %}
+            </td>
+            <td>{{ hf.closed }}</td>
+            <td>{{ hf.open_time }}</td>
+            <td>{{ hf.close_time }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+      <small class="text-muted">Uncheck “Show publicly” to hide opening times on the public site. You can still edit them here.</small>
+    </div>
+
+    <div class="card" style="padding:12px; margin-bottom:16px;" id="roles">
+      <h2>Roles (Groups) {% visibility_cog 'cms.setup.roles' 'Roles' %}</h2>
+      {{ roles.management_form }}
+      <table class="table" id="roles-table">
+        <tr><th>Name</th><th>Actions</th></tr>
+        {% for rf in roles %}
+          <tr class="role-form">
+            {{ rf.id }}
+            <td>{{ rf.name }}</td>
+            <td>
+              <span style="display:none;">{{ rf.DELETE }}</span>
+              <button type="button" class="btn btn-danger" onclick="markFormRowDeleted(this)">Delete</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+      <button type="button" class="btn btn-secondary" id="add-role">+ Add Role</button>
+    </div>
+
+    <button class="btn btn-primary">Save Settings</button>
+    <a class="btn btn-secondary" href="{% url 'setup:visibility_list' %}">Visibility Rules</a>
+  </form>
+
+</div>
+
+<style>
+  .only-venue, .only-band, .only-blog { display: none; }
+  #setup-root[data-mode="venue"] .only-venue { display: block; }
+  #setup-root[data-mode="band"]  .only-band  { display: block; }
+  #setup-root[data-mode="blog"]  .only-blog  { display: block; }
+  .page-item {
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:6px; padding:6px 8px;
+    background-color: rgba(175, 179, 184, 0.284);
+  }
+</style>
+
+<script>
+/* ===== General setup toggles ===== */
+(function(){
+  var root = document.getElementById("setup-root");
+  var modeSelect = document.getElementById("id_mode");
+  function syncMode(){
+    var mode = (modeSelect && modeSelect.value ? modeSelect.value : "venue").toLowerCase();
+    root.setAttribute("data-mode", mode);
+  }
+  if (modeSelect){ modeSelect.addEventListener("change", syncMode); }
+  syncMode();
+
+  var enabled = document.getElementById("id_membership_enabled");
+  var block = document.getElementById("tiers-block");
+  function syncMembership(){ block.style.display = enabled && enabled.checked ? "block" : "none"; }
+  if (enabled){ enabled.addEventListener("change", syncMembership); syncMembership(); }
+})();
+</script>
+
+<script>
+/* ===== Formset utilities ===== */
+function replaceIndex(str, newIndex){
+  return str.replace(/-(\d+)-/g, `-${newIndex}-`).replace(/_(\d+)_/g, `_${newIndex}_`);
+}
+function markFormRowDeleted(btn){
+  const row = btn.closest('tr');
+  if (!row) return;
+  const del = row.querySelector("input[name$='-DELETE']");
+  if (del){
+    if (del.type === 'checkbox') del.checked = true;
+    else del.value = 'on';
+  }
+  row.style.display = 'none';
+}
+(function() {
+  function addForm(prefix, tableId, rowClass) {
+    const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+    const formCount = parseInt(totalForms.value, 10);
+    const table = document.getElementById(tableId);
+    const templateRow = table.querySelector('.' + rowClass);
+    if (!templateRow) return;
+
+    const newRow = templateRow.cloneNode(true);
+
+    newRow.querySelectorAll('input,select,textarea').forEach(el => {
+      if (el.name) el.name = replaceIndex(el.name, formCount);
+      if (el.id)   el.id   = replaceIndex(el.id,   formCount);
+
+      if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+      else if (el.tagName === 'SELECT') el.selectedIndex = -1;
+      else el.value = '';
+    });
+
+    const idField = newRow.querySelector("input[name$='-id']");
+    if (idField) idField.value = '';
+    const del = newRow.querySelector("input[name$='-DELETE']");
+    if (del){ if (del.type === 'checkbox') del.checked = false; else del.value = ''; }
+
+    newRow.style.display = '';
+    table.appendChild(newRow);
+    totalForms.value = formCount + 1;
+  }
+
+  const addTierBtn = document.getElementById('add-tier');
+  if (addTierBtn) addTierBtn.addEventListener('click', function(){ addForm('tiers', 'tiers-table', 'tier-form'); });
+
+  const addRoleBtn = document.getElementById('add-role');
+  if (addRoleBtn) addRoleBtn.addEventListener('click', function(){ addForm('roles', 'roles-table', 'role-form'); });
+})();
+</script>
+
+<script>
+/* ===== Public Pages editor (label-only) =====
+   - We keep a stable slug per row in dataset: row.dataset.slug
+   - On save we submit hidden inputs in the form "slug|Label" in DOM order
+   - Renaming the label never changes the slug
+*/
+(function(){
+  const grid   = document.getElementById('pages-grid');
+  const hidden = document.getElementById('pages-hidden');
+  if(!grid || !hidden) return;
+
+  function slugify(s){
+    return (s || "")
+      .toString()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s_-]/g, '')
+      .replace(/[\s_]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  // Parse a stored "slug|Label" OR plain "Label"
+  function parseLine(line){
+    const raw = (line || '').trim();
+    if (!raw) return null;
+    if (raw.includes('|')){
+      const idx = raw.indexOf('|');
+      const slug  = raw.slice(0, idx).trim();
+      const label = (raw.slice(idx+1).trim()) || slug || 'page';
+      return { slug: slug || slugify(label) || 'page', label };
+    } else {
+      const label = raw;
+      return { slug: slugify(label) || 'page', label };
+    }
+  }
+
+  // Read saved order from server
+  let saved = [];
+  const dataEl = document.getElementById('selected-pages');
+  if (dataEl) {
+    try { saved = JSON.parse(dataEl.textContent || '[]'); } catch(e) { saved = []; }
+  }
+  const savedItems = saved.map(parseLine).filter(Boolean);
+
+  // Build ordered grid reflecting saved (slug + label), then append leftovers
+  function realizeSavedOrder(){
+    const ordered = [];
+
+    // Helper to create a row
+    function makeRow(label, slug, checked){
+      const row = document.createElement('div');
+      row.className = 'page-item';
+      row.dataset.slug = slug || '';
+      row.innerHTML = `
+        <label style="display:flex; align-items:center; gap:.5rem;">
+          <span class="order-num" style="width:2ch; text-align:right;">–</span>
+          <input type="checkbox" class="page-check" ${checked ? 'checked' : ''} />
+          <input type="text" class="form-control form-control-sm page-title" value="${label}" style="max-width: 12rem;" />
+          <span style="margin-left:auto; display:flex; gap:.25rem;">
+            <button type="button" class="btn btn-xs btn-outline-secondary up"   aria-label="Move up">↑</button>
+            <button type="button" class="btn btn-xs btn-outline-secondary down" aria-label="Move down">↓</button>
+          </span>
+        </label>`;
+      return row;
+    }
+
+    // 1) Add saved items first (checked & in order)
+    savedItems.forEach(it => {
+      ordered.push(makeRow(it.label, it.slug, true));
+    });
+
+    // 2) Collect existing titles from the initial grid to avoid duplicates
+    const seenSlugs = new Set(savedItems.map(i => i.slug));
+    const initialRows = Array.from(grid.children);
+    initialRows.forEach(r => {
+      const label = r.querySelector('.page-title')?.value || '';
+      const slug  = slugify(label);
+      if (seenSlugs.has(slug)) return; // already rendered from saved
+      ordered.push(makeRow(label, slug, false));
+    });
+
+    // 3) Replace grid content
+    grid.innerHTML = '';
+    ordered.forEach(r => grid.appendChild(r));
+  }
+
+  function renumber(){
+    let n = 0;
+    Array.from(grid.children).forEach(it => {
+      const cb  = it.querySelector('.page-check');
+      const num = it.querySelector('.order-num');
+      if (cb && cb.checked) { n += 1; num.textContent = String(n) + '.'; }
+      else { num.textContent = '–'; }
+    });
+  }
+
+  function move(el, dir){
+    if(!el) return;
+    const sib = (dir === -1) ? el.previousElementSibling : el.nextElementSibling;
+    if(!sib) return;
+    if (dir === -1) grid.insertBefore(el, sib);
+    else grid.insertBefore(sib, el);
+    renumber();
+  }
+
+  // Build hidden inputs: "required_pages" = "slug|Label" in checked DOM order
+  function buildHidden(){
+    hidden.innerHTML = '';
+    Array.from(grid.children).forEach(it => {
+      const cb = it.querySelector('.page-check');
+      if (!cb || !cb.checked) return;
+
+      const label = (it.querySelector('.page-title')?.value || '').trim();
+      let slug = (it.dataset.slug || '').trim();
+      if (!slug) {
+        slug = slugify(label) || 'page';
+        it.dataset.slug = slug; // persist first-time slug
+      }
+
+      const input = document.createElement('input');
+      input.type  = 'hidden';
+      input.name  = 'required_pages';
+      input.value = slug + '|' + (label || slug);
+      hidden.appendChild(input);
+    });
+  }
+
+  // Initialize
+  realizeSavedOrder();
+  renumber();
+
+  // Wire controls
+  grid.addEventListener('click', function(e){
+    const t = e.target;
+    if (t.classList.contains('up'))   move(t.closest('.page-item'), -1);
+    if (t.classList.contains('down')) move(t.closest('.page-item'), +1);
+  });
+  grid.addEventListener('change', function(e){
+    if (e.target.classList.contains('page-check') || e.target.classList.contains('page-title')) {
+      renumber();
+    }
+  });
+  grid.addEventListener('input', function(e){
+    if (e.target.classList.contains('page-title')) {
+      // label edits do NOT change slug; we only ensure a slug exists when saving
+    }
+  });
+
+  // Before submit: synthesize ordered hidden inputs
+  const form = grid.closest('form');
+  if (form){
+    form.addEventListener('submit', function(){
+      renumber();
+      buildHidden();
+    });
+  }
+})();
+</script>
+
+{% endblock %}

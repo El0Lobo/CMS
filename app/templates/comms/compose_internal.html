@@ -1,0 +1,38 @@
+
+{% extends "cms/base_cms.html" %}
+{% load setup_tags %}
+
+{% block title %}Compose Internal — CMS{% endblock %}
+
+{% block content %}
+  <h1 style="margin:0;">Compose internal</h1>
+  <form method="post" class="card" style="padding:12px;">
+    {% csrf_token %}
+    <div class="mb-2">
+      <label>Subject</label>
+      {{ form.subject }}
+      {{ form.subject.errors }}
+    </div>
+    <div class="mb-2">
+      <label>Body</label>
+      {{ form.body }}
+      {{ form.body.errors }}
+    </div>
+    <div class="mb-2">
+      <label>Users (optional)</label>
+      {{ form.users }}
+    </div>
+    <div class="mb-2">
+      <label>Groups (optional)</label>
+      {{ form.groups }}
+    </div>
+    <div class="mb-2">
+      <label>Badges (optional)</label>
+      {{ form.badges }}
+    </div>
+    <div class="mt-2">
+      <button class="btn btn-primary">Send</button>
+      <a class="btn btn-outline-secondary" href="{% url 'comms:inbox' %}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

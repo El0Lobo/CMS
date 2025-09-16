@@ -1,0 +1,14 @@
+{% extends 'pages/base.html' %}
+{% block content %}
+<h1>Menu</h1>
+
+{% if drinks_root %}
+  <h2>Drinks</h2>
+  {% include 'public/menu/_tree.html' with node=drinks_root %}
+{% endif %}
+
+{% if food_root %}
+  <h2>Food</h2>
+  {% include 'public/menu/_tree.html' with node=food_root %}
+{% endif %}
+{% endblock %}

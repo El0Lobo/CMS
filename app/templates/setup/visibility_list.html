@@ -1,0 +1,30 @@
+{# app/templates/setup/visibility_list.html #}
+{% extends "cms/base_cms.html" %}
+{% block content %}
+<h1>Visibility Rules</h1>
+
+<form method="get" class="mb-3" style="display:flex; gap:.5rem; align-items:center;">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search key/label/notes" style="flex:1; padding:.4rem .6rem;">
+  <button class="btn btn-primary" type="submit">Search</button>
+  <a class="btn btn-secondary" href="{% url 'setup:visibility_list' %}">Reset</a>
+</form>
+
+<table class="table">
+  <tr><th>Key</th><th>Label</th><th>Enabled</th><th>Groups</th><th>Notes</th><th>Actions</th></tr>
+  {% for r in rules %}
+    <tr>
+      <td><code>{{ r.key }}</code></td>
+      <td>{{ r.label }}</td>
+      <td>{{ r.is_enabled }}</td>
+      <td>{% for g in r.allowed_groups.all %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% empty %}<em>None</em>{% endfor %}</td>
+      <td>{{ r.notes }}</td>
+      <td>
+        <a class="btn btn-secondary" href="{% url 'setup:visibility_edit' %}?key={{ r.key|urlencode }}">Edit</a>
+        <a class="btn btn-danger" href="{% url 'setup:visibility_delete' r.id %}" onclick="return confirm('Delete rule?');">Delete</a>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6"><em>No rules found.</em></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

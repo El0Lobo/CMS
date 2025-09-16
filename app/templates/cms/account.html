@@ -1,0 +1,10 @@
+{% extends "cms/base_cms.html" %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+  <h1>My Account</h1>
+  <dl class="details">
+    <dt>Username</dt><dd>{{ user.username }}</dd>
+    <dt>Email</dt><dd>{{ user.email|default:"—" }}</dd>
+  </dl>
+  <p><a class="btn" href="/accounts/password_change/">Change password</a></p>
+{% endblock %}

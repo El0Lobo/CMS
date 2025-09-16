@@ -1,0 +1,15 @@
+{% extends "public/base_public.html" %}
+{% block title %}{{ nav_label|default:page.title }} — {{ site_settings.org_name }}{% endblock %}
+
+{% block content %}
+<article class="card">
+  <h2 style="margin:0">{{ nav_label|default:page.title }}</h2>
+  {% firstof page.created_at page.published_at as pdate %}
+  {% if pdate %}
+    <div class="muted" style="margin:.25rem 0 1rem">{{ pdate|date:"M d, Y" }}</div>
+  {% endif %}
+  <div class="content">
+    {{ page.body|safe }}
+  </div>
+</article>
+{% endblock %}
