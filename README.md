@@ -1,4 +1,4 @@
-# Bar OS Starter — Full Template Pass (Windows + psycopg + CMS)
+# Bar OS Starter 
 
 This starter adds **templates & placeholder pages for every module** so you
 can immediately see the shape of the app and grow each part.
