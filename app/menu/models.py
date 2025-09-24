@@ -10,7 +10,11 @@ slug_validator = RegexValidator(
     message='Enter a valid “slug” (letters, numbers, underscores, or hyphens).'
 )
 
-def unique_slug_for(instance, base: str, field_name="slug"):
+def unique_slug_for(instance, base: str, field_name: str = "slug"):
+    """
+    Create a unique slug from `base` for the given model instance,
+    stored in the given `field_name`.
+    """
     base_slug = slugify(base) or "item"
     slug = base_slug
     n = 2
@@ -19,6 +23,7 @@ def unique_slug_for(instance, base: str, field_name="slug"):
         slug = f"{base_slug}-{n}"
         n += 1
     return slug
+
 
 class Unit(models.Model):
     KIND_VOLUME = "volume"
@@ -29,8 +34,9 @@ class Unit(models.Model):
         (KIND_MASS, "Mass"),
         (KIND_COUNT, "Count"),
     ]
-    code = models.CharField(max_length=16, unique=True)      # e.g. L, mL, g, pcs
-    display = models.CharField(max_length=32)                # e.g. "Liters", "grams", "pieces"
+
+    code = models.CharField(max_length=16, unique=True)   # e.g. L, mL, g, pcs
+    display = models.CharField(max_length=32)             # e.g. "Liters", "grams", "pieces"
     kind = models.CharField(max_length=16, choices=KIND_CHOICES)
 
     class Meta:
@@ -38,6 +44,7 @@ class Unit(models.Model):
 
     def __str__(self):
         return self.code
+
 
 class UnitGroup(models.Model):
     """
@@ -52,6 +59,7 @@ class UnitGroup(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Category(models.Model):
     KIND_DRINK = "drink"
@@ -74,7 +82,7 @@ class Category(models.Model):
         return self.name
 
     @property
-    def depth(self):
+    def depth(self) -> int:
         d, p = 0, self.parent
         while p:
             d += 1
@@ -85,6 +93,7 @@ class Category(models.Model):
         if not self.slug:
             self.slug = unique_slug_for(self, self.name)
         super().save(*args, **kwargs)
+
 
 class Item(models.Model):
     name = models.CharField(max_length=160)
@@ -121,16 +130,19 @@ class Item(models.Model):
     def active_unit_group(self):
         return self.unit_group_override or self.category.unit_group
 
-    def is_sold_out(self):
+    # Note: in Django templates you can call no-arg methods without parentheses,
+    # so `{% if i.is_sold_out %}` works with this method signature.
+    def is_sold_out(self) -> bool:
         return bool(self.sold_out_until and self.sold_out_until >= timezone.now())
 
-    def is_new(self):
+    def is_new(self) -> bool:
         return bool(self.new_until and self.new_until >= timezone.now())
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = unique_slug_for(self, self.name)
         super().save(*args, **kwargs)
+
 
 class ItemVariant(models.Model):
     item = models.ForeignKey(Item, related_name="variants", on_delete=models.CASCADE)

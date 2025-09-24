@@ -41,6 +41,7 @@ urlpatterns = [
     path("cms/menu/", include(("app.menu.urls", "menu"), namespace="menu")),
     path("cms/assets/", include("app.assets.urls")),   
     path("cms/inbox/", include(("app.comms.urls", "comms"), namespace="comms")),
+    path("cms/pos/", include("app.pos.urls", namespace="pos")),
 ]
 
 # Media during development

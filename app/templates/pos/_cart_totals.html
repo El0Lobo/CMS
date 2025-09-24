@@ -1,0 +1,8 @@
+{% with totals=cart.totals %}
+<div class="totals">
+  <div><span>Subtotal</span><span data-total-subtotal>{{ totals.subtotal }}</span></div>
+  <div><span>Discounts</span><span data-total-discount>{{ totals.discount_total }}</span></div>
+  <div><span>Tax</span><span data-total-tax>{{ totals.tax_total }}</span></div>
+  <div class="grand"><span>Total</span><span data-total-grand>{{ totals.grand_total }}</span></div>
+</div>
+{% endwith %}

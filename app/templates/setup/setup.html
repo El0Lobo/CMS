@@ -2,301 +2,458 @@
 {% load setup_tags %}
 {% block content %}
 
-{# Wrapper carries current mode so we can show/hide blocks without JS race #}
-<div id="setup-root" data-mode="{{ current_mode|default:'venue' }}">
+<style>
+  /* ===== CMS Setup – minimal design system ===== */
+  :root {
+    --setup-gap: 12px;
+    --setup-gap-lg: 16px;
+    --setup-radius: 8px;
+    --setup-border: 2px;
+    --setup-card-bg: rgba(175, 179, 184, 0.12);
+    --setup-card-bg-strong: rgba(175, 179, 184, 0.24);
+    --setup-border-color: rgba(255,255,255,0.18);
+    --setup-border-strong: rgba(255,255,255,0.28);
+    --setup-muted: #b8bcc3;
+    --setup-accent: #faebd7; /* antique white, matches your chev */
+  }
 
-  <h1>CMS Setup {% visibility_cog 'cms.setup.page' 'CMS Setup Page' %}</h1>
-  <p class="text-muted">Configure global settings (mode, address, socials, membership, opening times, roles).</p>
+  #setup-root {
+    display: block;
+  }
 
-  <form method="post" enctype="multipart/form-data" novalidate>
+  #setup-root h1 {
+    margin: 0 0 6px 0;
+  }
+
+  #setup-root .lead-muted,
+  #setup-root .text-muted {
+    color: var(--setup-muted);
+  }
+
+  /* ===== Utilities ===== */
+  .stack { display: grid; gap: var(--setup-gap); }
+  .stack-lg { display: grid; gap: var(--setup-gap-lg); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--setup-gap); }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--setup-gap); }
+  .grid-auto-3 { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--setup-gap); }
+  .field { display: grid; gap: 6px; }
+  .mt-1 { margin-top: 6px; }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+  .mb-0 { margin-bottom: 0; }
+
+  /* ===== Cards ===== */
+  .card {
+    border: var(--setup-border) solid var(--setup-border-color);
+    border-radius: var(--setup-radius);
+    background: var(--setup-card-bg);
+    padding: 12px;
+  }
+
+  .card + .card { margin-top: var(--setup-gap-lg); }
+
+  .card h2 {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin: 0 0 8px 0;
+    font-size: 1.15rem;
+  }
+
+  .card h2 small { color: var(--setup-muted); font-weight: normal; }
+
+  /* Collapse toggle */
+  .card .collapse-toggle {
+    appearance: none;
+    border: 0;
+    background: none;
+    padding: 0;
+    margin-right: .25rem;
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .card .collapse-toggle .chev {
+    display: inline-block;
+    transition: transform .18s ease;
+    color: var(--setup-accent);
+    font-size: 1.1em;
+  }
+  .card[aria-expanded="true"]  .collapse-toggle .chev { transform: rotate(90deg); }
+  .card__body { display: block; }
+  .card[aria-expanded="false"] .card__body { display: none; }
+
+  /* ===== Tables ===== */
+  .table { width: 100%; border-collapse: collapse; }
+  .table th, .table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--setup-border-color);
+  }
+  .table tr:hover td { background: var(--setup-card-bg-strong); }
+  .table th { background: rgba(255,255,255,0.06); font-weight: 600; }
+
+  /* ===== Pages grid ===== */
+  #pages-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    gap: 8px;
+  }
+
+  .page-item {
+    border: 1px solid var(--setup-border-color);
+    border-radius: 6px;
+    padding: 8px;
+    background-color: var(--setup-card-bg);
+  }
+
+  .page-item .row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .order-num {
+    width: 2ch;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .page-actions {
+    margin-left: auto;
+    display: flex;
+    gap: .25rem;
+  }
+
+  /* ===== Mode-based visibility ===== */
+  .only-venue, .only-band, .only-blog { display: none; }
+  #setup-root[data-mode="venue"] .only-venue { display: block; }
+  #setup-root[data-mode="band"]  .only-band  { display: block; }
+  #setup-root[data-mode="blog"]  .only-blog  { display: block; }
+
+  /* Tiny buttons harmony */
+  .btn.btn-xs { padding: 2px 6px; font-size: .8rem; line-height: 1.1; border-width: 1px; }
+
+  /* Stronger horizontal separator where used */
+  .rule { border: 0; border-top: var(--setup-border) solid var(--setup-border-color); margin: 16px 0; }
+</style>
+
+<div id="setup-root" data-mode="{{ current_mode|default:'venue' }}" class="stack-lg">
+
+  <div class="stack">
+    <h1 class="mb-0">CMS Setup {% visibility_cog 'cms.setup.page' 'CMS Setup Page' %}</h1>
+    <p class="lead-muted">Configure global settings (mode, address, socials, membership, opening times, roles).</p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate class="stack-lg">
     {% csrf_token %}
 
-    <div class="card" style="padding:12px; margin-bottom:16px;">
-      <h2>General {% visibility_cog 'cms.setup.general' 'General' %}</h2>
-      {{ form.non_field_errors }}
-      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>{{ form.mode.label_tag }} {{ form.mode }}</div>
-        <div>{{ form.org_name.label_tag }} {{ form.org_name }}</div>
-        <div>
-          {{ form.logo.label_tag }} {{ form.logo }}
-          {% if form.instance.logo %}
-            <div style="margin-top:8px;"><img src="{{ form.instance.logo.url }}" alt="Logo" style="height:64px"></div>
-          {% endif %}
+    <!-- ===== Section: General ===== -->
+    <section class="card" data-collapsible-key="setup:general">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+        General {% visibility_cog 'cms.setup.general' 'General' %}
+      </h2>
+      <div class="card__body stack">
+        {{ form.non_field_errors }}
+        <div class="grid-2">
+          <div class="field">{{ form.mode.label_tag }} {{ form.mode }}</div>
+          <div class="field">{{ form.org_name.label_tag }} {{ form.org_name }}</div>
+          <div class="field">
+            {{ form.logo.label_tag }} {{ form.logo }}
+            {% if form.instance.logo %}
+              <div class="mt-2"><img src="{{ form.instance.logo.url }}" alt="Logo" style="height:64px"></div>
+            {% endif %}
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    {# Address (shown for venue & band) #}
-    <div class="card only-venue only-band" style="padding:12px; margin-bottom:16px;">
-      <h2>Address {% visibility_cog 'cms.setup.address' 'Address' %}</h2>
+    <!-- ===== Section: Address (venue & band) ===== -->
+    <section class="card only-venue only-band" data-collapsible-key="setup:address">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Address {% visibility_cog 'cms.setup.address' 'Address' %}
+      </h2>
+      <div class="card__body stack">
+        <div class="address-ui address-ui--stacked stack">
+          <div class="field">{{ form.address_street.label_tag }} {{ form.address_street }}</div>
+          <div class="field">{{ form.address_number.label_tag }} {{ form.address_number }}</div>
+          <div class="field">{{ form.address_postal_code.label_tag }} {{ form.address_postal_code }}</div>
+          <div class="field">{{ form.address_city.label_tag }} {{ form.address_city }}</div>
 
-      <div class="address-ui address-ui--stacked">
-        <div class="field">
-          {{ form.address_street.label_tag }}
-          {{ form.address_street }}
-        </div>
+          <div class="field">
+            <label for="country">Country or region</label>
+            <select id="country" name="{{ form.address_country.html_name }}" autocomplete="country" enterkeyhint="done">
+              <option value=""></option>
+              {% include "setup/partials/_countries_options.html" with selected=form.address_country.value %}
+            </select>
+          </div>
 
-        <div class="field">
-          {{ form.address_number.label_tag }}
-          {{ form.address_number }}
-        </div>
-
-        <div class="field">
-          {{ form.address_postal_code.label_tag }}
-          {{ form.address_postal_code }}
-        </div>
-
-        <div class="field">
-          {{ form.address_city.label_tag }}
-          {{ form.address_city }}
-        </div>
-
-        <div class="field">
-          <label for="country">Country or region</label>
-          <select id="country"
-                  name="{{ form.address_country.html_name }}"
-                  autocomplete="country"
-                  enterkeyhint="done">
-            <option value=""></option>
-            {% include "setup/partials/_countries_options.html" with selected=form.address_country.value %}
-          </select>
-        </div>
-
-        <div class="field" style="margin-top:.25rem">
-          <label>{{ form.address_autocomplete }} Enable address autocomplete (bring your own API)</label>
+          <div class="field mt-1">
+            <label>{{ form.address_autocomplete }} Enable address autocomplete (bring your own API)</label>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card" style="padding:12px; margin-bottom:16px;">
-      <h2>Socials & Contact {% visibility_cog 'cms.setup.socials' 'Socials' %}</h2>
-      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>{{ form.contact_email.label_tag }} {{ form.contact_email }}</div>
-        <div>{{ form.contact_phone.label_tag }} {{ form.contact_phone }}</div>
-        <div>{{ form.website_url.label_tag }} {{ form.website_url }}</div>
-        <div>{{ form.social_facebook.label_tag }} {{ form.social_facebook }}</div>
-        <div>{{ form.social_instagram.label_tag }} {{ form.social_instagram }}</div>
-        <div>{{ form.social_twitter.label_tag }} {{ form.social_twitter }}</div>
-        <div>{{ form.social_tiktok.label_tag }} {{ form.social_tiktok }}</div>
-        <div>{{ form.social_youtube.label_tag }} {{ form.social_youtube }}</div>
-        <div>{{ form.social_spotify.label_tag }} {{ form.social_spotify }}</div>
-        <div>{{ form.social_soundcloud.label_tag }} {{ form.social_soundcloud }}</div>
-        <div>{{ form.social_bandcamp.label_tag }} {{ form.social_bandcamp }}</div>
-        <div>{{ form.social_linkedin.label_tag }} {{ form.social_linkedin }}</div>
-        <div>{{ form.social_mastodon.label_tag }} {{ form.social_mastodon }}</div>
+    <!-- ===== Section: Socials & Contact ===== -->
+    <section class="card" data-collapsible-key="setup:socials">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Socials & Contact {% visibility_cog 'cms.setup.socials' 'Socials' %}
+      </h2>
+      <div class="card__body stack">
+        <div class="grid-2">
+          <div class="field">{{ form.contact_email.label_tag }} {{ form.contact_email }}</div>
+          <div class="field">{{ form.contact_phone.label_tag }} {{ form.contact_phone }}</div>
+          <div class="field">{{ form.website_url.label_tag }} {{ form.website_url }}</div>
+          <div class="field">{{ form.social_facebook.label_tag }} {{ form.social_facebook }}</div>
+          <div class="field">{{ form.social_instagram.label_tag }} {{ form.social_instagram }}</div>
+          <div class="field">{{ form.social_twitter.label_tag }} {{ form.social_twitter }}</div>
+          <div class="field">{{ form.social_tiktok.label_tag }} {{ form.social_tiktok }}</div>
+          <div class="field">{{ form.social_youtube.label_tag }} {{ form.social_youtube }}</div>
+          <div class="field">{{ form.social_spotify.label_tag }} {{ form.social_spotify }}</div>
+          <div class="field">{{ form.social_soundcloud.label_tag }} {{ form.social_soundcloud }}</div>
+          <div class="field">{{ form.social_bandcamp.label_tag }} {{ form.social_bandcamp }}</div>
+          <div class="field">{{ form.social_linkedin.label_tag }} {{ form.social_linkedin }}</div>
+          <div class="field">{{ form.social_mastodon.label_tag }} {{ form.social_mastodon }}</div>
+        </div>
+        <div class="mt-2 field">
+          {{ form.same_as.label_tag }} {{ form.same_as }}
+        </div>
       </div>
-      <div style="margin-top:8px;">
-        {{ form.same_as.label_tag }} {{ form.same_as }}
-      </div>
-    </div>
+    </section>
 
-    <div class="card only-venue only-band" style="padding:12px; margin-bottom:16px;">
-      <h2>Standards {% visibility_cog 'cms.setup.schema' 'Schema' %}</h2>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-        <div>{{ form.geo_lat.label_tag }} {{ form.geo_lat }}</div>
-        <div>{{ form.geo_lng.label_tag }} {{ form.geo_lng }}</div>
-        <div>{{ form.price_range.label_tag }} {{ form.price_range }}</div>
-      </div>
-      <div style="margin-top:8px;">
-        <label for="currency_text">Currency</label>
-        {{ form.currency_text }}
-        <datalist id="currency_list">
-          <option value="EUR"></option><option value="USD"></option><option value="GBP"></option><option value="CHF"></option>
-          <option value="JPY"></option><option value="CNY"></option><option value="CAD"></option><option value="AUD"></option>
-          <option value="SEK"></option><option value="NOK"></option><option value="DKK"></option><option value="PLN"></option>
-          <option value="CZK"></option><option value="HUF"></option><option value="RON"></option><option value="BGN"></option>
-          <option value="TRY"></option><option value="INR"></option><option value="BRL"></option><option value="MXN"></option><option value="ZAR"></option>
-        </datalist>
-        {{ form.default_currency.as_hidden }}
-        <small class="text-muted">Pick a common currency or type your own. Defaults from timezone, fallback EUR.</small>
-      </div>
-      <div style=" margin-top:12px;">
+    <!-- ===== Section: Standards ===== -->
+    <section class="card only-venue only-band" data-collapsible-key="setup:schema">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Standards {% visibility_cog 'cms.setup.schema' 'Schema' %}
+      </h2>
+      <div class="card__body stack">
+        <div class="grid-3">
+          <div class="field">{{ form.geo_lat.label_tag }} {{ form.geo_lat }}</div>
+          <div class="field">{{ form.geo_lng.label_tag }} {{ form.geo_lng }}</div>
+          <div class="field">{{ form.price_range.label_tag }} {{ form.price_range }}</div>
+        </div>
+
+        <div class="mt-2 field">
+          <label for="currency_text">Currency</label>
+          {{ form.currency_text }}
+          <datalist id="currency_list">
+            <option value="EUR"></option><option value="USD"></option><option value="GBP"></option><option value="CHF"></option>
+            <option value="JPY"></option><option value="CNY"></option><option value="CAD"></option><option value="AUD"></option>
+            <option value="SEK"></option><option value="NOK"></option><option value="DKK"></option><option value="PLN"></option>
+            <option value="CZK"></option><option value="HUF"></option><option value="RON"></option><option value="BGN"></option>
+            <option value="TRY"></option><option value="INR"></option><option value="BRL"></option><option value="MXN"></option><option value="ZAR"></option>
+          </datalist>
+          {{ form.default_currency.as_hidden }}
+          <small class="text-muted">Pick a common currency or type your own. Defaults from timezone, fallback EUR.</small>
+        </div>
+
+        <div class="mt-3 field">
           <label for="{{ form.maximum_attendee_capacity.id_for_label }}">Max attendee capacity</label>
           {{ form.maximum_attendee_capacity }}
           <small class="text-muted">Schema: <code>Event.maximumAttendeeCapacity</code> (or <code>Place.maximumAttendeeCapacity</code> for the venue overall).</small>
-      </div>
-    </div>
-
-    <div class="card only-venue" style="padding:12px; margin-bottom:16px;">
-      <h2>Policies & Accessibility {% visibility_cog 'cms.setup.policies' 'Policies' %}</h2>
-
-      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-        <div>
-          <label for="{{ form.smoking_allowed.id_for_label }}">Smoking allowed?</label>
-          {{ form.smoking_allowed }}
-          <small class="text-muted">Schema: <code>Place.smokingAllowed</code></small>
-        </div>
-        <div>
-          <label for="{{ form.pets_allowed_text.id_for_label }}">Pets</label>
-          {{ form.pets_allowed_text }}
-          <small class="text-muted">Examples: “dogs only”, “no pets”, blank = unspecified.</small>
-        </div>
-        <div>
-          <label for="{{ form.typical_age_range.id_for_label }}">Typical age range</label>
-          {{ form.typical_age_range }}
-          <small class="text-muted">Examples: “0-12”, “13+”, leave empty if not applicable.</small>
         </div>
       </div>
+    </section>
 
-      <div style="margin-top:8px;">
-        <label for="{{ form.minors_policy_note.id_for_label }}">Kids / Minors note</label>
-        {{ form.minors_policy_note }}
-        <small class="text-muted">Example: People under 16 only in company of an adult.</small>
-      </div>
-
-      <div style="margin-top:12px;">
-        <label>Accessibility & inclusivity</label>
-        <div class="grid" style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px;">
-          <label>{{ form.acc_step_free }} Step-free entrance</label>
-          <label>{{ form.acc_wheelchair }} Wheelchair accessible</label>
-          <label>{{ form.acc_accessible_wc }} Accessible restroom</label>
-          <label>{{ form.acc_visual_aid }} Visual assistance available</label>
-          <label>{{ form.acc_service_animals }} Service animals welcome</label>
-          <label>{{ form.lgbtq_friendly }} LGBTQIA+ friendly</label>
-        </div>
-        <div style="margin-top:8px;">
-          <label for="{{ form.accessibility_summary.id_for_label }}">Accessibility notes (optional)</label>
-          {{ form.accessibility_summary }}
-        </div>
-        <small class="text-muted">Stored as <code>Place.amenityFeature</code> (LocationFeatureSpecification) and/or Event notes.</small>
-      </div>
-
-      <hr style="margin:16px 0;">
-
-      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>
-          <label>{{ form.awareness_team_available }} Awareness team available</label>
-          <div style="margin-top:6px;">
-            <label for="{{ form.awareness_contact.id_for_label }}">Awareness contact</label>
-            {{ form.awareness_contact }}
-            <small class="text-muted">Phone, email, URL, or instruction. Leave empty to hide.</small>
+    <!-- ===== Section: Policies & Accessibility (venue) ===== -->
+    <section class="card only-venue" data-collapsible-key="setup:policies">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Policies & Accessibility {% visibility_cog 'cms.setup.policies' 'Policies' %}
+      </h2>
+      <div class="card__body stack">
+        <div class="grid-3">
+          <div class="field">
+            <label for="{{ form.smoking_allowed.id_for_label }}">Smoking allowed?</label>
+            {{ form.smoking_allowed }}
+            <small class="text-muted">Schema: <code>Place.smokingAllowed</code></small>
           </div>
-          <small class="text-muted">Published via <code>Organization.contactPoint</code> with <code>contactType: "safety"</code> (only if provided).</small>
+          <div class="field">
+            <label for="{{ form.pets_allowed_text.id_for_label }}">Pets</label>
+            {{ form.pets_allowed_text }}
+            <small class="text-muted">Examples: “dogs only”, “no pets”, blank = unspecified.</small>
+          </div>
+          <div class="field">
+            <label for="{{ form.typical_age_range.id_for_label }}">Typical age range</label>
+            {{ form.typical_age_range }}
+            <small class="text-muted">Examples: “0-12”, “13+”, leave empty if not applicable.</small>
+          </div>
+        </div>
+
+        <div class="field mt-2">
+          <label for="{{ form.minors_policy_note.id_for_label }}">Kids / Minors note</label>
+          {{ form.minors_policy_note }}
+          <small class="text-muted">Example: People under 16 only in company of an adult.</small>
+        </div>
+
+        <div class="mt-3">
+          <label>Accessibility & inclusivity</label>
+          <div class="grid-auto-3 mt-1">
+            <label>{{ form.acc_step_free }} Step-free entrance</label>
+            <label>{{ form.acc_wheelchair }} Wheelchair accessible</label>
+            <label>{{ form.acc_accessible_wc }} Accessible restroom</label>
+            <label>{{ form.acc_visual_aid }} Visual assistance available</label>
+            <label>{{ form.acc_service_animals }} Service animals welcome</label>
+            <label>{{ form.lgbtq_friendly }} LGBTQIA+ friendly</label>
+          </div>
+          <div class="field mt-2">
+            <label for="{{ form.accessibility_summary.id_for_label }}">Accessibility notes (optional)</label>
+            {{ form.accessibility_summary }}
+          </div>
+          <small class="text-muted">Stored as <code>Place.amenityFeature</code> (LocationFeatureSpecification) and/or Event notes.</small>
+        </div>
+
+        <hr class="rule">
+
+        <div class="grid-2">
+          <div class="field">
+            <label>{{ form.awareness_team_available }} Awareness team available</label>
+            <div class="mt-1 field">
+              <label for="{{ form.awareness_contact.id_for_label }}">Awareness contact</label>
+              {{ form.awareness_contact }}
+              <small class="text-muted">Phone, email, URL, or instruction. Leave empty to hide.</small>
+            </div>
+            <small class="text-muted">Published via <code>Organization.contactPoint</code> with <code>contactType: "safety"</code> (only if provided).</small>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    {# Public Pages — edit LABEL + order only; we keep slug internally #}
-    <div class="card" style="padding:12px; margin-bottom:16px;">
-      <h2>Public Pages</h2>
-      <p class="text-muted">
-        Tick to include. Use arrows to set the nav order. You can rename the label.
-        URLs keep their underlying slug. The numbers show the order of checked items.
-      </p>
+    <!-- ===== Section: Public Pages ===== -->
+    <section class="card" data-collapsible-key="setup:public-pages">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Public Pages {% visibility_cog 'cms.setup.public' 'Public' %}
+      </h2>
 
-      <div id="pages-hidden" aria-hidden="true"></div>
-      {{ selected_pages|json_script:"selected-pages" }}
+      <div class="card__body stack">
+        <p class="text-muted mb-0">
+          Tick to include. Use arrows to set the nav order. You can rename the label.
+          URLs keep their underlying slug. The numbers show the order of checked items.
+        </p>
 
-      <div id="pages-grid" style="display:grid; grid-template-columns: repeat(3, minmax(200px, 1fr)); gap: 8px;">
-        {% for p in available_pages %}
-          <div class="page-item" style="border:1px solid rgba(255,255,255,.15); border-radius:6px; padding:6px 8px; background-color: rgba(175, 179, 184, 0.12);">
-            <label style="display:flex; align-items:center; gap:.5rem;">
-              <span class="order-num" style="width:2ch; text-align:right;">–</span>
-              <input type="checkbox" class="page-check" {% if p in selected_pages %}checked{% endif %} />
-              <input type="text" class="form-control form-control-sm page-title" value="{{ p }}" style="max-width: 12rem;" />
-              <span style="margin-left:auto; display:flex; gap:.25rem;">
-                <button type="button" class="btn btn-xs btn-outline-secondary up"   aria-label="Move up">↑</button>
-                <button type="button" class="btn btn-xs btn-outline-secondary down" aria-label="Move down">↓</button>
-              </span>
-            </label>
-          </div>
-        {% endfor %}
+        <div id="pages-hidden" aria-hidden="true"></div>
+        {{ selected_pages|json_script:"selected-pages" }}
+
+        <div id="pages-grid">
+          {% for p in available_pages %}
+            <div class="page-item" data-slug="">
+              <label class="row">
+                <span class="order-num">–</span>
+                <input type="checkbox" class="page-check" {% if p in selected_pages %}checked{% endif %} />
+                <input type="text" class="form-control form-control-sm page-title" value="{{ p }}" style="max-width: 12rem;" />
+                <span class="page-actions">
+                  <button type="button" class="btn btn-xs btn-outline-secondary up"   aria-label="Move up">↑</button>
+                  <button type="button" class="btn btn-xs btn-outline-secondary down" aria-label="Move down">↓</button>
+                </span>
+              </label>
+            </div>
+          {% endfor %}
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card" style="padding:12px; margin-bottom:16px;">
-      <h2>Membership {% visibility_cog 'cms.setup.membership' 'Membership' %}</h2>
-      <div>{{ form.membership_enabled }} {{ form.membership_enabled.label_tag }}</div>
-      <div>{{ form.membership_hint.label_tag }} {{ form.membership_hint }}</div>
+    <!-- ===== Section: Membership ===== -->
+    <section class="card" data-collapsible-key="setup:membership">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Membership {% visibility_cog 'cms.setup.membership' 'Membership' %}
+      </h2>
+      <div class="card__body stack">
+        <div class="control-inline">
+          {{ form.membership_enabled.label_tag }}
+          {{ form.membership_enabled }}
+        </div>
+        {% comment %} <div class="field">{{ form.membership_hint.label_tag }} {{ form.membership_hint }}</div> {% endcomment %}
 
-      <div id="tiers-block" style="margin-top:8px;">
-        <h3>Tiers</h3>
-        {{ tiers.management_form }}
-        <table class="table" id="tiers-table">
-          <tr><th>Name</th><th>Months</th><th>Price (minor)</th><th>Active</th><th>Actions</th></tr>
-          {% for tf in tiers %}
-            <tr class="tier-form">
-              {{ tf.id }}
-              <td>{{ tf.name }}</td>
-              <td>{{ tf.months }}</td>
-              <td>{{ tf.price_minor }}</td>
-              <td>{{ tf.active }}</td>
+        <div id="tiers-block" class="mt-2 stack">
+          <h3 class="mb-0">Tiers</h3>
+          {{ tiers.management_form }}
+          <table class="table" id="tiers-table">
+            <tr><th>Name</th><th>Months</th><th>Price (minor)</th><th>Active</th><th>Actions</th></tr>
+            {% for tf in tiers %}
+              <tr class="tier-form">
+                {{ tf.id }}
+                <td>{{ tf.name }}</td>
+                <td>{{ tf.months }}</td>
+                <td>{{ tf.price_minor }}</td>
+                <td>{{ tf.active }}</td>
+                <td>
+                  <span style="display:none;">{{ tf.DELETE }}</span>
+                  <button type="button" class="btn btn-danger" onclick="markFormRowDeleted(this)">Delete</button>
+                </td>
+              </tr>
+            {% endfor %}
+          </table>
+          <button type="button" class="btn btn-secondary" id="add-tier">+ Add Tier</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Section: Opening Times (venue only) ===== -->
+    <section class="card only-venue" data-collapsible-key="setup:opening">
+      <h2 style="display:flex; align-items:center; gap:.75rem;">
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Opening Times {% visibility_cog 'cms.setup.opening' 'Opening Times' %}
+      </h2>
+      <div class="card__body stack">
+        <label style="margin-left:auto; display:flex; align-items:center; gap:.4rem; font-size:.95rem;">
+          {{ form.publish_opening_times }} Show publicly
+        </label>
+        {{ hours.management_form }}
+        <table class="table">
+          <tr><th>Weekday</th><th>Closed</th><th>Opens</th><th>Closes</th></tr>
+          {% for hf in hours %}
+            <tr>
+              {{ hf.id }} {{ hf.weekday }}
               <td>
-                <span style="display:none;">{{ tf.DELETE }}</span>
+                {% with wd=hf.instance.weekday %}
+                  {% if wd == 0 %}Monday{% elif wd == 1 %}Tuesday{% elif wd == 2 %}Wednesday{% elif wd == 3 %}Thursday{% elif wd == 4 %}Friday{% elif wd == 5 %}Saturday{% else %}Sunday{% endif %}
+                {% endwith %}
+              </td>
+              <td>{{ hf.closed }}</td>
+              <td>{{ hf.open_time }}</td>
+              <td>{{ hf.close_time }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+        <small class="text-muted">Uncheck “Show publicly” to hide opening times on the public site. You can still edit them here.</small>
+      </div>
+    </section>
+
+    <!-- ===== Section: Roles ===== -->
+    <section class="card" id="roles" data-collapsible-key="setup:roles">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
+        Roles (Groups) {% visibility_cog 'cms.setup.roles' 'Roles' %}
+      </h2>
+      <div class="card__body stack">
+        {{ roles.management_form }}
+        <table class="table" id="roles-table">
+          <tr><th>Name</th><th>Actions</th></tr>
+          {% for rf in roles %}
+            <tr class="role-form">
+              {{ rf.id }}
+              <td>{{ rf.name }}</td>
+              <td>
+                <span style="display:none;">{{ rf.DELETE }}</span>
                 <button type="button" class="btn btn-danger" onclick="markFormRowDeleted(this)">Delete</button>
               </td>
             </tr>
           {% endfor %}
         </table>
-        <button type="button" class="btn btn-secondary" id="add-tier">+ Add Tier</button>
+        <button type="button" class="btn btn-secondary" id="add-role">+ Add Role</button>
       </div>
+    </section>
+
+    <div class="stack" style="grid-auto-flow: column; justify-content: start; gap: 8px;">
+      <button class="btn btn-primary">Save Settings</button>
     </div>
-
-    {# Opening times (venue only) #}
-    <div class="card only-venue" style="padding:12px; margin-bottom:16px;">
-      <h2 style="display:flex; align-items:center; gap:.75rem;">
-        Opening Times {% visibility_cog 'cms.setup.opening' 'Opening Times' %}
-        <label style="margin-left:auto; display:flex; align-items:center; gap:.4rem; font-size:.95rem;">
-          {{ form.publish_opening_times }} Show publicly
-        </label>
-      </h2>
-
-      {{ hours.management_form }}
-      <table class="table">
-        <tr><th>Weekday</th><th>Closed</th><th>Opens</th><th>Closes</th></tr>
-        {% for hf in hours %}
-          <tr>
-            {{ hf.id }} {{ hf.weekday }}
-            <td>
-              {% with wd=hf.instance.weekday %}
-                {% if wd == 0 %}Monday{% elif wd == 1 %}Tuesday{% elif wd == 2 %}Wednesday{% elif wd == 3 %}Thursday{% elif wd == 4 %}Friday{% elif wd == 5 %}Saturday{% else %}Sunday{% endif %}
-              {% endwith %}
-            </td>
-            <td>{{ hf.closed }}</td>
-            <td>{{ hf.open_time }}</td>
-            <td>{{ hf.close_time }}</td>
-          </tr>
-        {% endfor %}
-      </table>
-      <small class="text-muted">Uncheck “Show publicly” to hide opening times on the public site. You can still edit them here.</small>
-    </div>
-
-    <div class="card" style="padding:12px; margin-bottom:16px;" id="roles">
-      <h2>Roles (Groups) {% visibility_cog 'cms.setup.roles' 'Roles' %}</h2>
-      {{ roles.management_form }}
-      <table class="table" id="roles-table">
-        <tr><th>Name</th><th>Actions</th></tr>
-        {% for rf in roles %}
-          <tr class="role-form">
-            {{ rf.id }}
-            <td>{{ rf.name }}</td>
-            <td>
-              <span style="display:none;">{{ rf.DELETE }}</span>
-              <button type="button" class="btn btn-danger" onclick="markFormRowDeleted(this)">Delete</button>
-            </td>
-          </tr>
-        {% endfor %}
-      </table>
-      <button type="button" class="btn btn-secondary" id="add-role">+ Add Role</button>
-    </div>
-
-    <button class="btn btn-primary">Save Settings</button>
-    <a class="btn btn-secondary" href="{% url 'setup:visibility_list' %}">Visibility Rules</a>
   </form>
-
 </div>
-
-<style>
-  .only-venue, .only-band, .only-blog { display: none; }
-  #setup-root[data-mode="venue"] .only-venue { display: block; }
-  #setup-root[data-mode="band"]  .only-band  { display: block; }
-  #setup-root[data-mode="blog"]  .only-blog  { display: block; }
-  .page-item {
-    border:1px solid rgba(255,255,255,.1);
-    border-radius:6px; padding:6px 8px;
-    background-color: rgba(175, 179, 184, 0.284);
-  }
-</style>
 
 <script>
 /* ===== General setup toggles ===== */
@@ -424,11 +581,11 @@ function markFormRowDeleted(btn){
       row.className = 'page-item';
       row.dataset.slug = slug || '';
       row.innerHTML = `
-        <label style="display:flex; align-items:center; gap:.5rem;">
-          <span class="order-num" style="width:2ch; text-align:right;">–</span>
+        <label class="row">
+          <span class="order-num">–</span>
           <input type="checkbox" class="page-check" ${checked ? 'checked' : ''} />
           <input type="text" class="form-control form-control-sm page-title" value="${label}" style="max-width: 12rem;" />
-          <span style="margin-left:auto; display:flex; gap:.25rem;">
+          <span class="page-actions">
             <button type="button" class="btn btn-xs btn-outline-secondary up"   aria-label="Move up">↑</button>
             <button type="button" class="btn btn-xs btn-outline-secondary down" aria-label="Move down">↓</button>
           </span>
@@ -526,6 +683,77 @@ function markFormRowDeleted(btn){
       buildHidden();
     });
   }
+})();
+</script>
+
+<script>
+/* ===== Collapsible cards with persistence ===== */
+(function() {
+  function uid() { return 'c' + Math.random().toString(36).slice(2, 8); }
+  function keyFor(card, headingText) {
+    return card.getAttribute('data-collapsible-key') ||
+           ('setup:' + (headingText || '').trim().toLowerCase().replace(/\s+/g,'-'));
+  }
+
+  // a11y helper for screen readers (kept invisible visually)
+  (function ensureSR(){
+    var sr = document.getElementById('sr-only-style');
+    if (sr) return;
+    sr = document.createElement('style');
+    sr.id = 'sr-only-style';
+    sr.innerHTML = '.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}';
+    document.head.appendChild(sr);
+  })();
+
+  document.querySelectorAll('.card').forEach(function(card) {
+    var h2 = card.querySelector('h2');
+    if (!h2) return;
+
+    // Wrap following siblings of h2 into a .card__body (idempotent)
+    var body = card.querySelector('.card__body');
+    if (!body) {
+      var bodyId = uid();
+      body = document.createElement('div');
+      body.className = 'card__body';
+      body.id = bodyId;
+
+      var n = h2.nextSibling, toMove = [];
+      while (n) { toMove.push(n); n = n.nextSibling; }
+      toMove.forEach(function(node){ body.appendChild(node); });
+      card.appendChild(body);
+
+      var btn = h2.querySelector('.collapse-toggle');
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'collapse-toggle';
+        btn.innerHTML = '<span class="chev">▸</span><span class="sr-only">Toggle section</span>';
+        h2.insertBefore(btn, h2.firstChild);
+      }
+      btn.setAttribute('aria-controls', bodyId);
+    }
+
+    var headingText = h2.textContent || '';
+    var key = keyFor(card, headingText);
+    var saved = localStorage.getItem(key);
+    var open = saved == null ? true : (saved === '1');
+
+    card.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+    function toggle() {
+      var nowOpen = card.getAttribute('aria-expanded') !== 'true';
+      card.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+      localStorage.setItem(key, nowOpen ? '1' : '0');
+    }
+
+    h2.addEventListener('click', function(e){
+      var t = e.target;
+      if (t.closest('button, a, input, select, textarea')) return;
+      toggle();
+    });
+    var btnEl = h2.querySelector('.collapse-toggle');
+    if (btnEl) btnEl.addEventListener('click', function(e){ e.stopPropagation(); toggle(); });
+  });
 })();
 </script>
 

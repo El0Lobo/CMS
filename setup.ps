@@ -1,9 +1,0 @@
-# Run migrations
-python manage.py migrate
-
-# Create superuser without prompts
-$env:DJANGO_SUPERUSER_USERNAME = "admin"
-$env:DJANGO_SUPERUSER_EMAIL    = "admin@example.com"
-$env:DJANGO_SUPERUSER_PASSWORD = "admin123"
-python manage.py createsuperuser --noinput
-python manage.py runserver

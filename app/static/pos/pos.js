@@ -1,0 +1,517 @@
+// static/pos/pos.js
+(function () {
+  "use strict";
+
+  // ---------- DOM ----------
+  let root, endpoints, el = {};
+  const state = {
+    cart: null,
+    selectedLineId: null, // for item-scope discounts
+    quickButtons: [],
+  };
+
+  document.addEventListener("DOMContentLoaded", init);
+
+  function init() {
+    root = document.getElementById("pos-root");
+    if (!root) {
+      console.error("[POS] #pos-root not found");
+      return;
+    }
+    try {
+      endpoints = JSON.parse(root.getAttribute("data-endpoints"));
+    } catch {
+      console.error("[POS] invalid data-endpoints JSON");
+      return;
+    }
+
+    // cache elements
+    el.search = root.querySelector("#posSearch");
+    el.results = root.querySelector("#posResults");
+    el.cartLines = root.querySelector("#cartLines");
+    el.cartTotals = root.querySelector("#cartTotals"); // contains the _cart_totals include
+    el.quickButtons = root.querySelector("#quickButtons");
+    el.kind = root.querySelector("#paymentKind");
+    el.amount = root.querySelector("#paymentAmount");
+    el.btnCheckout = root.querySelector("#btnCheckout");
+    el.btnClear = root.querySelector("#btnClearCart");
+
+    bindEvents();
+    bootstrap();
+  }
+
+  async function bootstrap() {
+    try {
+      // load quick buttons + current cart snapshot + browse categories
+      const promises = [getJSON(endpoints.buttons), getJSON(endpoints.totals)];
+      if (endpoints.browse) promises.push(getJSON(endpoints.browse));
+      const [btns, cart, browse] = await Promise.all(promises);
+
+      state.quickButtons = (btns && btns.buttons) || [];
+      renderQuickButtons(state.quickButtons);
+      renderCart(cart);
+
+      // show categories on load (if endpoint exists)
+      if (browse && browse.categories) {
+        renderBrowse(browse.categories);
+      } else if (endpoints.browse) {
+        // fallback fetch (in case Promise.all short-circuited)
+        const b = await getJSON(endpoints.browse);
+        renderBrowse((b && b.categories) || []);
+      }
+    } catch (e) {
+      console.error(e);
+      toast("Failed to initialize POS.", "error");
+    }
+  }
+
+  // ---------- Events ----------
+  function bindEvents() {
+    // Search (debounced) + Enter to force search
+    if (el.search) {
+      el.search.addEventListener("input", debounce(onSearch, 180));
+      el.search.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") onSearch();
+        if (e.key === "Escape") {
+          el.search.value = "";
+          showBrowse();
+        }
+      });
+    }
+
+    // Click result → add to cart (works for search results and browse cards)
+    if (el.results) {
+      el.results.addEventListener("click", (ev) => {
+        // toggle category collapse
+        const hdr = ev.target.closest("[data-cat-toggle]");
+        if (hdr) {
+          hdr.parentElement.classList.toggle("is-collapsed");
+          return;
+        }
+        const btn = ev.target.closest("[data-add-id]");
+        if (!btn) return;
+        addItem(btn.getAttribute("data-add-id")).catch(logAndToast("Add failed."));
+      });
+    }
+
+    // Cart interactions (delegate)
+    if (el.cartLines) {
+      el.cartLines.addEventListener("click", onCartClick);
+      el.cartLines.addEventListener("change", onCartChange);
+    }
+
+    // Clear cart
+    if (el.btnClear) {
+      el.btnClear.addEventListener("click", () => {
+        clearCart().catch(logAndToast("Clear failed."));
+      });
+    }
+
+    // Quick buttons
+    if (el.quickButtons) {
+      el.quickButtons.addEventListener("click", (ev) => {
+        const b = ev.target.closest("button[data-type][data-scope]");
+        if (!b) return;
+        const scope = b.getAttribute("data-scope"); // ORDER|ITEM
+        const type = b.getAttribute("data-type");   // PERCENT|AMOUNT|FREE
+        const value = b.getAttribute("data-value") || "0";
+        const reasonId = b.getAttribute("data-reason-id") || "";
+        if (scope === "ITEM") {
+          if (!state.selectedLineId) {
+            toast("Select a cart line first for item discount.", "error");
+            return;
+          }
+          applyDiscount({ scope, type, value, reasonId, itemId: state.selectedLineId })
+            .catch(logAndToast("Discount failed."));
+        } else {
+          applyDiscount({ scope, type, value, reasonId })
+            .catch(logAndToast("Discount failed."));
+        }
+      });
+    }
+
+    // Checkout
+    if (el.btnCheckout) {
+      el.btnCheckout.addEventListener("click", () => {
+        const kind = (el.kind && el.kind.value) || "CASH";
+        const raw = (el.amount && el.amount.value.trim()) || "";
+        if (!raw) {
+          toast("Enter payment amount.", "error");
+          el.amount && el.amount.focus();
+          return;
+        }
+        const val = Number(String(raw).replace(",", "."));
+        if (!Number.isFinite(val) || val <= 0) {
+          toast("Invalid payment amount.", "error");
+          el.amount && el.amount.focus();
+          return;
+        }
+        checkout(kind, val.toFixed(2)).catch((err) => {
+          console.error(err);
+          toast("Checkout failed.", "error");
+        });
+      });
+    }
+  }
+
+  // Search handler (empty → show browse)
+  async function onSearch() {
+    const q = el.search.value.trim();
+    if (!q) {
+      showBrowse();
+      return;
+    }
+    try {
+      const data = await getJSON(endpoints.search + `?q=${encodeURIComponent(q)}`);
+      renderResults((data && data.results) || []);
+    } catch (e) {
+      console.error(e);
+      toast("Search failed.", "error");
+    }
+  }
+
+  async function showBrowse() {
+    if (!endpoints.browse) {
+      el.results.innerHTML = `<div class="empty">Type to search…</div>`;
+      return;
+    }
+    try {
+      const data = await getJSON(endpoints.browse);
+      renderBrowse((data && data.categories) || []);
+    } catch (e) {
+      console.error(e);
+      toast("Browse load failed.", "error");
+    }
+  }
+
+  // Cart clicks: select line, qty inc/dec, remove
+  function onCartClick(ev) {
+    const selectBtn = ev.target.closest("[data-select-id]");
+    if (selectBtn) {
+      const id = selectBtn.getAttribute("data-select-id");
+      state.selectedLineId = state.selectedLineId === id ? null : id;
+      // update selection visuals
+      el.cartLines.querySelectorAll(".cart-line").forEach((row) => {
+        const isSel = row.getAttribute("data-id") === state.selectedLineId;
+        row.classList.toggle("is-selected", !!isSel);
+        const dot = row.querySelector("[data-select-id]");
+        if (dot) dot.textContent = isSel ? "●" : "○";
+      });
+      return;
+    }
+
+    const inc = ev.target.closest("[data-inc-id]");
+    const dec = ev.target.closest("[data-dec-id]");
+    const rm = ev.target.closest("[data-remove-id]");
+
+    if (inc || dec) {
+      const id = (inc || dec).getAttribute(inc ? "data-inc-id" : "data-dec-id");
+      const input = el.cartLines.querySelector(`input[data-qty-id="${cssEscape(id)}"]`);
+      if (!input) return;
+      const cur = parseInt(input.value || "0", 10);
+      let next = cur + (inc ? 1 : -1);
+      if (next < 0) next = 0;
+      input.value = String(next);
+      updateQty(id, next).catch(logAndToast("Qty update failed."));
+      return;
+    }
+
+    if (rm) {
+      const id = rm.getAttribute("data-remove-id");
+      removeItem(id).catch(logAndToast("Remove failed."));
+    }
+  }
+
+  // Cart changes: direct qty input
+  function onCartChange(ev) {
+    const input = ev.target.closest("input[data-qty-id]");
+    if (!input) return;
+    const id = input.getAttribute("data-qty-id");
+    let qty = parseInt(input.value || "0", 10);
+    if (!Number.isFinite(qty) || qty < 0) qty = 0;
+    updateQty(id, qty).catch(logAndToast("Qty update failed."));
+  }
+
+  // ---------- Rendering ----------
+  function renderResults(items) {
+    el.results.innerHTML = "";
+    if (!items.length) {
+      el.results.innerHTML = `<div class="empty">No items found</div>`;
+      return;
+    }
+    // results-grid: simple buttons/cards
+    for (const it of items) {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "result-card";
+      card.setAttribute("data-add-id", it.id);
+      card.innerHTML = `
+        <span class="title">${esc(it.title)}</span>
+        <span class="price">${esc(it.price)}</span>
+      `;
+      el.results.appendChild(card);
+    }
+  }
+
+  // NEW: categories with collapsible bodies
+  function renderBrowse(categories) {
+    el.results.innerHTML = "";
+    if (!categories.length) {
+      el.results.innerHTML = `<div class="empty">No items available.</div>`;
+      return;
+    }
+    for (const cat of categories) {
+      const sec = document.createElement("section");
+      sec.className = "cat-section";
+      sec.innerHTML = `
+        <button class="cat-header" type="button" data-cat-toggle>
+          <span class="chev">▾</span>
+          <span class="cat-name">${esc(cat.name)}</span>
+        </button>
+        <div class="cat-body">
+          <div class="cat-grid"></div>
+        </div>
+      `;
+      const grid = sec.querySelector(".cat-grid");
+      for (const it of cat.items) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "result-card";
+        btn.setAttribute("data-add-id", it.id);
+        btn.innerHTML = `
+          <span class="title">${esc(it.title)}</span>
+          <span class="price">${esc(it.price)}</span>
+        `;
+        grid.appendChild(btn);
+      }
+      el.results.appendChild(sec);
+    }
+
+    // Optional: start collapsed
+    // el.results.querySelectorAll(".cat-section").forEach(s => s.classList.add("is-collapsed"));
+
+    // Toggle handler is delegated in bindEvents (click on data-cat-toggle)
+  }
+
+  function renderQuickButtons(buttons) {
+    el.quickButtons.innerHTML = "";
+    if (!buttons.length) {
+      el.quickButtons.innerHTML = `<div class="empty">No quick buttons configured.</div>`;
+      return;
+    }
+    for (const b of buttons) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "qbtn";
+      btn.textContent = b.label;
+      btn.title = `${b.label} — ${b.scope} ${b.type}${b.type !== "FREE" ? " " + b.value : ""}`;
+      btn.setAttribute("data-type", b.type);
+      btn.setAttribute("data-scope", b.scope);
+      btn.setAttribute("data-value", b.value);
+      if (b.reason_id) btn.setAttribute("data-reason-id", b.reason_id);
+      el.quickButtons.appendChild(btn);
+    }
+  }
+
+  // Compact cart: main row + tiny meta row
+  function renderCart(cart) {
+    state.cart = cart;
+    el.cartLines.innerHTML = "";
+
+    const lines = (cart && cart.lines) || [];
+    if (!lines.length) {
+      el.cartLines.innerHTML = `<div class="empty-cart">Cart is empty</div>`;
+      updateTotals({ subtotal: "0.00", discount_total: "0.00", tax_total: "0.00", grand_total: "0.00" });
+      state.selectedLineId = null;
+      return;
+    }
+
+    for (const line of lines) {
+      const isSel = String(state.selectedLineId) === String(line.id);
+      const wrap = document.createElement("div");
+      wrap.className = "cart-line" + (isSel ? " is-selected" : "");
+      wrap.setAttribute("data-id", String(line.id));
+
+      const discountBadge = line.discount
+        ? `<span class="badge">${esc(line.discount.type)}${line.discount.type !== "FREE" ? " " + esc(line.discount.value) : ""}</span>`
+        : "";
+
+      wrap.innerHTML = `
+        <div class="row compact">
+          <button class="select" type="button" data-select-id="${line.id}" aria-pressed="${isSel ? "true" : "false"}">${isSel ? "●" : "○"}</button>
+          <div class="title">${esc(line.title)} ${discountBadge}</div>
+          <div class="qty">
+            <button class="dec" type="button" data-dec-id="${line.id}">−</button>
+            <input type="number" min="0" step="1" class="qty-input" data-qty-id="${line.id}" value="${Number(line.qty)}" inputmode="numeric" pattern="[0-9]*">
+            <button class="inc" type="button" data-inc-id="${line.id}">+</button>
+          </div>
+          <div class="unit">${esc(line.unit_price)}</div>
+          <div class="line-total"><strong>${esc(line.calc_total)}</strong></div>
+          <button class="remove" type="button" data-remove-id="${line.id}" title="Remove">✕</button>
+        </div>
+        <div class="row meta">
+          <span class="sub">Sub: <strong>${esc(line.calc_subtotal)}</strong></span>
+          <span class="disc">Disc: <strong>${esc(line.calc_discount)}</strong></span>
+          <span class="tax">Tax: <strong>${esc(line.calc_tax)}</strong></span>
+        </div>
+      `;
+      el.cartLines.appendChild(wrap);
+    }
+
+    updateTotals(cart.totals || { subtotal: "0.00", discount_total: "0.00", tax_total: "0.00", grand_total: "0.00" });
+  }
+
+  function updateTotals(t) {
+    if (!el.cartTotals) return;
+    const map = {
+      subtotal: '[data-total-subtotal]',
+      discount_total: '[data-total-discount]',
+      tax_total: '[data-total-tax]',
+      grand_total: '[data-total-grand]',
+    };
+    for (const [k, sel] of Object.entries(map)) {
+      const node = el.cartTotals.querySelector(sel);
+      if (node) node.textContent = String(t[k] ?? "0.00");
+    }
+  }
+
+  // ---------- Server actions ----------
+  async function refreshCart() {
+    const data = await getJSON(endpoints.totals);
+    renderCart(data);
+  }
+
+  async function addItem(id, qty = 1) {
+    const data = await postForm(endpoints.add, { id, qty });
+    renderCart(data);
+  }
+
+  async function removeItem(id) {
+    const data = await postForm(endpoints.remove, { id });
+    renderCart(data);
+    if (String(state.selectedLineId) === String(id)) state.selectedLineId = null;
+  }
+
+  async function updateQty(id, qty) {
+    const data = await postForm(endpoints.update, { id, qty });
+    renderCart(data);
+  }
+
+  async function clearCart() {
+    const data = await postForm(endpoints.clear, {});
+    renderCart(data);
+    state.selectedLineId = null;
+  }
+
+  async function applyDiscount({ scope, type, value = "0", reasonId = "", itemId = "" }) {
+    const payload = { scope, type, value };
+    if (reasonId) payload.reason_id = reasonId;
+    if (scope === "ITEM") payload.item_id = itemId;
+    const data = await postForm(endpoints.applyDiscount, payload);
+    renderCart(data);
+  }
+
+  async function checkout(kind, amount) {
+    const data = await postForm(endpoints.checkout, { kind, amount, close: "true" });
+    toast(`Payment recorded. Sale #${data.sale_id}`, "success");
+    await refreshCart();
+    if (el.amount) el.amount.value = "";
+  }
+
+  // ---------- Net helpers (Django CSRF safe) ----------
+  async function getJSON(url) {
+    const res = await fetch(url, {
+      credentials: "same-origin",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    });
+    if (!res.ok) throw new Error(`GET ${url} → ${res.status}`);
+    return res.json();
+  }
+
+  function toFormData(obj) {
+    const fd = new FormData();
+    Object.entries(obj).forEach(([k, v]) => fd.append(k, v));
+    return fd;
+  }
+
+  async function postForm(url, bodyObj) {
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRFToken": getCsrf(),
+      },
+      body: toFormData(bodyObj),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`POST ${url} → ${res.status} ${text || ""}`);
+    }
+    return res.json();
+  }
+
+  function getCsrf(name = "csrftoken") {
+    const m = document.cookie.match(new RegExp("(^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[2]) : "";
+  }
+
+  // ---------- Utilities ----------
+  function debounce(fn, ms) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(null, args), ms);
+    };
+  }
+
+  function esc(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function cssEscape(id) {
+    return (window.CSS && CSS.escape) ? CSS.escape(String(id)) : String(id).replace(/"/g, '\\"');
+  }
+
+  function logAndToast(msg, type = "error") {
+    return (err) => {
+      console.error(err);
+      toast(msg, type);
+    };
+  }
+
+  function toast(message, type = "info") {
+    const div = document.createElement("div");
+    div.className = `pos-toast ${type}`;
+    div.textContent = message;
+    Object.assign(div.style, {
+      position: "fixed",
+      right: "14px",
+      bottom: "14px",
+      background: type === "error" ? "#2a1111" : type === "success" ? "#0f2314" : "#121212",
+      color: "#eee",
+      border: "1px solid #333",
+      padding: "10px 12px",
+      borderRadius: "10px",
+      opacity: "0",
+      transform: "translateY(10px)",
+      transition: ".25s",
+      zIndex: 9999,
+    });
+    document.body.appendChild(div);
+    requestAnimationFrame(() => {
+      div.style.opacity = "1";
+      div.style.transform = "translateY(0)";
+    });
+    setTimeout(() => {
+      div.style.opacity = "0";
+      div.style.transform = "translateY(10px)";
+      setTimeout(() => div.remove(), 250);
+    }, 2200);
+  }
+})();

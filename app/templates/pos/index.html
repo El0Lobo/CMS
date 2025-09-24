@@ -1,23 +1,72 @@
 {% extends "cms/base_cms.html" %}
-{% block title %}Register (POS) · CMS{% endblock %}
+{% load static %}
+{% block title %}POS — CMS{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'pos/pos.css' %}">
+<script defer src="{% static 'pos/pos.js' %}"></script>
+<style>
+  /* Optional: page-level overrides */
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Register (POS)</h1>
-<div class="toolbar">
-  <a class="btn" href="/cms/pos/create/">+ New</a>
-  <input placeholder="Search (not wired yet)" style="padding:.5rem;border-radius:8px;border:1px solid var(--line);background:#0f1419;color:#e9f1f2;width:240px">
+<div id="pos-root" class="pos-grid" data-endpoints='{
+  "search":"{% url 'pos:api_search_items' %}",
+  "browse":"{% url 'pos:api_browse_items' %}",           
+  "add":"{% url 'pos:api_cart_add' %}",
+  "remove":"{% url 'pos:api_cart_remove' %}",
+  "update":"{% url 'pos:api_cart_update' %}",
+  "clear":"{% url 'pos:api_cart_clear' %}",
+  "applyDiscount":"{% url 'pos:api_cart_apply_discount' %}",
+  "totals":"{% url 'pos:api_cart_totals' %}",
+  "checkout":"{% url 'pos:api_checkout' %}",
+  "buttons":"{% url 'pos:api_quick_buttons' %}"
+}'>
+
+  <div class="pos-left">
+    <div class="search-bar">
+      <input id="posSearch" type="text" placeholder="Search menu…" autocomplete="off">
+    </div>
+    <div id="posResults" class="results-grid" aria-live="polite"></div>
+  </div>
+
+  <div class="pos-right">
+    <div class="cart-card">
+      <header>
+        <h3>Cart</h3>
+        <div class="cart-actions">
+          <button id="btnClearCart" class="btn danger">Clear</button>
+        </div>
+      </header>
+      <div id="cartLines" class="cart-lines">
+        {# filled by JS #}
+      </div>
+      <footer id="cartTotals">
+        {% include "pos/_cart_totals.html" with cart=cart %}
+      </footer>
+    </div>
+
+    <div class="buttons-card">
+      <header><h3>Quick Discounts</h3></header>
+      <div id="quickButtons" class="buttons-grid">
+        {# populated by JS from /api/quick-buttons/ #}
+      </div>
+    </div>
+
+    <div class="checkout-card">
+      <header><h3>Checkout</h3></header>
+      <div class="pay-row">
+        <select id="paymentKind">
+          <option value="CASH">Cash</option>
+          <option value="CARD">Card</option>
+          <option value="OTHER">Other</option>
+        </select>
+        <input id="paymentAmount" type="number" step="0.01" min="0" placeholder="Amount">
+        <button id="btnCheckout" class="btn primary">Complete Sale</button>
+      </div>
+      <small class="muted">MVP supports one payment per sale; extend as needed.</small>
+    </div>
+  </div>
 </div>
-{% if rows %}
-<table class="tbl">
-  <thead><tr><th>tab</th><th>items</th><th>total</th><th>status</th></tr></thead>
-  <tbody>
-    {% for r in rows %}
-    <tr onclick="window.location='/cms/pos/{{ r.slug }}/edit/'" style="cursor:pointer">
-      <td>{{ r.tab }}</td><td>{{ r.items }}</td><td>{{ r.total }}</td><td>{{ r.status }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-  <div class="empty">Nothing here yet. Click “New”.</div>
-{% endif %}
 {% endblock %}
