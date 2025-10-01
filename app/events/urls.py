@@ -1,7 +1,14 @@
 from django.urls import path
-from .views import index, create, edit
+
+from app.events import views
+
+app_name = "events"
+
+
 urlpatterns = [
-    path("", index, name="events_index"),
-    path("create/", create, name="events_create"),
-    path("<slug:slug>/edit/", edit, name="events_edit"),
+    path("", views.index, name="index"),
+    path("create/", views.create, name="create"),
+    path("<slug:slug>/edit/", views.edit, name="edit"),
+    path("<slug:slug>/delete/", views.delete, name="delete"),
+    path("<slug:slug>/", views.detail, name="detail"),
 ]

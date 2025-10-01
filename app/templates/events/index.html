@@ -1,23 +1,99 @@
 {% extends "cms/base_cms.html" %}
-{% block title %}Events · CMS{% endblock %}
+{% load static setup_tags %}
+
+{% block title %}Events &middot; CMS{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'events/events.css' %}">
+{% endblock %}
+
+{% block extra_body %}
+  <script src="{% static 'events/events.js' %}" defer></script>
+{% endblock %}
+
 {% block content %}
-<h1>Events</h1>
-<div class="toolbar">
-  <a class="btn" href="/cms/events/create/">+ New</a>
-  <input placeholder="Search (not wired yet)" style="padding:.5rem;border-radius:8px;border:1px solid var(--line);background:#0f1419;color:#e9f1f2;width:240px">
-</div>
-{% if rows %}
-<table class="tbl">
-  <thead><tr><th>title</th><th>slug</th><th>date</th><th>status</th></tr></thead>
-  <tbody>
-    {% for r in rows %}
-    <tr onclick="window.location='/cms/events/{{ r.slug }}/edit/'" style="cursor:pointer">
-      <td>{{ r.title }}</td><td>{{ r.slug }}</td><td>{{ r.date }}</td><td>{{ r.status }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<section class="module-header">
+  <div>
+    <h1>Events</h1>
+    <p class="sub">Create public events, manage performers, and prepare staffing.</p>
+  </div>
+  <div class="actions">
+    <form method="get" class="search-form">
+      <input type="search" name="q" value="{{ search_query }}" placeholder="Search title...">
+      <button class="btn btn-outline" type="submit">Search</button>
+    </form>
+    <button class="btn btn-primary" data-open-modal="#modal-event">+ New event</button>
+  </div>
+</section>
+
+{% if events %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Starts</th>
+        <th>Doors</th>
+        <th>Shifts</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for event in events %}
+        <tr>
+          <td>
+            <strong><a href="{% url 'events:edit' event.slug %}">{{ event.title }}</a></strong>
+            <div class="meta">
+              {% for cat in event.categories.all %}
+                <span class="pill">{{ cat.name }}</span>
+              {% empty %}
+                <span class="quiet">No categories</span>
+              {% endfor %}
+            </div>
+          </td>
+          <td>{{ event.get_status_display }}</td>
+          <td>{{ event.starts_at|date:"Y-m-d H:i" }}</td>
+          <td>{% if event.doors_at %}{{ event.doors_at|date:"H:i" }}{% else %}&mdash;{% endif %}</td>
+          <td>
+            {% if event.requires_shifts %}
+              <span class="pill pill-green">Enabled</span>
+            {% else %}
+              <span class="pill">Disabled</span>
+            {% endif %}
+          </td>
+          <td class="row-actions">
+            <a class="btn btn-outline" href="{% url 'events:detail' event.slug %}">Preview</a>
+            <a class="btn btn-outline" href="{% url 'events:edit' event.slug %}">Edit</a>
+            <form method="post" action="{% url 'events:delete' event.slug %}" onsubmit="return confirm('Delete this event?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% else %}
-  <div class="empty">Nothing here yet. Click “New”.</div>
+  <p class="empty">No events yet. Click "New event" to create your first one.</p>
 {% endif %}
+
+<!-- Event creation modal -->
+<div class="modal-overlay" id="modal-event" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-event-title">
+    <div class="modal-header">
+      <h2 id="modal-event-title">Create event</h2>
+      <button type="button" class="iconbtn" data-close-modal aria-label="Close">&times;</button>
+    </div>
+    <form id="event-create-form" method="post" enctype="multipart/form-data" action="{% url 'events:create' %}" hx-post="{% url 'events:create' %}" hx-target="#event-form-body" hx-swap="outerHTML" class="modal-form">
+      {% csrf_token %}
+      <div id="event-form-body">
+        {% include "events/partials/event_form_body.html" with event_form=event_form performer_formset=performer_formset %}
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">Save event</button>
+        <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

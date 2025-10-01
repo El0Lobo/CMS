@@ -1,23 +1,247 @@
 {% extends "cms/base_cms.html" %}
-{% block title %}Shifts · CMS{% endblock %}
-{% block content %}
-<h1>Shifts</h1>
-<div class="toolbar">
-  <a class="btn" href="/cms/shifts/create/">+ New</a>
-  <input placeholder="Search (not wired yet)" style="padding:.5rem;border-radius:8px;border:1px solid var(--line);background:#0f1419;color:#e9f1f2;width:240px">
-</div>
-{% if rows %}
-<table class="tbl">
-  <thead><tr><th>event</th><th>role</th><th>slots</th><th>filled</th></tr></thead>
-  <tbody>
-    {% for r in rows %}
-    <tr onclick="window.location='/cms/shifts/{{ r.slug }}/edit/'" style="cursor:pointer">
-      <td>{{ r.event }}</td><td>{{ r.role }}</td><td>{{ r.slots }}</td><td>{{ r.filled }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-  <div class="empty">Nothing here yet. Click “New”.</div>
-{% endif %}
+{% load static setup_tags %}
+
+{% block title %}Shifts &middot; CMS{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'shifts/shifts.css' %}">
 {% endblock %}
+
+{% block extra_body %}
+  <script src="{% static 'shifts/shifts.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<section class="module-header">
+  <div>
+    <h1>Shift planner</h1>
+    <p class="sub">Track staffing needs and assignments per event.</p>
+  </div>
+  <div class="actions">
+    <button class="btn btn-secondary" data-open-modal="#modal-create-template">+ New standard shift</button>
+    {% visibility_cog_inline 'cms.shifts.templates' 'Standard shift controls' %}
+  </div>
+</section>
+
+<section class="templates-panel">
+  <header>
+    <h2>Standard shifts</h2>
+    <p class="quiet">Define reusable shifts (door, bar, etc.) that event creators can toggle.</p>
+  </header>
+  {% if templates %}
+    <table class="data-table compact">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Segments</th>
+          <th>People/segment</th>
+          <th>Start from</th>
+          <th>Start offset</th>
+          <th>End offset</th>
+          <th>Duration</th>
+          <th>Signup</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for template, edit_form in template_forms %}
+          <tr>
+            <td>{{ template.name }}</td>
+            <td>{{ template.segment_count }}</td>
+            <td>{{ template.capacity }}</td>
+            <td>{{ template.get_start_reference_display }}</td>
+            <td>{{ template.start_offset_minutes }} min</td>
+            <td>{{ template.end_offset_minutes }} min</td>
+            <td>{% if template.duration_minutes %}{{ template.duration_minutes }} min{% else %}Auto{% endif %}</td>
+            <td>{% if template.allow_signup %}Allowed{% else %}Manual only{% endif %}</td>
+            <td class="row-actions">
+              <button class="btn btn-outline" data-open-modal="#modal-edit-template-{{ template.id }}">Edit</button>
+              <form method="post" action="{% url 'shifts:template_delete' template.id %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline btn-danger" onclick="return confirm('Delete this standard shift?');">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">No standard shifts defined yet. Add one to make event creation faster.</p>
+  {% endif %}
+</section>
+
+{% for template, edit_form in template_forms %}
+  <div class="modal-overlay" id="modal-edit-template-{{ template.id }}" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-edit-template-title-{{ template.id }}">
+      <div class="modal-header">
+        <h2 id="modal-edit-template-title-{{ template.id }}">Edit standard shift</h2>
+        <button type="button" class="iconbtn" data-close-modal aria-label="Close">&times;</button>
+      </div>
+      <form method="post" action="{% url 'shifts:template_update' template.id %}" class="modal-form">
+        {% csrf_token %}
+        {% include "shifts/partials/template_form_body.html" with template_form=edit_form %}
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">Save changes</button>
+          <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endfor %}
+
+{% if events_with_shifts %}
+  {% for bundle in events_with_shifts %}
+    <section class="event-shift-group">
+      <header class="event-shift-header">
+        <div class="event-header-main">
+          <button type="button" class="event-link" data-open-modal="#modal-event-{{ bundle.event.id }}">{{ bundle.event.title }}</button>
+        </div>
+        <div class="event-header-meta nav-inline">
+          <span class="event-date">{{ bundle.event.starts_at|date:"D d.m.Y" }}</span>
+          <a class="btn btn-outline" href="{% url 'shifts:manage_event' bundle.event.slug %}">Manage event</a>
+          {% visibility_cog_inline "cms.shifts.assign" "Assign shift controls" %}
+          {% if bundle.has_shift_options and request.user|allow_for:"cms.shifts.assign" %}
+            <button class="btn btn-outline" data-open-modal="#modal-assign" data-event-id="{{ bundle.event.id }}" data-event-title="{{ bundle.event.title }}" data-assign-options='{{ bundle.assign_options_json|escape }}'>Assign shifts</button>
+          {% endif %}
+        </div>
+      </header>
+      <table class="data-table compact">
+        <thead>
+          <tr>
+            <th>Shift</th>
+            <th>Schedule</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for shift in bundle.shifts %}
+            <tr>
+              <td>{{ shift.title }}</td>
+              <td>{{ shift.start_at|date:"H:i" }} - {{ shift.end_at|date:"H:i" }}</td>
+              <td class="row-actions">
+                {% with badges=shift.assignment_badges %}
+                  {% if badges %}
+                    <div class="assignment-badges">
+                      {% for badge in badges %}
+                        {% if request.user.is_authenticated and badge.user_id == request.user.id %}
+                          <span class="pill pill-green">You</span>
+                        {% else %}
+                          <span class="pill pill-assignee">{{ badge.name }}</span>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+                {% if shift.allow_signup and shift.id not in taken_shift_ids and not shift.is_full %}
+                  <form method="post" action="{% url 'shifts:take' shift.id %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline">Take shift</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endfor %}
+{% else %}
+  <p class="empty">No upcoming shifts yet.</p>
+{% endif %}
+
+{% for bundle in events_with_shifts %}
+  <div class="modal-overlay" id="modal-event-{{ bundle.event.id }}" hidden>
+    <div class="modal-card modal-event-card" role="dialog" aria-modal="true" aria-labelledby="modal-event-title-{{ bundle.event.id }}">
+      <div class="modal-header">
+        <h2 id="modal-event-title-{{ bundle.event.id }}">{{ bundle.event.title }}</h2>
+        <button type="button" class="iconbtn" data-close-modal aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body event-modal-body">
+        {% include "shifts/partials/event_summary.html" with event=bundle.event %}
+      </div>
+      <div class="modal-actions">
+        <a class="btn btn-outline" href="{% url 'events:edit' bundle.event.slug %}">Edit event</a>
+        <a class="btn btn-outline" href="{% url 'shifts:manage_event' bundle.event.slug %}">Manage shifts</a>
+        <a class="btn btn-outline" href="{% url 'events:detail' bundle.event.slug %}" target="_blank" rel="noopener">Preview</a>
+        <button type="button" class="btn btn-primary" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+<section class="stats-panel">
+  <header>
+    <h2>Shift statistics {% visibility_cog_inline 'cms.shifts.stats' 'Shift statistics' %}</h2>
+    <form method="get" class="filters">
+      {{ stats_form.period }}
+      <button class="btn btn-outline" type="submit">Filter</button>
+    </form>
+  </header>
+  <table class="data-table compact">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Total shifts</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in stats %}
+        <tr>
+          <td>{{ row.display_name }}</td>
+          <td>{{ row.total }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="2" class="empty">No assignments in this period.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<!-- Assignment modal -->
+<div class="modal-overlay" id="modal-assign" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-assign-title">
+    <div class="modal-header">
+      <h2 id="modal-assign-title">Assign shift</h2>
+      <p class="sub" data-assign-summary></p>
+      <button type="button" class="iconbtn" data-close-modal aria-label="Close">&times;</button>
+    </div>
+    <form id="shift-assign-form" method="post" action="/cms/shifts/assign/__id__/" class="modal-form" hx-post="/cms/shifts/assign/__id__/" hx-target="#assignment-form-body" hx-swap="outerHTML" data-base-action="/cms/shifts/assign/__id__/">
+      {% csrf_token %}
+      <input type="hidden" name="shift_id" value="">
+      <div id="assignment-form-body">
+        {% include "shifts/partials/assignment_form_body.html" with assign_form=assign_form %}
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">Save assignment</button>
+        <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Standard shift modal -->
+<div class="modal-overlay" id="modal-create-template" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-template-title">
+    <div class="modal-header">
+      <h2 id="modal-template-title">New standard shift</h2>
+      <button type="button" class="iconbtn" data-close-modal aria-label="Close">&times;</button>
+    </div>
+    <form id="template-create-form" method="post" action="{% url 'shifts:template_create' %}" hx-post="{% url 'shifts:template_create' %}" hx-target="#template-form-body" hx-swap="outerHTML" class="modal-form">
+      {% csrf_token %}
+      <div id="template-form-body">
+        {% include "shifts/partials/template_form_body.html" with template_form=template_form %}
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">Save standard shift</button>
+        <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+
+
+
+

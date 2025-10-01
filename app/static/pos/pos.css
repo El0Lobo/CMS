@@ -65,7 +65,7 @@
   gap: 12px;
   max-height: calc(100vh - 260px);
   overflow: auto;
-  padding-bottom: 2px; /* room for scrollbar */
+  padding-bottom: 2px; 
 }
 .result-card {
   border: 1px solid var(--border);
@@ -274,12 +274,10 @@
 .btn.size { padding:6px 10px; border-radius:999px; font-size:.9rem; }
 .pos-category { margin-bottom:1.25rem; }
 .pos-cat-title { margin:0 0 .5rem; font-weight:700; opacity:.8; }
-/* Make the meta row hide when space is tight */
 @media (max-width: 640px) {
   #pos-root .cart-line .row.meta { display: none; }
 }
 #pos-root .cat-section { /* start collapsed */
-  /* no style needed */
 }
 #pos-root .cat-section .cat-body { display: block; }
 #pos-root .cat-section.is-collapsed .cat-body { display: none; }
