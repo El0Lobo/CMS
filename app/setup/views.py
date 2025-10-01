@@ -8,7 +8,9 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q
-
+from django.db.models.functions.text import StrIndex
+from django.db.models import F, Value, Case, When, CharField, Q
+from django.db.models.functions import Substr
 from .models import SiteSettings, OpeningHour, VisibilityRule
 from .forms import SettingsForm, TierFormSet, HourFormSet, GroupFormSet, VisibilityRuleForm
 
@@ -136,13 +138,48 @@ def setup_view(request):
 @login_required
 @user_passes_test(superuser_required)
 def visibility_list(request):
-    q = (request.GET.get("q") or "").strip()
-    rules = VisibilityRule.objects.all().order_by("key")
+    q = request.GET.get("q", "").strip()
+    sort = request.GET.get("sort", "key")
+    direction = request.GET.get("dir", "asc")
+
+    rules = VisibilityRule.objects.all()
+
     if q:
-        rules = rules.filter(Q(key__icontains=q) | Q(label__icontains=q) | Q(notes__icontains=q))
-    return render(request, "setup/visibility_list.html", {"rules": rules, "q": q})
+        rules = rules.filter(
+            Q(key__icontains=q) |
+            Q(label__icontains=q) |
+            Q(notes__icontains=q)
+        )
 
+    rules = rules.annotate(first_dot=StrIndex(F("key"), Value(".")))
+    rules = rules.annotate(after_first=Substr(F("key"), F("first_dot") + 1))
+    rules = rules.annotate(second_rel=StrIndex(F("after_first"), Value(".")))
+    rules = rules.annotate(
+        group_name=Case(
+            When(second_rel__gt=1,
+                 then=Substr(F("key"), F("first_dot") + 1, F("second_rel") - 1)),
+            default=Value(""),
+            output_field=CharField(),
+        )
+    )
 
+    allowed_sorts = {"key", "label", "is_enabled", "notes", "group"}  # add "group"
+
+    if sort not in allowed_sorts:
+        sort = "key"
+
+    # map "group" to the annotation name "group_name"
+    sort_field = "group_name" if sort == "group" else sort
+    sort_expr = f"-{sort_field}" if direction == "desc" else sort_field
+
+    rules = rules.order_by(sort_expr, "key")  # stable tiebreak
+
+    ctx = {"rules": rules, "q": q, "sort": sort, "direction": direction}
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, "setup/_visibility_table.html", ctx)
+
+    return render(request, "setup/visibility_list.html", ctx)
 @login_required
 @user_passes_test(superuser_required)
 def visibility_edit(request):

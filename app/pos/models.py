@@ -53,7 +53,6 @@ class Sale(models.Model):
 
 class SaleItem(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name="items")
-    # String FK to your menu variant model (app_label.ModelName)
     menu_variant = models.ForeignKey("menu.ItemVariant", on_delete=models.PROTECT)
 
     title_snapshot = models.CharField(max_length=160)

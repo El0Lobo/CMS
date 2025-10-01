@@ -42,8 +42,7 @@
 
   {# --- Impersonation banner --- #}
   {% if request.impersonating %}
-    <div class="impersonation-banner" role="status" aria-live="polite"
-         style="background:#ffd966; color:#222; padding:.5rem .75rem; display:flex; gap:.5rem; align-items:center;">
+    <div class="impersonation-banner" role="status" aria-live="polite" style="background:#ffd966; color:#222; padding:.7rem .75rem; right: 0; z-index: 10000; position: fixed; display:flex; gap:.5rem; align-items:center;">
       <strong>{% trans "Impersonating" %}:</strong>
       <span>{{ request.user.get_username }}</span>
       <span style="margin-left:auto;">
@@ -51,7 +50,7 @@
       </span>
     </div>
   {% endif %}
-
+ 
   <!-- mobile overlay -->
   <div class="backdrop" data-nav-close></div>
 

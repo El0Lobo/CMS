@@ -26,6 +26,18 @@ SECRET_KEY = env("SECRET_KEY")
 ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS").split(",") if h.strip()]
 CSRF_TRUSTED_ORIGINS = [u.strip() for u in env("CSRF_TRUSTED_ORIGINS").split(",") if u.strip()]
 
+FIELD_ENCRYPTION_KEYS = [
+    key.strip()
+    for key in env("FIELD_ENCRYPTION_KEYS", default="").split(",")
+    if key.strip()
+]
+
+_fallback_field_key = env("FIELD_ENCRYPTION_KEY", default="")
+if not FIELD_ENCRYPTION_KEYS and _fallback_field_key:
+    FIELD_ENCRYPTION_KEYS = [_fallback_field_key]
+
+FIELD_ENCRYPTION_KEY = FIELD_ENCRYPTION_KEYS[0] if FIELD_ENCRYPTION_KEYS else ""
+
 INSTALLED_APPS = [
     # Django
     "django.contrib.admin",
@@ -176,3 +188,5 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "guardian.backends.ObjectPermissionBackend",
 )
+
+

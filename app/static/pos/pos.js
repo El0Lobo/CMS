@@ -53,11 +53,11 @@
 
       // show categories on load (if endpoint exists)
       if (browse && browse.categories) {
-        renderBrowse(browse.categories);
+        renderBrowseGrouped(browse.categories);
       } else if (endpoints.browse) {
         // fallback fetch (in case Promise.all short-circuited)
         const b = await getJSON(endpoints.browse);
-        renderBrowse((b && b.categories) || []);
+        renderBrowseGrouped((b && b.categories) || []);
       }
     } catch (e) {
       console.error(e);
@@ -79,10 +79,11 @@
       });
     }
 
-    // Click result → add to cart (works for search results and browse cards)
+    // Clicks inside results area:
+    // - Toggle category collapse
+    // - Click size button (data-add-id = variant id)
     if (el.results) {
       el.results.addEventListener("click", (ev) => {
-        // toggle category collapse
         const hdr = ev.target.closest("[data-cat-toggle]");
         if (hdr) {
           hdr.parentElement.classList.toggle("is-collapsed");
@@ -162,8 +163,9 @@
       return;
     }
     try {
+      // NEW API SHAPE: { items: [{ id, name, variants: [{id, size, price}, ...] }, ...] }
       const data = await getJSON(endpoints.search + `?q=${encodeURIComponent(q)}`);
-      renderResults((data && data.results) || []);
+      renderSearchGrouped((data && data.items) || []);
     } catch (e) {
       console.error(e);
       toast("Search failed.", "error");
@@ -177,7 +179,7 @@
     }
     try {
       const data = await getJSON(endpoints.browse);
-      renderBrowse((data && data.categories) || []);
+      renderBrowseGrouped((data && data.categories) || []);
     } catch (e) {
       console.error(e);
       toast("Browse load failed.", "error");
@@ -233,28 +235,43 @@
   }
 
   // ---------- Rendering ----------
-  function renderResults(items) {
+  // Build a single item tile with variant/size buttons
+  function buildItemCard(item) {
+    const card = document.createElement("div");
+    card.className = "pos-item-card";
+    card.innerHTML = `
+      <div class="pos-item-head">
+        <div class="pos-item-title">${esc(item.name)}</div>
+      </div>
+      <div class="pos-variant-row"></div>
+    `;
+    const row = card.querySelector(".pos-variant-row");
+    (item.variants || []).forEach(v => {
+      const btn = document.createElement("button");
+      btn.className = "btn size";
+      btn.type = "button";
+      btn.setAttribute("data-add-id", v.id); // variant id used by addItem()
+      btn.textContent = `${v.size} — ${v.price}`;
+      row.appendChild(btn);
+    });
+    return card;
+  }
+
+  // Search results (flat list of items with variant buttons)
+  function renderSearchGrouped(items) {
     el.results.innerHTML = "";
     if (!items.length) {
       el.results.innerHTML = `<div class="empty">No items found</div>`;
       return;
     }
-    // results-grid: simple buttons/cards
-    for (const it of items) {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "result-card";
-      card.setAttribute("data-add-id", it.id);
-      card.innerHTML = `
-        <span class="title">${esc(it.title)}</span>
-        <span class="price">${esc(it.price)}</span>
-      `;
-      el.results.appendChild(card);
-    }
+    const grid = document.createElement("div");
+    grid.className = "results-grid";
+    items.forEach(item => grid.appendChild(buildItemCard(item)));
+    el.results.appendChild(grid);
   }
 
-  // NEW: categories with collapsible bodies
-  function renderBrowse(categories) {
+  // Browse categories → sections → grid of item cards
+  function renderBrowseGrouped(categories) {
     el.results.innerHTML = "";
     if (!categories.length) {
       el.results.innerHTML = `<div class="empty">No items available.</div>`;
@@ -273,24 +290,11 @@
         </div>
       `;
       const grid = sec.querySelector(".cat-grid");
-      for (const it of cat.items) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "result-card";
-        btn.setAttribute("data-add-id", it.id);
-        btn.innerHTML = `
-          <span class="title">${esc(it.title)}</span>
-          <span class="price">${esc(it.price)}</span>
-        `;
-        grid.appendChild(btn);
-      }
+      (cat.items || []).forEach(item => grid.appendChild(buildItemCard(item)));
       el.results.appendChild(sec);
     }
-
     // Optional: start collapsed
     // el.results.querySelectorAll(".cat-section").forEach(s => s.classList.add("is-collapsed"));
-
-    // Toggle handler is delegated in bindEvents (click on data-cat-toggle)
   }
 
   function renderQuickButtons(buttons) {
@@ -494,7 +498,7 @@
       right: "14px",
       bottom: "14px",
       background: type === "error" ? "#2a1111" : type === "success" ? "#0f2314" : "#121212",
-      color: "#eee",
+      color: "#eeeeeeff",
       border: "1px solid #333",
       padding: "10px 12px",
       borderRadius: "10px",

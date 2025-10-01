@@ -3,7 +3,6 @@
 {% block content %}
   <h1>Pos — {% if mode == 'create' %}Create{% else %}Edit{% endif %}</h1>
   <form class="form">
-    <!-- Replace with real Django forms later -->
     <label>Title</label><input placeholder="Title" value="{{ item.title|default:'' }}">
     <label>Slug</label><input placeholder="slug" value="{{ item.slug|default:'' }}">
     <label>Notes</label><textarea rows="4" placeholder="Notes">{{ item.notes|default:'' }}</textarea>

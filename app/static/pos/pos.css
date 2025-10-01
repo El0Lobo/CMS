@@ -267,7 +267,13 @@
 #pos-root .cart-line .line-total { font-variant-numeric: tabular-nums; }
 #pos-root .cart-line .line-total strong { font-weight: 800; }
 #pos-root .cart-line .remove { padding: .25rem .5rem; border-radius: 8px; }
-
+.pos-item-card { background:#05a9ac63; border-radius:12px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); display:flex; flex-direction:column; gap:8px; }
+.pos-item-head { display:flex; align-items:center; justify-content:space-between; }
+.pos-item-title { font-weight:600; }
+.pos-variant-row { display:flex; flex-wrap:wrap; gap:8px; }
+.btn.size { padding:6px 10px; border-radius:999px; font-size:.9rem; }
+.pos-category { margin-bottom:1.25rem; }
+.pos-cat-title { margin:0 0 .5rem; font-weight:700; opacity:.8; }
 /* Make the meta row hide when space is tight */
 @media (max-width: 640px) {
   #pos-root .cart-line .row.meta { display: none; }

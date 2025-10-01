@@ -134,6 +134,17 @@ def _variant_display_title(variant: ItemVariant) -> str:
     return f"{base} — {tail}"
 
 
+def _variant_size_label(v: ItemVariant) -> str:
+    """
+    Size/variant label for buttons inside an item tile.
+    Prefer explicit label; else derive from quantity + unit (e.g., '0.3 L').
+    """
+    if v.label:
+        return v.label
+    q = f"{v.quantity.normalize():g}" if hasattr(v.quantity, "normalize") else str(v.quantity)
+    return f"{q} {v.unit.code}"
+
+
 # === Views ===
 @method_decorator([login_required], name="dispatch")
 class IndexView(View):
@@ -146,11 +157,25 @@ class IndexView(View):
 
 @login_required
 def api_search_items(request):
+    """
+    Returns grouped items for search:
+    {
+      "items": [
+        {
+          "id": <item_id>, "name": "Latte",
+          "variants": [
+            {"id": <variant_id>, "size": "Small", "price": "2.80"},
+            ...
+          ]
+        },
+        ...
+      ]
+    }
+    """
     q = request.GET.get("q", "").strip()
 
-    qs = ItemVariant.objects.select_related("item", "unit", "item__category")
-    # Only public items
-    qs = qs.filter(item__visible_public=True)
+    qs = ItemVariant.objects.select_related("item", "unit", "item__category") \
+                            .filter(item__visible_public=True)
 
     if q:
         qs = qs.filter(
@@ -158,18 +183,81 @@ def api_search_items(request):
             djmodels.Q(label__icontains=q)
         )
 
-    results = []
+    items = {}
     for v in qs.order_by("item__name", "label")[:60]:
         # filter out sold-out parent items (your Item method)
         if v.item.is_sold_out():
             continue
-        results.append({
-            "id": v.id,  # variant pk
-            "title": _variant_display_title(v),
+        it = items.setdefault(v.item.id, {"id": v.item.id, "name": v.item.name, "variants": []})
+        it["variants"].append({
+            "id": v.id,
+            "size": _variant_size_quantity(v),
             "price": str(_money(v.price)),
         })
 
-    return JsonResponse({"results": results})
+    out = list(items.values())
+    # sort variants and items for stable ordering
+    for it in out:
+        it["variants"].sort(key=lambda x: x["size"].lower())
+    out.sort(key=lambda x: x["name"].lower())
+    return JsonResponse({"items": out})
+
+
+@login_required
+def api_browse_items(request):
+    """
+    Returns categories grouped by item with variants per item:
+    {
+      "categories": [
+        {
+          "id": <cat_id>, "name": "Coffee",
+          "items": [
+            {
+              "id": <item_id>, "name": "Latte",
+              "variants": [
+                {"id": <variant_id>, "size": "Small", "price": "2.80"},
+                ...
+              ]
+            },
+            ...
+          ]
+        },
+        ...
+      ]
+    }
+    """
+    qs = ItemVariant.objects.select_related("item", "unit", "item__category") \
+                            .filter(item__visible_public=True) \
+                            .order_by("item__category__name", "item__name", "label")
+
+    # cat_id -> {id, name, items: {item_id: {id, name, variants: []}}}
+    cats = {}
+    for v in qs:
+        if v.item.is_sold_out():
+            continue
+        cat = v.item.category
+        if not cat:
+            continue
+
+        c = cats.setdefault(cat.id, {"id": cat.id, "name": cat.name, "items": {}})
+        it = c["items"].setdefault(v.item.id, {"id": v.item.id, "name": v.item.name, "variants": []})
+        it["variants"].append({
+            "id": v.id,
+            "size": _variant_size_quantity(v),
+            "price": str(_money(v.price)),
+        })
+
+    # finalize: list-ify and sort
+    categories = []
+    for c in cats.values():
+        items_list = list(c["items"].values())
+        for it in items_list:
+            it["variants"].sort(key=lambda x: x["size"].lower())
+        items_list.sort(key=lambda x: x["name"].lower())
+        categories.append({"id": c["id"], "name": c["name"], "items": items_list})
+
+    categories.sort(key=lambda c: c["name"].lower())
+    return JsonResponse({"categories": categories})
 
 
 @login_required
@@ -361,41 +449,10 @@ def api_checkout(request):
     # clear cart
     _save_cart(request, {"lines": [], "order_discount": None})
     return JsonResponse({"ok": True, "sale_id": sale.id})
+def _variant_size_quantity(v):
+    # Return numeric quantity as a clean string, e.g. "0.3"
+    try:
+        return f"{v.quantity.normalize():g}"
+    except Exception:
+        return str(v.quantity)
 
-# app/pos/views.py (NEW)
-@login_required
-def api_browse_items(request):
-    """
-    Returns categories with visible, not-sold-out variants:
-    {
-    "categories": [
-        {"id": 3, "name": "Cocktails", "items": [{"id": 12, "title": "...", "price": "8.50"}, ...]},
-        ...
-    ]
-    }
-    """
-    qs = ItemVariant.objects.select_related("item", "unit", "item__category") \
-                            .filter(item__visible_public=True) \
-                            .order_by("item__category__name", "item__name", "label")
-
-    cats = {}  # cat_id -> {id, name, items: []}
-    for v in qs:
-        if v.item.is_sold_out():
-            continue
-        cat = v.item.category
-        if not cat:
-            continue
-        cid = cat.id
-        if cid not in cats:
-            cats[cid] = {"id": cid, "name": cat.name, "items": []}
-        cats[cid]["items"].append({
-            "id": v.id,
-            "title": _variant_display_title(v),
-            "price": str(_money(v.price)),
-        })
-
-    # Only keep categories that actually have items
-    categories = [c for c in cats.values() if c["items"]]
-    # Sort by name
-    categories.sort(key=lambda c: c["name"].lower())
-    return JsonResponse({"categories": categories})

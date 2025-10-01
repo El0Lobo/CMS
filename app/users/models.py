@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from app.core.encryption import EncryptedCharField, EncryptedDateField, EncryptedEmailField, EncryptedTextField
 
 User = settings.AUTH_USER_MODEL
 
@@ -63,19 +64,19 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
 
     # Identity
-    legal_name = models.CharField(max_length=200, blank=True)
-    chosen_name = models.CharField(max_length=200, blank=True)
-    pronouns = models.CharField(max_length=64, blank=True, help_text=_("e.g. she/her, he/him, they/them"))
-    birth_date = models.DateField(null=True, blank=True)  # replaces 'age'
+    legal_name = EncryptedCharField(max_length=200, blank=True)
+    chosen_name = EncryptedCharField(max_length=200, blank=True)
+    pronouns = EncryptedCharField(max_length=64, blank=True, help_text=_("e.g. she/her, he/him, they/them"))
+    birth_date = EncryptedDateField(null=True, blank=True)  # replaces 'age'
 
     # Contact
-    email = models.EmailField(blank=True)
-    phone = models.CharField(max_length=64, blank=True)
-    address = models.TextField(blank=True)
+    email = EncryptedEmailField(blank=True)
+    phone = EncryptedCharField(max_length=64, blank=True)
+    address = EncryptedTextField(blank=True)
 
     # Role/Duties
-    role_title = models.CharField(max_length=120, blank=True, help_text=_("Free-text role label, e.g. 'Bar lead'"))
-    duties = models.TextField(blank=True)
+    role_title = EncryptedCharField(max_length=120, blank=True, help_text=_("Free-text role label, e.g. 'Bar lead'"))
+    duties = EncryptedTextField(blank=True)
     primary_group = models.ForeignKey(
         Group,
         on_delete=models.SET_NULL,
@@ -124,3 +125,5 @@ class UserProfile(models.Model):
         if (today.month, today.day) < (self.birth_date.month, self.birth_date.day):
             years -= 1
         return years
+
+

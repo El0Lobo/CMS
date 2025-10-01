@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Group
 from django.core.validators import RegexValidator
-from django.db import models
+from app.core.encryption import EncryptedCharField, EncryptedEmailField, EncryptedTextField
 
 class SiteSettings(models.Model):
     class Mode(models.TextChoices):
@@ -12,23 +12,23 @@ class SiteSettings(models.Model):
 
     # General
     mode = models.CharField(max_length=10, choices=Mode.choices, default=Mode.VENUE)
-    org_name = models.CharField(max_length=200, blank=True)
+    org_name = EncryptedCharField(max_length=200, blank=True)
     logo = models.ImageField(upload_to="logos/", blank=True, null=True)
 
     # Address (structured)
-    address_street = models.CharField(max_length=200, blank=True)
-    address_number = models.CharField(max_length=20, blank=True)
-    address_postal_code = models.CharField(max_length=20, blank=True)
-    address_city = models.CharField(max_length=120, blank=True)
-    address_country = models.CharField(max_length=120, blank=True)
+    address_street = EncryptedCharField(max_length=200, blank=True)
+    address_number = EncryptedCharField(max_length=20, blank=True)
+    address_postal_code = EncryptedCharField(max_length=20, blank=True)
+    address_city = EncryptedCharField(max_length=120, blank=True)
+    address_country = EncryptedCharField(max_length=120, blank=True)
     address_autocomplete = models.BooleanField(
         default=False,
         help_text=_("Enable address autocomplete (requires JS integration)."),
     )
 
     # Contact / Socials
-    contact_email = models.EmailField(blank=True)
-    contact_phone = models.CharField(max_length=64, blank=True)
+    contact_email = EncryptedEmailField(blank=True)
+    contact_phone = EncryptedCharField(max_length=64, blank=True)
     website_url = models.URLField(blank=True)
     social_facebook = models.URLField(blank=True)
     social_instagram = models.URLField(blank=True)
@@ -40,7 +40,7 @@ class SiteSettings(models.Model):
     social_bandcamp = models.URLField(blank=True)
     social_linkedin = models.URLField(blank=True)
     social_mastodon = models.URLField(blank=True)
-    same_as = models.TextField(blank=True, help_text=_("schema.org sameAs: one URL per line"))
+    same_as = EncryptedTextField(blank=True, help_text=_("schema.org sameAs: one URL per line"))
 
     # schema.org-ish extras
     geo_lat = models.DecimalField(
@@ -99,7 +99,7 @@ class SiteSettings(models.Model):
 
     # Awareness team availability + single free-text contact
     awareness_team_available = models.BooleanField(default=False)
-    awareness_contact = models.CharField(
+    awareness_contact = EncryptedCharField(
         max_length=200,
         blank=True,
         help_text=_("Phone, email, URL, or a short instruction (free text)."),
@@ -171,3 +171,5 @@ class VisibilityRule(models.Model):
 
     def __str__(self):
         return self.label or self.key
+
+
