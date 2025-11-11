@@ -1,0 +1,39 @@
+<section class="page-block page-block--events layout-{{ props.layout|default:'grid' }}">
+  <div class="page-block__container">
+    {% if props.title %}<div class="page-block__header"><h2>{{ props.title }}</h2>{% if props.subtitle %}<p>{{ props.subtitle }}</p>{% endif %}</div>{% endif %}
+    <div class="page-events">
+      {% for event in events %}
+        <article class="page-events__card">
+          {% if event.hero_image %}
+            <div class="page-events__image" style="background-image:url('{{ event.hero_image }}');"></div>
+          {% endif %}
+          <div class="page-events__body">
+            <p class="page-events__meta">
+              {% if event.effective_start %}
+                <time datetime="{{ event.effective_start }}">{{ event.effective_start|date:"D, M j · H:i" }}</time>
+              {% endif %}
+              {% if event.recurrence.description %}
+                <span class="badge">{{ event.recurrence.description }}</span>
+              {% endif %}
+            </p>
+            <h3 class="page-events__title">
+              {% if props.open_mode == 'modal' %}
+                <button class="page-events__trigger" data-action="open-event" data-event-slug="{{ event.slug }}">{{ event.title }}</button>
+              {% elif event.url %}
+                <a href="{{ event.url }}">{{ event.title }}</a>
+              {% else %}
+                {{ event.title }}
+              {% endif %}
+            </h3>
+            {% if event.teaser %}<p class="page-events__teaser">{{ event.teaser }}</p>{% endif %}
+            {% if props.show_actions and event.url %}
+              <a class="btn btn-ghost" href="{{ event.url }}">Details</a>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <p class="muted">No events scheduled yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>

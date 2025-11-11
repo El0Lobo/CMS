@@ -1,7 +1,7 @@
 {% extends "cms/base_cms.html" %}
 {% load static %}
 
-{% block title %}Event Preview · {{ event.title }}{% endblock %}
+{% block title %}Event Preview &middot; {{ event.title }}{% endblock %}
 
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'events/events.css' %}">
@@ -24,20 +24,62 @@
     <img class="hero" src="{{ event.hero_image.url }}" alt="Poster for {{ event.title }}">
   {% endif %}
   <dl class="kv">
+    <dt>Type</dt><dd>{{ event.get_event_type_display }}</dd>
     <dt>Status</dt><dd>{{ event.get_status_display }}</dd>
-    <dt>Starts</dt><dd>{{ event.starts_at|date:"Y-m-d H:i" }}</dd>
-    <dt>Doors</dt><dd>{% if event.doors_at %}{{ event.doors_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</dd>
-    <dt>Ends</dt><dd>{% if event.ends_at %}{{ event.ends_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</dd>
-    <dt>Location</dt><dd>{{ event.venue_name }} · {{ event.venue_address }} {{ event.venue_postal_code }} {{ event.venue_city }} {{ event.venue_country }}</dd>
+    <dt>Recurrence</dt>
+    <dd>
+      {% if event.is_recurring %}
+        {{ event.recurrence_description }}
+        {% if event.recurrence_next_start_at %}
+          <div class="quiet">Next: {{ event.recurrence_next_start_at|date:"Y-m-d H:i" }}</div>
+        {% endif %}
+      {% elif event.recurrence_next_start_at %}
+        Next scheduled: {{ event.recurrence_next_start_at|date:"Y-m-d H:i" }}
+      {% else %}
+        Does not repeat
+      {% endif %}
+    </dd>
+    <dt>Starts</dt>
+    <dd>
+      {% if event.starts_at %}
+        {{ event.starts_at|date:"Y-m-d H:i" }}
+      {% elif event.recurrence_next_start_at %}
+        {{ event.recurrence_next_start_at|date:"Y-m-d H:i" }}
+      {% else %}
+        &mdash;
+      {% endif %}
+    </dd>
+    <dt>Upcoming</dt>
+    <dd>
+      {% if occurrences %}
+        <ul class="mini-list">
+          {% for occ in occurrences|slice:":6" %}
+            <li>{{ occ.start|date:"Y-m-d H:i" }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <span class="quiet">No scheduled dates</span>
+      {% endif %}
+    </dd>
+    <dt>Doors</dt><dd>{% if event.doors_at %}{{ event.doors_at|date:"Y-m-d H:i" }}{% else %}&mdash;{% endif %}</dd>
+    <dt>Ends</dt><dd>{% if event.ends_at %}{{ event.ends_at|date:"Y-m-d H:i" }}{% else %}&mdash;{% endif %}</dd>
+    <dt>Location</dt>
+    <dd>
+      {% if event.venue_name %}<strong>{{ event.venue_name }}</strong>{% endif %}
+      {% if event.venue_address %}
+        <div>{{ event.venue_address }}{% if event.venue_postal_code %}, {{ event.venue_postal_code }}{% endif %}{% if event.venue_city %} {{ event.venue_city }}{% endif %}</div>
+      {% endif %}
+      {% if event.venue_country %}<div>{{ event.venue_country }}</div>{% endif %}
+    </dd>
     <dt>Ticketing</dt>
     <dd>
       {% if event.is_free %}
         Free entry
       {% else %}
         {% if event.ticket_price_from %}
-          €{{ event.ticket_price_from }}{% if event.ticket_price_to %}–€{{ event.ticket_price_to }}{% endif %}
+          {{ event.ticket_price_from }}{% if event.ticket_price_to %}-{{ event.ticket_price_to }}{% endif %}
         {% else %}
-          —
+          &mdash;
         {% endif %}
       {% endif %}
       {% if event.ticket_url %}<div><a href="{{ event.ticket_url }}" target="_blank" rel="noopener">Ticket link</a></div>{% endif %}
@@ -61,7 +103,9 @@
       {% for slot in event.performers.all %}
         <li>
           <strong>{{ slot.display_name }}</strong>
-          {% if slot.slot_starts_at %}<span> · {{ slot.slot_starts_at|date:"H:i" }}{% if slot.slot_ends_at %}–{{ slot.slot_ends_at|date:"H:i" }}{% endif %}</span>{% endif %}
+          {% if slot.slot_starts_at %}
+            <span> &middot; {{ slot.slot_starts_at|date:"H:i" }}{% if slot.slot_ends_at %}-{{ slot.slot_ends_at|date:"H:i" }}{% endif %}</span>
+          {% endif %}
           {% if slot.performer_type %}<span class="quiet">({{ slot.performer_type }})</span>{% endif %}
         </li>
       {% empty %}

@@ -11,8 +11,15 @@ class EventPerformerInline(admin.TabularInline):
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ["title", "starts_at", "status", "requires_shifts", "featured"]
-    list_filter = ["status", "requires_shifts", "featured", "categories"]
+    list_display = ["title", "event_type", "starts_at", "status", "requires_shifts", "featured"]
+    list_filter = [
+        "event_type",
+        "status",
+        "recurrence_frequency",
+        "requires_shifts",
+        "featured",
+        "categories",
+    ]
     search_fields = ["title", "teaser"]
     inlines = [EventPerformerInline]
     filter_horizontal = ["categories"]

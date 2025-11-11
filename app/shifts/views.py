@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import calendar
 import json
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -18,23 +20,114 @@ from app.events.models import Event
 from app.shifts.forms import (
     EventShiftFormSet,
     ShiftAssignmentForm,
+    ShiftFilterForm,
     ShiftStatsFilterForm,
     ShiftTemplateForm,
 )
 from app.shifts.models import Shift, ShiftAssignment, ShiftTemplate
 
+
+def _add_months(dt, delta):
+    month = dt.month - 1 + delta
+    year = dt.year + month // 12
+    month = month % 12 + 1
+    day = min(dt.day, calendar.monthrange(year, month)[1])
+    return dt.replace(year=year, month=month, day=day)
+
 User = get_user_model()
 
 
 def _build_index_context(request):
-    upcoming_shifts_qs = (
+    filter_form = ShiftFilterForm(request.GET or None)
+    if filter_form.is_valid():
+        filters = filter_form.cleaned_data
+    else:
+        filters = {}
+
+    shifts_qs = (
         Shift.objects.select_related("event", "template")
         .prefetch_related("assignments__user__profile")
-        .filter(start_at__gte=timezone.now() - timedelta(days=7))
         .order_by("start_at")
     )
-    upcoming_shifts = list(upcoming_shifts_qs)
 
+    include_past = bool(filters.get("include_past"))
+    timeframe = filters.get("timeframe") or ShiftFilterForm.Timeframe.WEEK
+    offset = filters.get("period_offset") or 0
+    tz = timezone.get_current_timezone()
+    now = timezone.now()
+    local_now = timezone.localtime(now, tz)
+
+    start_local = None
+    end_local = None
+
+    if timeframe == ShiftFilterForm.Timeframe.WEEK:
+        base = (local_now - timedelta(days=local_now.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        start_local = base + timedelta(weeks=offset)
+        end_local = start_local + timedelta(weeks=1)
+    elif timeframe == ShiftFilterForm.Timeframe.MONTH:
+        base = local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_local = _add_months(base, offset)
+        end_local = _add_months(start_local, 1)
+    elif timeframe == ShiftFilterForm.Timeframe.YEAR:
+        base = local_now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_local = base.replace(year=base.year + offset)
+        end_local = start_local.replace(year=start_local.year + 1)
+
+    lower_bound = None
+    if include_past:
+        lower_bound = start_local
+    else:
+        if timeframe == ShiftFilterForm.Timeframe.ALL:
+            lower_bound = now
+        else:
+            candidates = [dt for dt in [now, start_local] if dt is not None]
+            lower_bound = max(candidates) if candidates else None
+
+    if timeframe == ShiftFilterForm.Timeframe.MONTH:
+        baseline = lower_bound if lower_bound is not None else start_local
+        if baseline is not None:
+            min_end = baseline + timedelta(days=28)
+            if end_local is None or end_local < min_end:
+                end_local = min_end
+
+    if lower_bound is not None:
+        shifts_qs = shifts_qs.filter(start_at__gte=lower_bound)
+
+    if end_local is not None:
+        shifts_qs = shifts_qs.filter(start_at__lte=end_local)
+
+    if timeframe == ShiftFilterForm.Timeframe.WEEK and start_local and end_local:
+        range_label = f"{start_local.strftime('%b %d')} – {(end_local - timedelta(days=1)).strftime('%b %d')}"
+    elif timeframe == ShiftFilterForm.Timeframe.MONTH and start_local:
+        range_label = start_local.strftime("%B %Y")
+    elif timeframe == ShiftFilterForm.Timeframe.YEAR and start_local:
+        range_label = start_local.strftime("%Y")
+    else:
+        range_label = "All shifts" if include_past else "Upcoming shifts"
+
+    show_navigation = timeframe != ShiftFilterForm.Timeframe.ALL
+    nav_prev = nav_next = None
+    if show_navigation:
+        def build_nav(delta: int) -> str:
+            params = request.GET.copy()
+            params["timeframe"] = timeframe
+            new_offset = offset + delta
+            if new_offset:
+                params["period_offset"] = str(new_offset)
+            elif "period_offset" in params:
+                del params["period_offset"]
+            return f"{request.path}?{params.urlencode()}"
+
+        nav_prev = build_nav(-1)
+        nav_next = build_nav(1)
+
+    timeframe_label = dict(ShiftFilterForm.Timeframe.choices).get(timeframe, "")
+
+    upcoming_shifts = list(shifts_qs)
+
+    # Build simple assignment badges on each shift
     assignee_statuses = {
         ShiftAssignment.Status.ASSIGNED,
         ShiftAssignment.Status.COMPLETED,
@@ -45,16 +138,17 @@ def _build_index_context(request):
             if assignment.status not in assignee_statuses:
                 continue
             badges.append({
-                'name': assignment.display_name,
-                'user_id': assignment.user_id,
+                "name": assignment.display_name,
+                "user_id": assignment.user_id,
             })
         shift.assignment_badges = badges
 
-
+    # Stats filter + bounds
     stats_form = ShiftStatsFilterForm(request.GET or None)
     stats_form.is_valid()
     since = stats_form.get_bounds()
 
+    # Assignment stats
     assignments = ShiftAssignment.objects.select_related("shift", "user")
     if since:
         assignments = assignments.filter(assigned_at__gte=since)
@@ -66,35 +160,50 @@ def _build_index_context(request):
     )
 
     user_ids = [row["user_id"] for row in stats_data if row["user_id"]]
-    users = {u.id: u for u in User.objects.filter(id__in=user_ids).select_related("profile")}
+    users = {
+        u.id: u
+        for u in User.objects.filter(id__in=user_ids).select_related("profile")
+    }
 
     def _display_name(user):
         if not user:
-            return '�'
-        profile = getattr(user, 'profile', None)
+            return "�"
+        profile = getattr(user, "profile", None)
         if profile:
-            chosen = (getattr(profile, 'chosen_name', '') or '').strip()
+            chosen = (getattr(profile, "chosen_name", "") or "").strip()
             if chosen:
                 return chosen
-            legal = (getattr(profile, 'legal_name', '') or '').strip()
+            legal = (getattr(profile, "legal_name", "") or "").strip()
             if legal:
                 return legal
-        full_name = (getattr(user, 'get_full_name', lambda: '')() or '').strip()
+        full_name = (getattr(user, "get_full_name", lambda: "")() or "").strip()
         if full_name:
             return full_name
-        username = getattr(user, 'get_username', lambda: str(getattr(user, 'pk', '')))()
-        return username or str(getattr(user, 'pk', ''))
+        username = getattr(user, "get_username", lambda: str(getattr(user, "pk", "")))()
+        return username or str(getattr(user, "pk", ""))
 
     stats = [
-        {"user_id": row["user_id"], "total": row["total"], "display_name": _display_name(users.get(row["user_id"]))}
+        {
+            "user_id": row["user_id"],
+            "total": row["total"],
+            "display_name": _display_name(users.get(row["user_id"])),
+        }
         for row in stats_data
     ]
 
+    # Forms
     assign_form = ShiftAssignmentForm()
-    assign_form.fields['user'].queryset = User.objects.all()  # or filter as needed
+    assign_form.fields["user"].queryset = User.objects.all()  # adjust if you need filtering
+
     template_form = ShiftTemplateForm()
     templates = ShiftTemplate.objects.order_by("order", "name")
+    template_edit_forms = {
+        tmpl.id: ShiftTemplateForm(instance=tmpl, prefix=f"tmpl-{tmpl.id}")
+        for tmpl in templates
+    }
+    template_forms = [(tmpl, template_edit_forms[tmpl.id]) for tmpl in templates]
 
+    # Which shifts the current user already has
     taken_shift_ids = set()
     if request.user.is_authenticated:
         taken_shift_ids = set(
@@ -108,53 +217,82 @@ def _build_index_context(request):
             ).values_list("shift_id", flat=True)
         )
 
-    template_edit_forms = {
-        tmpl.id: ShiftTemplateForm(instance=tmpl, prefix=f"tmpl-{tmpl.id}")
-        for tmpl in templates
-    }
-    template_forms = [(tmpl, template_edit_forms[tmpl.id]) for tmpl in templates]
-
-    event_ids = {shift.event_id for shift in upcoming_shifts}
+    # Group shifts by event (and fetch events efficiently)
+    event_ids = {s.event_id for s in upcoming_shifts if s.event_id}
     event_map = {
-        event.id: event
-        for event in Event.objects.filter(pk__in=event_ids)
+        e.id: e
+        for e in Event.objects.filter(pk__in=event_ids)
         .select_related("created_by", "updated_by")
         .prefetch_related("categories", "performers__band")
     }
 
-    events_by_id = {}
+    events_by_key = {}
     events_with_shifts = []
     for shift in upcoming_shifts:
-        event = event_map.get(shift.event_id, shift.event)
-        entry = events_by_id.get(event.id)
+        event = event_map.get(shift.event_id, getattr(shift, "event", None))
+        if not event:
+            continue
+        occurrence_date = None
+        if shift.start_at:
+            occurrence_date = timezone.localtime(shift.start_at).date()
+        key = (event.id, occurrence_date)
+        entry = events_by_key.get(key)
         if not entry:
-            entry = {"event": event, "shifts": []}
-            events_by_id[event.id] = entry
+            entry = {
+                "event": event,
+                "shifts": [],
+                "occurrence_date": occurrence_date,
+                "occurrence_start": shift.start_at,
+            }
+            events_by_key[key] = entry
             events_with_shifts.append(entry)
+        else:
+            if shift.start_at and (entry["occurrence_start"] is None or shift.start_at < entry["occurrence_start"]):
+                entry["occurrence_start"] = shift.start_at
         entry["shifts"].append(shift)
 
     for entry in events_with_shifts:
+        if entry["occurrence_start"]:
+            entry["occurrence_label"] = timezone.localtime(entry["occurrence_start"]).strftime("%a %d.%m.%Y %H:%M")
+        elif entry["occurrence_date"]:
+            entry["occurrence_label"] = entry["occurrence_date"].strftime("%a %d.%m.%Y")
+        else:
+            entry["occurrence_label"] = "Unscheduled"
+
+    # Build per-event assign options (ALWAYS define `options`)
+    for entry in events_with_shifts:
         options = []
         for s in entry["shifts"]:
-            try:
-                start_label = timezone.localtime(s.start_at).strftime('%H:%M')
-                end_label = timezone.localtime(s.end_at).strftime('%H:%M')
-            except Exception:
-                start_label = s.start_at.strftime('%H:%M') if hasattr(s.start_at, 'strftime') else ''
-                end_label = s.end_at.strftime('%H:%M') if hasattr(s.end_at, 'strftime') else ''
-            if start_label and end_label:
-                label = f"{s.title} ({start_label}-{end_label})"
-            else:
-                label = s.title
-            options.append({'id': s.id, 'label': label, 'title': s.title})
-    entry['assign_options_json'] = json.dumps(options)
-    entry['has_shift_options'] = bool(options)
+            title = getattr(s, "title", None) or str(s)
 
+            try:
+                start_label = timezone.localtime(s.start_at).strftime("%H:%M")
+            except Exception:
+                start_label = s.start_at.strftime("%H:%M") if hasattr(s.start_at, "strftime") else ""
+
+            try:
+                end_label = timezone.localtime(s.end_at).strftime("%H:%M")
+            except Exception:
+                end_label = s.end_at.strftime("%H:%M") if hasattr(s.end_at, "strftime") else ""
+
+            label = f"{title} ({start_label}-{end_label})" if start_label and end_label else title
+            options.append({"id": s.id, "label": label, "title": title})
+
+        # Safe JSON (won't crash on dates/decimals)
+        entry["assign_options_json"] = json.dumps(options, default=str)
+        entry["has_shift_options"] = bool(options)
 
     return {
         "shifts": upcoming_shifts,
         "events_with_shifts": events_with_shifts,
         "assign_form": assign_form,
+        "shift_filter_form": filter_form,
+        "shift_filter_range_label": range_label,
+        "shift_filter_nav_prev_url": nav_prev,
+        "shift_filter_nav_next_url": nav_next,
+        "shift_filter_nav_show": show_navigation,
+        "shift_filter_timeframe_label": timeframe_label,
+        "shift_period_offset": offset,
         "stats_form": stats_form,
         "stats": stats,
         "taken_shift_ids": taken_shift_ids,
@@ -163,7 +301,6 @@ def _build_index_context(request):
         "template_edit_forms": template_edit_forms,
         "template_forms": template_forms,
     }
-
 
 @login_required
 def index(request: HttpRequest) -> HttpResponse:

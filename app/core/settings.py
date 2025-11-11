@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     "django_otp",
     "django_otp.plugins.otp_totp",
     "django_htmx",
+    "ckeditor",
+    "ckeditor_uploader",
 
     # Project apps
     "app.core",
@@ -142,6 +144,35 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# WYSIWYG / CKEditor
+CKEDITOR_UPLOAD_PATH = "uploads/ckeditor/"
+CKEDITOR_ALLOW_NONIMAGE_FILES = True
+CKEDITOR_IMAGE_BACKEND = "pillow"
+CKEDITOR_CONFIGS = {
+    "default": {
+        "toolbar": "full",
+        "extraPlugins": ",".join(
+            [
+                "uploadimage",
+                "uploadfile",
+                "embed",
+                "autoembed",
+                "mediaembed",
+                "codesnippet",
+                "justify",
+                "autogrow",
+            ]
+        ),
+        "removePlugins": "stylesheetparser",
+        "height": 400,
+        "width": "100%",
+        "tabSpaces": 4,
+        "forcePasteAsPlainText": False,
+        "autoGrow_onStartup": True,
+        "embed_provider": "//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}",
+    }
+}
+
 # Whitenoise + default file storage
 STORAGES = {
     "default": {  # used for uploads (ImageField/FileField)
@@ -150,7 +181,11 @@ STORAGES = {
         # "OPTIONS": {"location": MEDIA_ROOT, "base_url": MEDIA_URL},
     },
     "staticfiles": {  # used for collectstatic
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
     },
 }
 
@@ -188,5 +223,3 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "guardian.backends.ObjectPermissionBackend",
 )
-
-

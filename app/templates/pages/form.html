@@ -1,12 +1,159 @@
 {% extends "cms/base_cms.html" %}
+{% load static %}
 {% block title %}Pages · {% if mode == 'create' %}Create{% else %}Edit{% endif %}{% endblock %}
+
+{% block extra_head %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'pages/builder.css' %}">
+{% endblock %}
+
 {% block content %}
-  <h1>Pages — {% if mode == 'create' %}Create{% else %}Edit{% endif %}</h1>
-  <form class="form">
-    <!-- Replace with real Django forms later -->
-    <label>Title</label><input placeholder="Title" value="{{ item.title|default:'' }}">
-    <label>Slug</label><input placeholder="slug" value="{{ item.slug|default:'' }}">
-    <label>Notes</label><textarea rows="4" placeholder="Notes">{{ item.notes|default:'' }}</textarea>
-    <div style="margin-top:1rem;"><a class="btn" href="javascript:alert('Submit not wired yet')">Save</a> <a class="btn" href="/cms/pages/">Cancel</a></div>
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+    <div>
+      <h1 style="margin:0;">{% if mode == 'create' %}Create page{% else %}Edit page{% endif %}</h1>
+      {% if page %}
+        <p class="muted" style="margin:.25rem 0 0;">Last updated {{ page.updated_at|date:"M d, Y H:i" }}</p>
+      {% endif %}
+    </div>
+    <div>
+      {% if page and page.get_absolute_url %}
+        <a class="btn btn-sm" href="{{ page.get_absolute_url }}" target="_blank" rel="noopener">View live</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <form id="page-form" method="post" enctype="multipart/form-data" class="form" style="margin-top:1.5rem;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-error" role="alert">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+    {{ form.blocks }}
+    <div style="display:none;">
+      {{ form.body }}
+    </div>
+
+    <div class="card" style="padding:1.25rem; margin-bottom:1.25rem;">
+      <div class="grid" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+        <div>
+          <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+          {{ form.title }}
+          {% if form.title.errors %}
+            <div class="field-error">{{ form.title.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <label for="{{ form.slug.id_for_label }}" class="form-label">Slug</label>
+          {{ form.slug }}
+          <p class="hint">Used in the URL, e.g. <code>/pages/&lt;slug&gt;/</code>.</p>
+          {% if form.slug.errors %}
+            <div class="field-error">{{ form.slug.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+          {{ form.status }}
+        </div>
+        <div>
+          <label for="{{ form.navigation_order.id_for_label }}" class="form-label">Navigation order</label>
+          {{ form.navigation_order }}
+        </div>
+        <div>
+          <label class="form-label checkbox">{{ form.is_visible }} Visible</label>
+          <p class="hint">Keep disabled while drafting.</p>
+        </div>
+        <div>
+          <label class="form-label checkbox">{{ form.show_in_navigation }} Show in navigation</label>
+        </div>
+      </div>
+
+      <div style="margin-top:1.25rem;">
+        <label for="{{ form.summary.id_for_label }}" class="form-label">Summary</label>
+        {{ form.summary }}
+        {% if form.summary.errors %}
+          <div class="field-error">{{ form.summary.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <div style="margin-top:1.25rem;">
+        <label for="{{ form.hero_image.id_for_label }}" class="form-label">Hero image</label>
+        {{ form.hero_image }}
+        {% if page and page.hero_image %}
+          <p class="hint">Current: <a href="{{ page.hero_image.url }}" target="_blank" rel="noopener">download</a></p>
+        {% endif %}
+        {% if form.hero_image.errors %}
+          <div class="field-error">{{ form.hero_image.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <section id="page-builder"
+             class="page-builder"
+             style="margin-bottom:1.5rem;">
+      <div class="page-builder__columns">
+        <aside class="page-builder__library" aria-label="Block library">
+          <h2>Blocks</h2>
+          <p class="muted">Drag or click to add sections.</p>
+          <div class="builder-library-list" id="builder-library"></div>
+        </aside>
+        <div class="page-builder__workspace">
+          <div class="builder-blocks">
+            <header class="builder-blocks__header">
+              <h2>Layout</h2>
+              <p class="muted">Reorder blocks to change the page flow.</p>
+            </header>
+            <ul class="builder-blocks__list" id="builder-block-list"></ul>
+          </div>
+          <div class="builder-preview">
+            <header class="builder-preview__header">
+              <div>
+                <h2>Preview</h2>
+                <p class="muted">Updates automatically as you edit.</p>
+              </div>
+              <div class="builder-preview__actions">
+                <button type="button" class="btn btn-sm" id="builder-refresh-preview">Refresh</button>
+              </div>
+            </header>
+            <div class="builder-preview__canvas">
+              <iframe id="builder-preview-frame" title="Page preview" sandbox="allow-same-origin allow-scripts allow-forms" style="width:100%;height:100%;border:0;border-radius:10px;background:#0b1118;"></iframe>
+            </div>
+          </div>
+        </div>
+        <aside class="page-builder__settings" aria-label="Block settings">
+          <header>
+            <h2>Settings</h2>
+            <p class="muted">Select a block to edit its content.</p>
+          </header>
+          <div id="builder-settings"></div>
+        </aside>
+      </div>
+    </section>
+
+    <div id="asset-browser" class="asset-browser is-hidden" aria-hidden="true">
+      <div class="asset-browser__overlay" data-asset-close></div>
+      <div class="asset-browser__panel" role="dialog" aria-modal="true" aria-labelledby="asset-browser-title" tabindex="-1">
+        <header class="asset-browser__header">
+          <h2 id="asset-browser-title">Choose an asset</h2>
+          <button type="button" class="asset-browser__close" data-asset-close aria-label="Close asset browser">×</button>
+        </header>
+        <p class="muted" id="asset-browser-subtitle"></p>
+        <div class="asset-browser__grid" id="asset-browser-list"></div>
+      </div>
+    </div>
+
+    <div class="form-actions" style="margin-top:1.5rem; display:flex; gap:.75rem; flex-wrap:wrap;">
+      <button type="submit" class="btn btn-primary" id="builder-save-btn">Save</button>
+      <button type="button" class="btn btn-secondary" id="builder-preview-btn">Preview in place</button>
+      <a class="btn" href="{% url 'pages_index' %}">Cancel</a>
+    </div>
   </form>
+{% endblock %}
+
+{% block extra_body %}
+  {{ block.super }}
+  <script>
+    window.__PAGE_BUILDER__ = {{ builder_boot|safe }};
+  </script>
+  <script type="module" src="{% static 'pages/builder.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,16 @@
+{% extends "cms/base_cms.html" %}
+{% block title %}Preview error{% endblock %}
+{% block content %}
+<article class="card">
+  <h1>Preview could not be generated</h1>
+  <p>Please fix the errors below and try again.</p>
+  <ul>
+    {% for field, errors in form.errors.items %}
+      <li><strong>{{ form.fields[field].label|default:field }}:</strong> {{ errors|join:", " }}</li>
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+      <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+</article>
+{% endblock %}

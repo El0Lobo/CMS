@@ -1,23 +1,45 @@
 {% extends "cms/base_cms.html" %}
 {% block title %}Pages · CMS{% endblock %}
 {% block content %}
-<h1>Pages</h1>
-<div class="toolbar">
-  <a class="btn" href="/cms/pages/create/">+ New</a>
-  <input placeholder="Search (not wired yet)" style="padding:.5rem;border-radius:8px;border:1px solid var(--line);background:#0f1419;color:#e9f1f2;width:240px">
-</div>
-{% if rows %}
-<table class="tbl">
-  <thead><tr><th>title</th><th>slug</th><th>updated</th></tr></thead>
-  <tbody>
-    {% for r in rows %}
-    <tr onclick="window.location='/cms/pages/{{ r.slug }}/edit/'" style="cursor:pointer">
-      <td>{{ r.title }}</td><td>{{ r.slug }}</td><td>{{ r.updated }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-  <div class="empty">Nothing here yet. Click “New”.</div>
-{% endif %}
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+    <h1 style="margin:0;">Pages</h1>
+    <a class="btn btn-primary" href="{% url 'pages_create' %}">+ New page</a>
+  </div>
+
+  {% if pages %}
+    <div class="table-wrapper" style="margin-top:1.5rem;">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Slug</th>
+            <th>Status</th>
+            <th>Visible</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for page in pages %}
+            <tr onclick="window.location='{% url 'pages_edit' slug=page.slug %}'" style="cursor:pointer;">
+              <td>{{ page.title }}</td>
+              <td>{{ page.slug }}</td>
+              <td>{{ page.get_status_display }}</td>
+              <td>
+                {% if page.is_visible %}
+                  {% if page.show_in_navigation %}<span class="badge badge-success">Nav</span>{% else %}<span class="badge">Hidden nav</span>{% endif %}
+                {% else %}
+                  <span class="badge badge-warning">Draft</span>
+                {% endif %}
+              </td>
+              <td>{{ page.updated_at|date:"M d, Y H:i" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty" style="margin-top:2rem;">
+      <p>No pages yet. Start by creating one.</p>
+    </div>
+  {% endif %}
 {% endblock %}

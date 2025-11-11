@@ -1,8 +1,31 @@
 <div class="event-summary">
   <dl class="kv">
     <dt>Status</dt><dd>{{ event.get_status_display }}</dd>
+    <dt>Type</dt><dd>{{ event.get_event_type_display }}</dd>
+    <dt>Recurrence</dt>
+    <dd>
+      {% if event.is_recurring %}
+        {{ event.recurrence_description }}
+        {% if event.recurrence_next_start_at %}
+          <div class="quiet">Next: {{ event.recurrence_next_start_at|date:"D d.m.Y H:i" }}</div>
+        {% endif %}
+      {% elif event.recurrence_next_start_at %}
+        Next scheduled: {{ event.recurrence_next_start_at|date:"D d.m.Y H:i" }}
+      {% else %}
+        Does not repeat
+      {% endif %}
+    </dd>
     <dt>Doors</dt><dd>{% if event.doors_at %}{{ event.doors_at|date:"D d.m.Y H:i" }}{% else %}&mdash;{% endif %}</dd>
-    <dt>Starts</dt><dd>{{ event.starts_at|date:"D d.m.Y H:i" }}</dd>
+    <dt>Starts</dt>
+    <dd>
+      {% if event.starts_at %}
+        {{ event.starts_at|date:"D d.m.Y H:i" }}
+      {% elif event.recurrence_next_start_at %}
+        {{ event.recurrence_next_start_at|date:"D d.m.Y H:i" }}
+      {% else %}
+        &mdash;
+      {% endif %}
+    </dd>
     <dt>Ends</dt><dd>{% if event.ends_at %}{{ event.ends_at|date:"D d.m.Y H:i" }}{% else %}&mdash;{% endif %}</dd>
     <dt>Curfew</dt><dd>{% if event.curfew_at %}{{ event.curfew_at|date:"D d.m.Y H:i" }}{% else %}&mdash;{% endif %}</dd>
     <dt>Location</dt>

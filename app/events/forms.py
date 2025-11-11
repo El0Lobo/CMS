@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import calendar
 from datetime import datetime, timedelta
 
 from django import forms
+from django.db import models
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 from django.utils.text import slugify
 
 from app.bands.models import Band
-from app.events.models import Event, EventPerformer
+from app.events.models import Event, EventCategory, EventPerformer
 from app.setup.models import SiteSettings
 from app.shifts.models import ShiftTemplate
 
@@ -22,6 +24,7 @@ class EventForm(forms.ModelForm):
         model = Event
         fields = [
             "title",
+            "event_type",
             "slug",
             "status",
             "hero_image",
@@ -33,6 +36,11 @@ class EventForm(forms.ModelForm):
             "starts_at",
             "ends_at",
             "curfew_at",
+            "recurrence_frequency",
+            "recurrence_weekday",
+            "recurrence_week_of_month",
+            "recurrence_day_of_month",
+            "recurrence_next_start_at",
             "ticket_url",
             "ticket_price_from",
             "ticket_price_to",
@@ -56,6 +64,9 @@ class EventForm(forms.ModelForm):
             "starts_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "ends_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "curfew_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "categories": forms.CheckboxSelectMultiple(),
+            "recurrence_day_of_month": forms.NumberInput(attrs={"min": 1, "max": 31}),
+            "recurrence_next_start_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "standard_shifts": forms.CheckboxSelectMultiple(),
         }
 
@@ -63,6 +74,20 @@ class EventForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.user = user
         tz = timezone.get_current_timezone()
+
+        for key in [
+            "doors_at",
+            "starts_at",
+            "ends_at",
+            "curfew_at",
+            "recurrence_frequency",
+            "recurrence_weekday",
+            "recurrence_week_of_month",
+            "recurrence_day_of_month",
+            "recurrence_next_start_at",
+        ]:
+            if key in self.fields:
+                self.fields[key].required = False
 
         def to_naive(value):
             if not value:
@@ -134,7 +159,9 @@ class EventForm(forms.ModelForm):
         self.fields["slug"].help_text = (
             "Leave blank to auto-generate from the title."
         )
-        self.fields["categories"].widget.attrs.update({"data-allow-search": "true"})
+        if "categories" in self.fields:
+            self.fields["categories"].queryset = EventCategory.objects.order_by("name")
+            self.fields["categories"].widget.attrs.update({"data-allow-search": "true"})
         if "standard_shifts" in self.fields:
             widget = self.fields["standard_shifts"].widget or forms.CheckboxSelectMultiple()
             if not isinstance(widget, forms.CheckboxSelectMultiple):
@@ -142,12 +169,28 @@ class EventForm(forms.ModelForm):
             widget.choices = self.fields["standard_shifts"].choices
             self.fields["standard_shifts"].widget = widget
             self.fields["standard_shifts"].required = False
-            if not self.instance.pk and queryset.exists():
-                self.initial.setdefault("standard_shifts", list(queryset.values_list("id", flat=True)))
-                self.initial.setdefault("requires_shifts", True)
-                self.fields["requires_shifts"].initial = True
+            if not self.instance.pk:
+                selected_ids = []
+                last_event = None
+                if user:
+                    last_event = (
+                        Event.objects.filter(created_by=user)
+                        .order_by("-created_at")
+                        .first()
+                    )
+                if not last_event:
+                    last_event = Event.objects.order_by("-created_at").first()
+                if last_event:
+                    selected_ids = list(
+                        last_event.standard_shifts.values_list("id", flat=True)
+                    )
+                    if selected_ids:
+                        self.initial.setdefault("standard_shifts", selected_ids)
+                        if last_event.requires_shifts:
+                            self.initial.setdefault("requires_shifts", True)
+                            self.fields["requires_shifts"].initial = True
 
-        for key in ["doors_at", "starts_at", "ends_at", "curfew_at"]:
+        for key in ["doors_at", "starts_at", "ends_at", "curfew_at", "recurrence_next_start_at"]:
             value = self.initial.get(key)
             if hasattr(value, "tzinfo") and value is not None:
                 self.initial[key] = value.replace(tzinfo=None)
@@ -158,6 +201,7 @@ class EventForm(forms.ModelForm):
                 [
                     "title",
                     "status",
+                    "event_type",
                     "slug",
                     "categories",
                     "featured",
@@ -170,6 +214,17 @@ class EventForm(forms.ModelForm):
                 "Schedule",
                 ["doors_at", "starts_at", "ends_at", "curfew_at"],
                 {"open": True},
+            ),
+            (
+                "Recurrence",
+                [
+                    "recurrence_frequency",
+                    "recurrence_weekday",
+                    "recurrence_week_of_month",
+                    "recurrence_day_of_month",
+                    "recurrence_next_start_at",
+                ],
+                {},
             ),
             (
                 "Location",
@@ -231,6 +286,289 @@ class EventForm(forms.ModelForm):
             if qs.filter(slug=slug).exists():
                 raise forms.ValidationError("Slug already in use.")
         return slug
+
+    def clean(self):
+        cleaned = super().clean()
+
+        event_type = cleaned.get("event_type") or Event.EventType.PUBLIC
+        starts_at = cleaned.get("starts_at")
+        freq = cleaned.get("recurrence_frequency") or Event.RecurrenceFrequency.NONE
+        weekday = cleaned.get("recurrence_weekday")
+        week_of_month = cleaned.get("recurrence_week_of_month")
+        day_of_month = cleaned.get("recurrence_day_of_month")
+        next_start = cleaned.get("recurrence_next_start_at")
+
+        tz = timezone.get_current_timezone()
+        reference_start = starts_at or next_start
+        aware_start = None
+        if reference_start:
+            if timezone.is_naive(reference_start):
+                aware_start = timezone.make_aware(reference_start, tz)
+            else:
+                aware_start = timezone.localtime(reference_start, tz)
+        now_local = timezone.now().astimezone(tz)
+
+        if event_type != Event.EventType.INTERNAL and not starts_at:
+            self.add_error("starts_at", "Start date/time is required for non-internal events.")
+
+        if day_of_month is not None and not 1 <= day_of_month <= 31:
+            self.add_error("recurrence_day_of_month", "Choose a day between 1 and 31.")
+
+        if freq in {
+            Event.RecurrenceFrequency.WEEKLY,
+            Event.RecurrenceFrequency.BIWEEKLY,
+            Event.RecurrenceFrequency.MONTHLY_WEEKDAY,
+        }:
+            if weekday is None:
+                self.add_error(
+                    "recurrence_weekday",
+                    "Select a weekday for this recurrence pattern.",
+                )
+        else:
+            cleaned["recurrence_weekday"] = None
+
+        if freq == Event.RecurrenceFrequency.MONTHLY_DATE:
+            if day_of_month is None:
+                self.add_error(
+                    "recurrence_day_of_month",
+                    "Select the day of the month for this recurrence.",
+                )
+        else:
+            cleaned["recurrence_day_of_month"] = (
+                day_of_month if freq == Event.RecurrenceFrequency.MONTHLY_DATE else None
+            )
+
+        if freq == Event.RecurrenceFrequency.MONTHLY_WEEKDAY:
+            if week_of_month is None:
+                self.add_error(
+                    "recurrence_week_of_month",
+                    "Select which week of the month applies.",
+                )
+        else:
+            cleaned["recurrence_week_of_month"] = None
+
+        if freq != Event.RecurrenceFrequency.NONE and not (starts_at or next_start):
+            self.add_error(
+                "recurrence_next_start_at",
+                "Provide either a start date/time or the next scheduled start for recurring events.",
+            )
+
+        if freq == Event.RecurrenceFrequency.NONE:
+            cleaned["recurrence_weekday"] = None
+            cleaned["recurrence_week_of_month"] = None
+            cleaned["recurrence_day_of_month"] = None
+            cleaned["recurrence_next_start_at"] = next_start
+
+        if event_type == Event.EventType.INTERNAL and freq == Event.RecurrenceFrequency.NONE:
+            # Internal, non-recurring events can omit scheduling entirely.
+            pass
+
+        # Align start time to selected weekday for weekly/biweekly recurrences
+        if freq in {
+            Event.RecurrenceFrequency.WEEKLY,
+            Event.RecurrenceFrequency.BIWEEKLY,
+        }:
+            weekday = cleaned.get("recurrence_weekday")
+            start_val = cleaned.get("starts_at")
+            if start_val and weekday is not None:
+                start_aware = start_val
+                if timezone.is_naive(start_aware):
+                    start_aware = timezone.make_aware(start_aware, tz)
+                else:
+                    start_aware = timezone.localtime(start_aware, tz)
+
+                # Only adjust when the chosen weekday does not match
+                now_local = timezone.now().astimezone(tz)
+                if start_aware.weekday() != weekday or start_aware <= now_local:
+                    now = timezone.now().astimezone(tz)
+                    time_part = start_aware.time()
+                    candidate = timezone.make_aware(
+                        datetime.combine(now.date(), time_part),
+                        tz,
+                    )
+                    # Advance to the requested weekday, ensuring it's not in the past
+                    while candidate.weekday() != weekday or candidate <= now:
+                        candidate += timedelta(days=1)
+
+                    cleaned["starts_at"] = candidate.astimezone(tz).replace(tzinfo=None)
+                    cleaned["recurrence_next_start_at"] = cleaned["starts_at"]
+
+                # Snap schedule to site opening hours if available
+                try:
+                    cfg = SiteSettings.get_solo()
+                except Exception:
+                    cfg = None
+
+                if cfg:
+                    slot = (
+                        cfg.hours.filter(
+                            weekday=weekday,
+                            closed=False,
+                            open_time__isnull=False,
+                            close_time__isnull=False,
+                        ).first()
+                    )
+                else:
+                    slot = None
+
+                if slot:
+                    def _aware(value):
+                        if not value:
+                            return None
+                        if timezone.is_naive(value):
+                            return timezone.make_aware(value, tz)
+                        return timezone.localtime(value, tz)
+
+                    def _delta(a, b, default):
+                        if a and b:
+                            aware_a = _aware(a)
+                            aware_b = _aware(b)
+                            if aware_a and aware_b:
+                                diff = aware_a - aware_b
+                                if diff.total_seconds() >= 0:
+                                    return diff
+                        return default
+
+                    door_existing = cleaned.get("doors_at")
+                    start_existing = cleaned.get("starts_at")
+                    end_existing = cleaned.get("ends_at")
+                    curfew_existing = cleaned.get("curfew_at")
+
+                    door_delta = timedelta(hours=0)
+                    start_delta = _delta(start_existing, door_existing, timedelta(hours=1))
+                    end_delta = _delta(end_existing, start_existing, timedelta(hours=3))
+                    curfew_delta = _delta(curfew_existing, end_existing, timedelta(0))
+
+                    def _next_occurrence(time_value):
+                        base_time = datetime.combine(now_local.date(), time_value)
+                        candidate = timezone.make_aware(base_time, tz)
+                        while candidate.weekday() != weekday or candidate <= now_local:
+                            candidate += timedelta(days=1)
+                        return candidate
+
+                    doors_local = _next_occurrence(slot.open_time)
+                    close_local = _next_occurrence(slot.close_time)
+                    if slot.close_time <= slot.open_time:
+                        close_local += timedelta(days=1)
+
+                    starts_local = doors_local + start_delta
+                    if starts_local > close_local:
+                        starts_local = doors_local
+
+                    ends_local = starts_local + end_delta
+                    if ends_local > close_local:
+                        ends_local = close_local
+
+                    curfew_local = ends_local + curfew_delta
+                    if curfew_local < ends_local:
+                        curfew_local = ends_local
+
+                    cleaned["doors_at"] = doors_local.replace(tzinfo=None)
+                    cleaned["starts_at"] = starts_local.replace(tzinfo=None)
+                    cleaned["ends_at"] = ends_local.replace(tzinfo=None)
+                    cleaned["curfew_at"] = curfew_local.replace(tzinfo=None)
+                    cleaned["recurrence_next_start_at"] = starts_local.replace(tzinfo=None)
+
+                else:
+                    # Without scheduled hours we just align based on deltas and the computed start
+                    door_existing = cleaned.get("doors_at")
+                    start_existing = cleaned.get("starts_at")
+                    end_existing = cleaned.get("ends_at")
+                    curfew_existing = cleaned.get("curfew_at")
+
+                    normalized_start = cleaned.get("starts_at")
+                    normalized_doors = cleaned.get("doors_at")
+                    normalized_end = cleaned.get("ends_at")
+                    normalized_curfew = cleaned.get("curfew_at")
+
+                    def _naive(value):
+                        if not value:
+                            return None
+                        if timezone.is_naive(value):
+                            return value
+                        return timezone.localtime(value, tz).replace(tzinfo=None)
+
+                    normalized_start = _naive(normalized_start)
+                    normalized_doors = _naive(normalized_doors)
+                    normalized_end = _naive(normalized_end)
+                    normalized_curfew = _naive(normalized_curfew)
+
+                    if normalized_doors and normalized_start and normalized_doors > normalized_start:
+                        normalized_doors = normalized_start
+
+                    cleaned["starts_at"] = normalized_start
+                    cleaned["doors_at"] = normalized_doors
+                    cleaned["ends_at"] = normalized_end
+                    cleaned["curfew_at"] = normalized_curfew
+                    cleaned["recurrence_next_start_at"] = normalized_start
+
+
+        if aware_start and freq == Event.RecurrenceFrequency.MONTHLY_DATE and day_of_month is not None:
+            try:
+                candidate = timezone.make_aware(
+                    datetime(
+                        year=now_local.year,
+                        month=now_local.month,
+                        day=day_of_month,
+                        hour=aware_start.hour,
+                        minute=aware_start.minute,
+                        second=aware_start.second,
+                    ),
+                    tz,
+                )
+            except ValueError:
+                last_day = calendar.monthrange(now_local.year, now_local.month)[1]
+                candidate = timezone.make_aware(
+                    datetime(
+                        year=now_local.year,
+                        month=now_local.month,
+                        day=last_day,
+                        hour=aware_start.hour,
+                        minute=aware_start.minute,
+                        second=aware_start.second,
+                    ),
+                    tz,
+                )
+            if candidate <= now_local:
+                next_month = _add_months(candidate, 1)
+                candidate = next_month
+
+            cleaned["starts_at"] = candidate.replace(tzinfo=None)
+            cleaned["recurrence_next_start_at"] = cleaned["starts_at"]
+
+        if (
+            aware_start
+            and freq == Event.RecurrenceFrequency.MONTHLY_WEEKDAY
+            and week_of_month is not None
+            and weekday is not None
+        ):
+            first_of_month = now_local.replace(
+                day=1,
+                hour=aware_start.hour,
+                minute=aware_start.minute,
+                second=aware_start.second,
+            )
+            candidate = first_of_month
+            while candidate.weekday() != weekday:
+                candidate += timedelta(days=1)
+            candidate += timedelta(weeks=week_of_month - 1)
+            if candidate <= now_local:
+                next_month = _add_months(candidate, 1).replace(day=1)
+                candidate = next_month
+                while candidate.weekday() != weekday:
+                    candidate += timedelta(days=1)
+                candidate += timedelta(weeks=week_of_month - 1)
+
+            cleaned["starts_at"] = candidate.replace(tzinfo=None)
+            cleaned["recurrence_next_start_at"] = cleaned["starts_at"]
+
+        # For non-recurring events normalize to naive values
+        for field_name in ["doors_at", "starts_at", "ends_at", "curfew_at", "recurrence_next_start_at"]:
+            value = cleaned.get(field_name)
+            if value and not timezone.is_naive(value):
+                cleaned[field_name] = timezone.localtime(value, timezone.get_current_timezone()).replace(tzinfo=None)
+
+        return cleaned
 
     def save(self, commit: bool = True):
         inst = super().save(commit=False)
@@ -341,3 +679,53 @@ EventPerformerFormSet = inlineformset_factory(
     extra=1,
     can_delete=True,
 )
+
+
+class EventCategoryForm(forms.ModelForm):
+    class Meta:
+        model = EventCategory
+        fields = ["name", "slug", "description", "color", "is_active"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "color": forms.TextInput(attrs={"type": "color"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["slug"].required = False
+        self.fields["slug"].help_text = "Leave blank to auto-generate from the name."
+
+    def save(self, commit: bool = True):
+        inst = super().save(commit=False)
+        if not inst.slug:
+            inst.slug = slugify(inst.name)[:140]
+        if commit:
+            inst.save()
+        return inst
+
+
+class EventFilterForm(forms.Form):
+    class Timeframe(models.TextChoices):
+        WEEK = "week", "This week"
+        MONTH = "month", "This month"
+        YEAR = "year", "This year"
+        ALL = "all", "All"
+
+    q = forms.CharField(required=False, label="Search title")
+    timeframe = forms.ChoiceField(choices=Timeframe.choices, initial=Timeframe.MONTH)
+    include_past = forms.BooleanField(
+        required=False, initial=False, label="Include past events"
+    )
+    period_offset = forms.IntegerField(required=False, widget=forms.HiddenInput(), initial=0)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "q" in self.fields:
+            self.fields["q"].widget.attrs.setdefault("placeholder", "Search title...")
+            self.fields["q"].widget.attrs.setdefault("type", "search")
+def _add_months(dt: datetime, delta: int) -> datetime:
+    month = dt.month - 1 + delta
+    year = dt.year + month // 12
+    month = month % 12 + 1
+    day = min(dt.day, calendar.monthrange(year, month)[1])
+    return dt.replace(year=year, month=month, day=day)

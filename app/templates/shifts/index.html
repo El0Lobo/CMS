@@ -23,6 +23,48 @@
   </div>
 </section>
 
+<section class="card filter-card">
+  <form id="shifts-filter-form" method="get" class="filter-form">
+    <input type="hidden" name="period_offset" value="{{ shift_period_offset }}">
+    <div class="filter-nav">
+      {% if shift_filter_nav_show %}
+        <a class="nav-arrow" href="{{ shift_filter_nav_prev_url }}" aria-label="Previous {{ shift_filter_timeframe_label|default:'period' }}">&#8592;</a>
+      {% endif %}
+      <span class="range-label">{{ shift_filter_range_label }}</span>
+      {% if shift_filter_nav_show %}
+        <a class="nav-arrow" href="{{ shift_filter_nav_next_url }}" aria-label="Next {{ shift_filter_timeframe_label|default:'period' }}">&#8594;</a>
+      {% endif %}
+    </div>
+    <div class="filter-grid">
+      <label>
+        <span class="label">Timeframe</span>
+        {{ shift_filter_form.timeframe }}
+      </label>
+      <label class="checkbox">
+        {{ shift_filter_form.include_past }}
+        <span>Include past shifts</span>
+      </label>
+      <div class="filter-actions">
+        <button class="btn btn-outline" type="submit">Apply filters</button>
+        <a class="btn btn-outline" href="{% url 'shifts:index' %}">Reset</a>
+      </div>
+    </div>
+  </form>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("shifts-filter-form");
+      if (!form) return;
+      const timeframe = form.querySelector('[name="timeframe"]');
+      const offset = form.querySelector('[name="period_offset"]');
+      if (timeframe && offset) {
+        timeframe.addEventListener("change", function () {
+          offset.value = 0;
+        });
+      }
+    });
+  </script>
+</section>
+
 <section class="templates-panel">
   <header>
     <h2>Standard shifts</h2>
@@ -90,63 +132,81 @@
 {% endfor %}
 
 {% if events_with_shifts %}
-  {% for bundle in events_with_shifts %}
-    <section class="event-shift-group">
-      <header class="event-shift-header">
-        <div class="event-header-main">
-          <button type="button" class="event-link" data-open-modal="#modal-event-{{ bundle.event.id }}">{{ bundle.event.title }}</button>
-        </div>
-        <div class="event-header-meta nav-inline">
-          <span class="event-date">{{ bundle.event.starts_at|date:"D d.m.Y" }}</span>
-          <a class="btn btn-outline" href="{% url 'shifts:manage_event' bundle.event.slug %}">Manage event</a>
-          {% visibility_cog_inline "cms.shifts.assign" "Assign shift controls" %}
-          {% if bundle.has_shift_options and request.user|allow_for:"cms.shifts.assign" %}
-            <button class="btn btn-outline" data-open-modal="#modal-assign" data-event-id="{{ bundle.event.id }}" data-event-title="{{ bundle.event.title }}" data-assign-options='{{ bundle.assign_options_json|escape }}'>Assign shifts</button>
-          {% endif %}
-        </div>
-      </header>
-      <table class="data-table compact">
-        <thead>
-          <tr>
-            <th>Shift</th>
-            <th>Schedule</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for shift in bundle.shifts %}
-            <tr>
-              <td>{{ shift.title }}</td>
-              <td>{{ shift.start_at|date:"H:i" }} - {{ shift.end_at|date:"H:i" }}</td>
-              <td class="row-actions">
-                {% with badges=shift.assignment_badges %}
-                  {% if badges %}
-                    <div class="assignment-badges">
-                      {% for badge in badges %}
-                        {% if request.user.is_authenticated and badge.user_id == request.user.id %}
-                          <span class="pill pill-green">You</span>
-                        {% else %}
-                          <span class="pill pill-assignee">{{ badge.name }}</span>
-                        {% endif %}
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                {% endwith %}
-                {% if shift.allow_signup and shift.id not in taken_shift_ids and not shift.is_full %}
-                  <form method="post" action="{% url 'shifts:take' shift.id %}" style="display:inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline">Take shift</button>
-                  </form>
+  <section class="card shift-schedule">
+    <h2>Shift coverage</h2>
+    <div class="shift-grid">
+      {% for bundle in events_with_shifts %}
+        <article class="shift-card">
+          <header class="shift-card-header">
+            <div class="shift-card-title">
+              <button type="button" class="event-link" data-open-modal="#modal-event-{{ bundle.event.id }}">{{ bundle.event.title }}</button>
+              {% if bundle.event.is_recurring %}<span class="pill">Recurring</span>{% endif %}
+              {% if bundle.event.requires_shifts %}<span class="pill pill-green">Shifts enabled</span>{% endif %}
+            </div>
+            <div class="shift-card-meta">
+              <span class="quiet">
+                {% if bundle.occurrence_label %}
+                  {{ bundle.occurrence_label }}
+                {% elif bundle.event.starts_at %}
+                  {{ bundle.event.starts_at|date:"D, M d · H:i" }}
+                {% elif bundle.event.recurrence_next_start_at %}
+                  {{ bundle.event.recurrence_next_start_at|date:"D, M d · H:i" }}
+                {% else %}
+                  Unscheduled
                 {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </section>
-  {% endfor %}
+              </span>
+            </div>
+          </header>
+          <div class="shift-card-body">
+            {% if bundle.shifts %}
+              <ul class="shift-list">
+                {% for shift in bundle.shifts %}
+                  <li class="shift-slot">
+                    <div class="slot-main">
+                      <strong>{{ shift.title }}</strong>
+                      <span class="quiet">{{ shift.start_at|date:"H:i" }} – {{ shift.end_at|date:"H:i" }}</span>
+                    </div>
+                    <div class="slot-side">
+                      {% with badges=shift.assignment_badges %}
+                        {% if badges %}
+                          <div class="assignment-badges">
+                            {% for badge in badges %}
+                              {% if request.user.is_authenticated and badge.user_id == request.user.id %}
+                                <span class="pill pill-green">You</span>
+                              {% else %}
+                                <span class="pill pill-assignee">{{ badge.name }}</span>
+                              {% endif %}
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      {% endwith %}
+                      {% if shift.allow_signup and shift.id not in taken_shift_ids and not shift.is_full %}
+                        <form method="post" action="{% url 'shifts:take' shift.id %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-outline">Take shift</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="quiet">No shifts defined for this event in the selected window.</p>
+            {% endif %}
+          </div>
+          <footer class="shift-card-footer">
+            <a class="btn btn-outline" href="{% url 'shifts:manage_event' bundle.event.slug %}">Manage shifts</a>
+            {% visibility_cog_inline "cms.shifts.assign" "Assign shift controls" %}
+            {% if bundle.has_shift_options and request.user|allow_for:"cms.shifts.assign" %}
+              <button class="btn btn-outline" data-open-modal="#modal-assign" data-event-id="{{ bundle.event.id }}" data-event-title="{{ bundle.event.title }}" data-assign-options='{{ bundle.assign_options_json|escape }}'>Assign shifts</button>
+            {% endif %}
+          </footer>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
 {% else %}
-  <p class="empty">No upcoming shifts yet.</p>
+  <p class="empty">No shifts in this timeframe.</p>
 {% endif %}
 
 {% for bundle in events_with_shifts %}
@@ -239,9 +299,3 @@
   </div>
 </div>
 {% endblock %}
-
-
-
-
-
-

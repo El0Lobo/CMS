@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from django import forms
+from django.db import models
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 
@@ -144,6 +145,18 @@ class ShiftStatsFilterForm(forms.Form):
         if days <= 0:
             return None
         return timezone.now() - timedelta(days=days)
+
+
+class ShiftFilterForm(forms.Form):
+    class Timeframe(models.TextChoices):
+        WEEK = "week", "This week"
+        MONTH = "month", "This month"
+        YEAR = "year", "This year"
+        ALL = "all", "All"
+
+    timeframe = forms.ChoiceField(choices=Timeframe.choices, initial=Timeframe.WEEK)
+    include_past = forms.BooleanField(required=False, initial=False, label="Include past shifts")
+    period_offset = forms.IntegerField(required=False, widget=forms.HiddenInput(), initial=0)
 class ShiftTemplateForm(forms.ModelForm):
     class Meta:
         model = ShiftTemplate

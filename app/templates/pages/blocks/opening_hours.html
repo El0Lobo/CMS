@@ -1,0 +1,30 @@
+<section class="page-block page-block--hours">
+  <div class="page-block__container">
+    {% if props.title or props.subtitle %}
+      <div class="page-block__header">
+        {% if props.title %}<h2>{{ props.title }}</h2>{% endif %}
+        {% if props.subtitle %}<p>{{ props.subtitle }}</p>{% endif %}
+      </div>
+    {% endif %}
+    <ul class="page-hours">
+      {% for entry in hours.entries %}
+        <li class="page-hours__row">
+          <span class="page-hours__weekday">{{ entry.weekday }}</span>
+          {% if entry.closed %}
+            <span class="page-hours__status">Closed</span>
+          {% else %}
+            <span class="page-hours__status">{{ entry.open_time }} – {{ entry.close_time }}</span>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="page-hours__row"><span class="muted">Opening times not configured yet.</span></li>
+      {% endfor %}
+    </ul>
+    {% if props.show_contact and site.contact %}
+      <p class="page-hours__contact">
+        {% if site.contact.phone %}Phone: <a href="tel:{{ site.contact.phone }}">{{ site.contact.phone }}</a>{% endif %}
+        {% if site.contact.email %} · Email: <a href="mailto:{{ site.contact.email }}">{{ site.contact.email }}</a>{% endif %}
+      </p>
+    {% endif %}
+  </div>
+</section>

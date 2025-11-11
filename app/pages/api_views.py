@@ -1,0 +1,207 @@
+from __future__ import annotations
+
+import json
+from typing import Any, Dict
+
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.text import slugify
+from django.views.decorators.http import require_http_methods
+
+from . import data_sources
+from .blocks import render_blocks
+from .models import Page
+from .navigation import get_navigation_entries
+from .serializers import serialize_page
+
+
+def _absolute_media(request, url: str | None) -> str | None:
+    if not url:
+        return None
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    return request.build_absolute_uri(url)
+
+
+@login_required
+def events_feed(request):
+    limit = int(request.GET.get("limit", 6))
+    include_internal = request.GET.get("include_internal") == "1"
+    events = data_sources.get_events(limit=limit, include_internal=include_internal)
+    # Upgrade media URLs to absolute paths for API consumers
+    for event in events:
+        event["hero_image"] = _absolute_media(request, event.get("hero_image"))
+        event["url"] = request.build_absolute_uri(event["url"]) if event.get("url") else None
+    return JsonResponse({"events": events})
+
+
+@login_required
+def menu_snapshot(request):
+    slugs = request.GET.getlist("slug") or None
+    categories = data_sources.get_menu_structure(slugs)
+    return JsonResponse({"categories": categories})
+
+
+@login_required
+def site_context(request):
+    data: Dict[str, Any] = data_sources.get_site_context()
+    data["logo"] = _absolute_media(request, data.get("logo"))
+    return JsonResponse(data)
+
+
+@login_required
+def assets_library(request):
+    kinds = request.GET.getlist("kind") or None
+    assets = data_sources.get_public_assets(kinds)
+    for asset in assets:
+        asset["url"] = _absolute_media(request, asset.get("url"))
+    return JsonResponse({"assets": assets})
+
+
+def _parse_json(request) -> Dict[str, Any]:
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("Invalid JSON payload") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("JSON payload must be an object")
+    return payload
+
+
+def _normalise_blocks(raw):
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return raw
+    raise ValueError("blocks must be an array")
+
+
+def _apply_page_payload(page: Page, data: Dict[str, Any], *, user) -> None:
+    simple_fields = [
+        "title",
+        "summary",
+        "status",
+        "is_visible",
+        "show_in_navigation",
+        "navigation_order",
+        "body",
+    ]
+    for field in simple_fields:
+        if field in data:
+            setattr(page, field, data[field])
+
+    if "slug" in data:
+        slug_value = data["slug"]
+        page.slug = slugify(slug_value) or (slugify(page.title) if page.title else page.slug or "page")
+
+    if "blocks" in data:
+        page.blocks = _normalise_blocks(data["blocks"])
+
+    if "navigation_order" in data:
+        try:
+            page.navigation_order = int(data["navigation_order"])
+        except (TypeError, ValueError):
+            page.navigation_order = 0
+
+    if page.status == Page.Status.PUBLISHED and not page.published_at:
+        page.published_at = timezone.now()
+    elif page.status != Page.Status.PUBLISHED:
+        page.published_at = None
+
+    page.updated_by = user
+    if page.pk is None:
+        page.created_by = user
+
+
+@login_required
+@require_http_methods(["GET", "PATCH"])
+def page_detail(request, slug):
+    page = get_object_or_404(Page, slug=slug)
+    if request.method == "GET":
+        return JsonResponse(serialize_page(page, request))
+
+    try:
+        payload = _parse_json(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    try:
+        _apply_page_payload(page, payload, user=request.user)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    try:
+        page.save()
+    except Exception as exc:  # pragma: no cover - database constraint errors
+        return HttpResponseBadRequest(str(exc))
+    return JsonResponse(serialize_page(page, request))
+
+
+@login_required
+@require_http_methods(["POST"])
+def page_create(request):
+    try:
+        payload = _parse_json(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    page = Page()
+    try:
+        _apply_page_payload(page, payload, user=request.user)
+        page.save()
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+    except Exception as exc:  # pragma: no cover
+        return HttpResponseBadRequest(str(exc))
+    return JsonResponse(serialize_page(page, request), status=201)
+
+
+@login_required
+@require_http_methods(["POST"])
+def preview_html(request):
+    try:
+        payload = _parse_json(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    blocks = payload.get("blocks") or []
+    try:
+        blocks = _normalise_blocks(blocks)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    rendered_body = render_blocks(blocks, request=request, extra_context={"preview": True})
+
+    preview_page = Page(
+        title=payload.get("title") or payload.get("page", {}).get("title") or "Preview",
+        slug=slugify(payload.get("slug") or payload.get("page", {}).get("slug") or "preview"),
+        body=payload.get("body") or "",
+        blocks=blocks,
+        status=payload.get("status") or Page.Status.DRAFT,
+        is_visible=True,
+        show_in_navigation=True,
+    )
+
+    nav_entries = get_navigation_entries()
+    context = {
+        "page": preview_page,
+        "page_rendered": rendered_body,
+        "nav_label": preview_page.title,
+        "is_preview": True,
+        "public_pages": [
+            {
+                "title": entry.title,
+                "slug": entry.slug,
+                "url": entry.url,
+                "pretty_slug": entry.pretty_slug,
+                "pretty_url": entry.pretty_url,
+            }
+            for entry in nav_entries
+        ],
+    }
+
+    html = render_to_string("public/page_detail.html", context, request=request)
+    return JsonResponse({"html": html})

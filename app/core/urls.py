@@ -24,6 +24,7 @@ urlpatterns = [
     # -------- CMS --------
     path("cms/", include("app.cms.urls")),
     path("cms/pages/", include("app.pages.urls")),
+    path("cms/ckeditor/", include("ckeditor_uploader.urls")),
     path("cms/blog/", include("app.blog.urls")),
     path("cms/events/", include("app.events.urls")),
     path("cms/shifts/", include("app.shifts.urls")),

@@ -1,0 +1,19 @@
+<section class="page-block page-block--gallery columns-{{ props.columns|default:3 }}">
+  <div class="page-block__container">
+    {% if props.title %}<div class="page-block__header"><h2>{{ props.title }}</h2>{% if props.subtitle %}<p>{{ props.subtitle }}</p>{% endif %}</div>{% endif %}
+    <div class="page-gallery">
+      {% for item in items %}
+        <figure class="page-gallery__item">
+          {% if item.image_resolved %}
+            <img src="{{ item.image_resolved }}" alt="{{ item.alt|default:item.caption }}">
+          {% endif %}
+          {% if item.caption %}
+            <figcaption>{{ item.caption }}</figcaption>
+          {% endif %}
+        </figure>
+      {% empty %}
+        <p class="muted">No images yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>

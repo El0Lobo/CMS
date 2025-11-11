@@ -90,10 +90,25 @@ def page_detail(request, slug):
     Page = _get_model("app.pages", "Page") or _get_model("app.cms", "Page")
     if Page:
         page = get_object_or_404(Page, slug=slug)
-        return render(request, "public/page_detail.html", {"page": page})
+        rendered = getattr(page, "render_content", lambda **kwargs: getattr(page, "body", ""))(request=request)
+        return render(
+            request,
+            "public/page_detail.html",
+            {
+                "page": page,
+                "page_rendered": rendered,
+            },
+        )
     # If no Page model, render a minimal stand-in
     fake = type("Page", (), {"title": slug.replace("-", " ").title(), "body": "<p>Content coming soon.</p>", "created_at": timezone.now()})
-    return render(request, "public/page_detail.html", {"page": fake})
+    return render(
+        request,
+        "public/page_detail.html",
+        {
+            "page": fake,
+            "page_rendered": getattr(fake, "body", ""),
+        },
+    )
 
 from django.shortcuts import render
 from app.menu.models import Category

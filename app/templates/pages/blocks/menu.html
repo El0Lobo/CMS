@@ -1,0 +1,17 @@
+<section class="page-block page-block--menu">
+  <div class="page-block__container">
+    {% if props.title %}
+      <div class="page-block__header">
+        <h2>{{ props.title }}</h2>
+        {% if props.subtitle %}<p>{{ props.subtitle }}</p>{% endif %}
+      </div>
+    {% endif %}
+    <div class="page-menu">
+      {% for category in categories %}
+        {% include "pages/blocks/partials/menu_section.html" with category=category props=props %}
+      {% empty %}
+        <p class="muted">No menu items available.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>

@@ -289,11 +289,13 @@ class Shift(models.Model):
     class Meta:
         ordering = ["start_at", "title"]
         unique_together = (
-            ("event", "template", "template_segment", "template_staff_position"),
+            ("event", "template", "template_segment", "template_staff_position", "start_at"),
         )
 
     def __str__(self) -> str:  # pragma: no cover - trivial
-        return f"{self.title} ({self.start_at:%Y-%m-%d %H:%M})"
+        if self.start_at:
+            return f"{self.title} ({self.start_at:%Y-%m-%d %H:%M})"
+        return self.title
 
     @property
     def slots_taken(self) -> int:
@@ -363,4 +365,3 @@ class ShiftAssignment(models.Model):
             return full_name
         username = getattr(self.user, 'get_username', lambda: str(self.user_id))()
         return username or str(self.user_id)
-

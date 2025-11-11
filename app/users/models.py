@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -115,15 +115,43 @@ class UserProfile(models.Model):
         except Exception:
             return str(self.user_id)
 
-    @property
-    def age_years(self):
-        """Compute age from birth_date; returns int or None."""
-        if not self.birth_date:
-            return None
+
+
+@property
+def age_years(self):
+    """Compute age from birth_date; returns int or None if unknown/invalid."""
+    bd = getattr(self, "birth_date", None)
+    if not bd:
+        return None
+
+    # Normalize to a date
+    if isinstance(bd, str):
+        s = bd.strip()
+        try:
+            # Fast path for ISO format
+            bd = date.fromisoformat(s)
+        except ValueError:
+            # Fallback explicit parse (same format; keeps Python 3.10 happy)
+            try:
+                bd = datetime.strptime(s, "%Y-%m-%d").date()
+            except ValueError:
+                return None
+    elif isinstance(bd, datetime):
+        bd = bd.date()
+    elif not isinstance(bd, date):
+        return None
+
+    # Use Django's localdate when available (falls back to date.today)
+    try:
+        from django.utils import timezone
+        today = timezone.localdate()
+    except Exception:
         today = date.today()
-        years = today.year - self.birth_date.year
-        if (today.month, today.day) < (self.birth_date.month, self.birth_date.day):
-            years -= 1
-        return years
+
+    years = today.year - bd.year
+    if (today.month, today.day) < (bd.month, bd.day):
+        years -= 1
+    return years
+
 
 

@@ -1,0 +1,35 @@
+<footer class="page-block page-block--footer">
+  <div class="page-block__container">
+    <div class="page-footer">
+      <div class="page-footer__brand">
+        {% if site.logo %}
+          <img src="{{ site.logo }}" alt="{{ site.name }}">
+        {% endif %}
+        {% if site.name %}<strong>{{ site.name }}</strong>{% endif %}
+      </div>
+      {% if links %}
+        <div class="page-footer__links">
+          {% for link in links %}
+            <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if legal %}
+        <div class="page-footer__legal">
+          {% for link in legal %}
+            <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if props.show_social %}
+        <div class="page-footer__socials">
+          {% for key, url in site.social.items %}
+            {% if url %}
+              <a href="{{ url }}" target="_blank" rel="noopener">{{ key|title }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</footer>

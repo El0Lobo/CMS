@@ -32,6 +32,10 @@ class EventCategory(models.Model):
 class Event(models.Model):
     """Represents a public- or internal-facing happening at the venue."""
 
+    class EventType(models.TextChoices):
+        PUBLIC = "public", "Public"
+        INTERNAL = "internal", "Internal"
+
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         SCHEDULED = "scheduled", "Scheduled"
@@ -39,10 +43,36 @@ class Event(models.Model):
         ARCHIVED = "archived", "Archived"
         CANCELLED = "cancelled", "Cancelled"
 
+    class RecurrenceFrequency(models.TextChoices):
+        NONE = "none", "Does not repeat"
+        WEEKLY = "weekly", "Weekly"
+        BIWEEKLY = "biweekly", "Every other week"
+        MONTHLY_DATE = "monthly_date", "Monthly (specific date)"
+        MONTHLY_WEEKDAY = "monthly_weekday", "Monthly (weekday, e.g. 1st Thursday)"
+
+    class Weekday(models.IntegerChoices):
+        MONDAY = 0, "Monday"
+        TUESDAY = 1, "Tuesday"
+        WEDNESDAY = 2, "Wednesday"
+        THURSDAY = 3, "Thursday"
+        FRIDAY = 4, "Friday"
+        SATURDAY = 5, "Saturday"
+        SUNDAY = 6, "Sunday"
+
+    class WeekOfMonth(models.IntegerChoices):
+        FIRST = 1, "First"
+        SECOND = 2, "Second"
+        THIRD = 3, "Third"
+        FOURTH = 4, "Fourth"
+        FIFTH = 5, "Fifth"
+
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
     status = models.CharField(
         max_length=12, choices=Status.choices, default=Status.DRAFT
+    )
+    event_type = models.CharField(
+        max_length=20, choices=EventType.choices, default=EventType.PUBLIC
     )
     hero_image = models.ImageField(
         upload_to="events/hero/", blank=True, null=True
@@ -68,9 +98,36 @@ class Event(models.Model):
     )
 
     doors_at = models.DateTimeField(blank=True, null=True)
-    starts_at = models.DateTimeField()
+    starts_at = models.DateTimeField(blank=True, null=True)
     ends_at = models.DateTimeField(blank=True, null=True)
     curfew_at = models.DateTimeField(blank=True, null=True)
+    recurrence_frequency = models.CharField(
+        max_length=32,
+        choices=RecurrenceFrequency.choices,
+        default=RecurrenceFrequency.NONE,
+    )
+    recurrence_weekday = models.PositiveSmallIntegerField(
+        choices=Weekday.choices,
+        blank=True,
+        null=True,
+        help_text="Weekday used for recurring patterns.",
+    )
+    recurrence_week_of_month = models.PositiveSmallIntegerField(
+        choices=WeekOfMonth.choices,
+        blank=True,
+        null=True,
+        help_text="Which week (1st, 2nd, etc.) of the month for weekday-based recurrences.",
+    )
+    recurrence_day_of_month = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        help_text="Specific day of the month (1-31) for date-based recurrences.",
+    )
+    recurrence_next_start_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Optional next scheduled start when managing recurring series.",
+    )
 
     ticket_url = models.URLField(blank=True)
     ticket_price_from = models.DecimalField(
@@ -144,6 +201,53 @@ class Event(models.Model):
 
     def get_absolute_url(self) -> str:
         return reverse("events:detail", args=[self.slug])
+
+    @property
+    def is_recurring(self) -> bool:
+        return self.recurrence_frequency != self.RecurrenceFrequency.NONE
+
+    def get_recurrence_weekday_display(self) -> str:
+        if self.recurrence_weekday is None:
+            return ""
+        try:
+            return self.Weekday(self.recurrence_weekday).label
+        except ValueError:  # pragma: no cover - defensive fallback
+            return ""
+
+    def get_recurrence_week_of_month_display(self) -> str:
+        if self.recurrence_week_of_month is None:
+            return ""
+        try:
+            return self.WeekOfMonth(self.recurrence_week_of_month).label
+        except ValueError:  # pragma: no cover - defensive fallback
+            return ""
+
+    @property
+    def recurrence_description(self) -> str:
+        freq = self.recurrence_frequency
+        if freq == self.RecurrenceFrequency.NONE:
+            return "Does not repeat"
+        weekday = self.get_recurrence_weekday_display()
+        if freq == self.RecurrenceFrequency.WEEKLY:
+            return f"Weekly on {weekday}" if weekday else "Weekly"
+        if freq == self.RecurrenceFrequency.BIWEEKLY:
+            return f"Every other week on {weekday}" if weekday else "Every other week"
+        if freq == self.RecurrenceFrequency.MONTHLY_DATE:
+            return (
+                f"Monthly on day {self.recurrence_day_of_month}"
+                if self.recurrence_day_of_month
+                else "Monthly"
+            )
+        if freq == self.RecurrenceFrequency.MONTHLY_WEEKDAY:
+            week_label = self.get_recurrence_week_of_month_display()
+            if week_label and weekday:
+                return f"Monthly on the {week_label.lower()} {weekday}"
+            if week_label:
+                return f"Monthly on the {week_label.lower()} week"
+            if weekday:
+                return f"Monthly on {weekday}"
+            return "Monthly"
+        return ""
 
     @property
     def doors_time(self) -> datetime | None:
