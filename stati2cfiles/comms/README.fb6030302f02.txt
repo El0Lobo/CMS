@@ -1,1 +1,0 @@
-Static files for comms (inbox.css/js).
