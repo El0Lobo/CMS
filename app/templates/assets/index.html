@@ -3,7 +3,10 @@
 {% load setup_tags %}
 
 {% block content %}
-  <div id="assets-root" data-base="{% url 'assets:index' %}">
+  <div id="assets-root"
+       data-base="{% url 'assets:index' %}"
+       data-api-base="{% url 'api-assets-list' %}"
+       data-collections-api-base="{% url 'api-collections-list' %}">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
       <div>
         <h1 class="mb-2" style="margin:0;">Digital Assets</h1>
@@ -46,7 +49,7 @@
     </form>
 
     <link rel="stylesheet" href="{% static 'assets/assets.css' %}?v=14">
-    <script defer src="{% static 'assets/assets.js' %}?v=12"></script>
+    <script defer src="{% static 'assets/assets.js' %}?v=15"></script>
     <script>window.htmx||document.write('<script src="https://unpkg.com/htmx.org@1.9.12"><\\/script>')</script>
 
     {# Nested collections tree; when filtering, only categories with hits + ancestors are included #}

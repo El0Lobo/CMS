@@ -48,17 +48,21 @@
                contenteditable="{% if su_is_super or request.user|allow_for:group_key %}true{% else %}false{% endif %}"
                data-field="title">{{ a.title }}</div>
 
-          <div class="sub">
-            <span class="{{ a.kind }}-pill">{{ a.kind|title }}</span>
-            {% if a.collection %} · in {{ a.collection.title }}{% endif %}
-            {% with atags=a.tags.all %}
-              {% if atags|length %}
-                ·
-                {% for t in atags %}
-                  <span class="tag">{{ t.name }}</span>{% if not forloop.last %} {% endif %}
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
+          <div class="sub" data-subline>
+            <span class="kind-pill {{ a.kind }}-pill" data-kind-pill="{{ a.kind }}">{{ a.kind|title }}</span>
+            {% if a.collection %} &middot; <span class="in-collection" data-collection-name>{{ a.collection.title }}</span>{% endif %}
+            <span class="tag-badges" data-tags-container>
+              {% with atags=a.tags.all %}
+                {% if atags|length %}
+                  &middot;
+                  {% for t in atags %}
+                    <span class="tag">{{ t.name }}</span>{% if not forloop.last %} {% endif %}
+                  {% endfor %}
+                {% else %}
+                  <span class="tag tag-empty">no tags</span>
+                {% endif %}
+              {% endwith %}
+            </span>
           </div>
 
           <div class="slug-row">
@@ -69,7 +73,7 @@
           </div>
 
           {% if a.kind == "note" and a.text_content %}
-            <details class="note-preview">
+            <details class="note-preview" data-note-preview>
               <summary>Preview text</summary>
               <pre>{{ a.text_content|truncatechars:240 }}</pre>
             </details>
@@ -82,7 +86,7 @@
                 <div class="btn-group" style="display:flex; flex-direction:column; gap:.35rem; align-items:stretch; border:1px solid #2c59a6ff; padding:4px 6px; width:100%;">
                   <button
                     class="btn btn-outline-secondary btn-sm js-toggle-vis"
-                    data-url="{% url 'assets:toggle_visibility' a.id %}"
+                    data-url="{% url 'api-assets-toggle-visibility' a.id %}"
                     style="width:100%; white-space:nowrap;">
                     Toggle Visibility
                   </button>
@@ -91,15 +95,15 @@
                     <div class="left" style="display:inline-flex; gap:.35rem; align-items:center;">
                       <button
                         class="btn btn-outline-secondary btn-sm js-asset-edit"
-                        data-edit-url="{% url 'assets:asset_data' a.id %}"
-                        data-update-url="{% url 'assets:asset_update' a.id %}"
+                        data-edit-url="{% url 'api-assets-detail' a.id %}"
+                        data-update-url="{% url 'api-assets-detail' a.id %}"
                         data-open-modal="#modal-asset">
                         Edit
                       </button>
 
                       <button
                         class="btn btn-outline-secondary btn-sm js-asset-delete"
-                        data-url="{% url 'assets:asset_delete' a.id %}">
+                        data-url="{% url 'api-assets-detail' a.id %}">
                         Delete
                       </button>
                     </div>

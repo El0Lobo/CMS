@@ -9,6 +9,7 @@ urlpatterns = [
     # Admin & health
     path("admin/", admin.site.urls),
     path("health/", health, name="health"),
+    path("api/v1/", include("app.api.urls")),
 
     # Auth
     path("accounts/", include("django.contrib.auth.urls")),

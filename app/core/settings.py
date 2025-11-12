@@ -55,9 +55,11 @@ INSTALLED_APPS = [
     "django_htmx",
     "ckeditor",
     "ckeditor_uploader",
+    "rest_framework",
 
     # Project apps
     "app.core",
+    "app.api",
     "app.pages",
     "app.cms",
     "app.blog",
@@ -223,3 +225,13 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "guardian.backends.ObjectPermissionBackend",
 )
+
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+}

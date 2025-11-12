@@ -5,7 +5,6 @@ import mimetypes
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.db.models import Q, F, Case, When, CharField
 from django.http import (
     HttpResponseRedirect,
     JsonResponse,
@@ -20,115 +19,15 @@ from django.views.decorators.http import require_POST
 
 from .forms import AssetFilterForm, AssetCreateForm, CollectionForm, TagForm
 from .models import Asset, Collection, Tag, VISIBILITY_MODE_CHOICES
+from .selectors import (
+    filter_assets_for_user,
+    filter_assets_with_form,
+    user_allowed_for,
+    user_can_view_asset,
+    user_group_ids,
+)
 from app.setup.helpers import is_allowed
 from app.setup.models import VisibilityRule
-
-
-# ---------- helpers -----------------------------------------------------------
-
-def _base_queryset():
-    return (
-        Asset.objects.select_related("collection")
-        .prefetch_related("tags", "collection__tags", "collection__allowed_groups")
-        .annotate(
-            eff_vis=Case(
-                When(visibility="inherit", then=F("collection__visibility_mode")),
-                default=F("visibility"),
-                output_field=CharField(),
-            )
-        )
-    )
-
-
-def _query_assets(request):
-    qs = _base_queryset()
-    form = AssetFilterForm(request.GET or None)
-
-    if form.is_valid():
-        q = form.cleaned_data.get("q")
-        if q:
-            qs = qs.filter(
-                Q(title__icontains=q)
-                | Q(description__icontains=q)
-                | Q(slug__icontains=q)
-                | Q(file__icontains=q)
-                | Q(url__icontains=q)
-                | Q(text_content__icontains=q)
-                | Q(tags__name__icontains=q)
-                | Q(collection__title__icontains=q)
-                | Q(collection__slug__icontains=q)
-                | Q(collection__tags__name__icontains=q)
-            ).distinct()
-
-        kind = form.cleaned_data.get("kind")
-        if kind:
-            qs = qs.filter(kind=kind)
-
-        visibility = form.cleaned_data.get("visibility")
-        if visibility in ("public", "internal", "groups"):
-            qs = qs.filter(eff_vis=visibility)
-
-        collection = form.cleaned_data.get("collection")
-        if collection:
-            qs = qs.filter(collection=collection)
-
-        tags = form.cleaned_data.get("tags")
-        if tags:
-            qs = qs.filter(tags__in=list(tags)).distinct()
-
-        source = form.cleaned_data.get("source")
-        if source == "local":
-            qs = qs.filter(file__isnull=False)
-        elif source == "external":
-            qs = qs.filter(file__isnull=True, url__isnull=False)
-
-    return form, qs
-
-
-def _user_group_ids(user):
-    if not user.is_authenticated:
-        return set()
-    return set(user.groups.values_list("id", flat=True))
-
-
-def _user_can_view_asset(user, asset: Asset) -> bool:
-    """
-    Public → everyone
-    Internal → must be authenticated
-    Groups → must be authenticated and in any allowed group for the collection
-    """
-    vis = getattr(asset, "effective_visibility", None) or getattr(asset, "eff_vis", None)
-    if not vis:
-        # fallback if property/annotation missing
-        vis = asset.visibility
-        if vis == "inherit" and asset.collection_id:
-            vis = asset.collection.visibility_mode
-
-    if vis == "public":
-        return True
-    if not user.is_authenticated:
-        return False
-    if vis == "internal":
-        return True
-    if vis == "groups":
-        if not asset.collection_id:
-            return False
-        user_groups = _user_group_ids(user)
-        allowed = set(asset.collection.allowed_groups.values_list("id", flat=True))
-        return bool(user_groups & allowed)
-    return False
-
-
-def _allowed_for(user, key: str) -> bool:
-    """Check if user is allowed for a given visibility key.
-    Superusers pass; non-superusers require an explicit enabled rule AND membership per rule.
-    """
-    if user.is_superuser:
-        return True
-    try:
-        return VisibilityRule.objects.filter(key=key, is_enabled=True).exists() and is_allowed(user, key)
-    except Exception:
-        return False
 
 
 # ---------- index -------------------------------------------------------------
@@ -147,7 +46,7 @@ def assets_index(request):
         action = (request.POST.get("action") or "create_asset").strip()
 
         if action == "create_collection":
-            if not _allowed_for(request.user, "cms.assets.add_collection"):
+            if not user_allowed_for(request.user, "cms.assets.add_collection"):
                 return HttpResponseForbidden("Not allowed")
             collection_form = CollectionForm(request.POST)
             if collection_form.is_valid():
@@ -155,7 +54,7 @@ def assets_index(request):
                 return HttpResponseRedirect(reverse("assets:index"))
 
         elif action == "create_tag":
-            if not _allowed_for(request.user, "cms.assets.add_tag"):
+            if not user_allowed_for(request.user, "cms.assets.add_tag"):
                 return HttpResponseForbidden("Not allowed")
             tag_form = TagForm(request.POST)
             if tag_form.is_valid():
@@ -163,7 +62,7 @@ def assets_index(request):
                 return HttpResponseRedirect(reverse("assets:index"))
 
         else:
-            if not _allowed_for(request.user, "cms.assets.add_asset"):
+            if not user_allowed_for(request.user, "cms.assets.add_asset"):
                 return HttpResponseForbidden("Not allowed")
             create_form = AssetCreateForm(request.POST, request.FILES)
             if create_form.is_valid():
@@ -173,39 +72,8 @@ def assets_index(request):
                 return HttpResponseRedirect(reverse("assets:index"))
 
     # Listing + filtering
-    filter_form, qs = _query_assets(request)
-
-    # Apply visibility for all users (no staff bypass)
-    user_groups = _user_group_ids(request.user)
-    allowed_q = Q(eff_vis="public")
-    if request.user.is_authenticated:
-        allowed_q = allowed_q | Q(eff_vis="internal")
-        if user_groups:
-            allowed_q = allowed_q | Q(eff_vis="groups", collection__allowed_groups__id__in=list(user_groups))
-
-    # Also include assets explicitly allowed by VisibilityRule keys (cog-based overrides)
-    allowed_by_rule_ids = []
-    for a in qs:
-        try:
-            akey = f"assets.asset.{a.id}"
-            ckey = f"assets.collection.{a.collection_id}" if a.collection_id else None
-            g_asset_actions = f"cms.assets.asset.{a.id}.actions"
-            g_col_actions = f"cms.assets.collection.{a.collection_id}.actions" if a.collection_id else None
-            g_col_toolbar = f"cms.assets.collection.{a.collection_id}.toolbar" if a.collection_id else None
-
-            def rule_allows(key: str | None) -> bool:
-                return bool(key) and VisibilityRule.objects.filter(key=key, is_enabled=True).exists() and is_allowed(request.user, key)
-
-            if rule_allows(akey) or rule_allows(ckey) or rule_allows(g_asset_actions) or rule_allows(g_col_actions) or rule_allows(g_col_toolbar):
-                allowed_by_rule_ids.append(a.id)
-        except Exception:
-            # On any error, do not broaden visibility beyond public/groups
-            continue
-
-    if allowed_by_rule_ids:
-        allowed_q = allowed_q | Q(id__in=allowed_by_rule_ids)
-
-    qs = qs.filter(allowed_q).distinct()
+    filter_form, qs = filter_assets_with_form(request.GET or None)
+    qs = filter_assets_for_user(qs, request.user)
 
     # Sorting
     sort = request.GET.get("sort") or "-updated"
@@ -281,7 +149,7 @@ def assets_index(request):
     # - Otherwise, fall back to model visibility (public/internal/groups) OR
     #   explicit action/toolbar rules to include the node so users can reach controls.
     if not request.user.is_superuser:
-        user_groups = _user_group_ids(request.user)
+        user_groups = user_group_ids(request.user)
 
         def col_access(c: Collection) -> bool:
             vm = c.visibility_mode
@@ -381,7 +249,7 @@ def assets_index(request):
 @require_POST
 def asset_toggle_visibility(request, pk):
     a = get_object_or_404(Asset, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
     a.visibility = "public" if a.effective_visibility in ("internal", "groups") else "internal"
     a.save()
@@ -392,7 +260,7 @@ def asset_toggle_visibility(request, pk):
 @require_POST
 def asset_rename(request, pk):
     a = get_object_or_404(Asset, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
 
     new_title = (request.POST.get("title") or "").strip()
@@ -412,7 +280,7 @@ def asset_rename(request, pk):
 @login_required
 def asset_data(request, pk):
     a = get_object_or_404(Asset.objects.select_related("collection").prefetch_related("tags"), pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
     data = {
         "id": a.id,
@@ -434,7 +302,7 @@ def asset_data(request, pk):
 @require_POST
 def asset_update(request, pk):
     a = get_object_or_404(Asset, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
 
     a.title = (request.POST.get("title") or a.title).strip()
@@ -486,7 +354,7 @@ def asset_update(request, pk):
 @require_POST
 def asset_delete(request, pk):
     a = get_object_or_404(Asset, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.asset.{a.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
     a.delete()
     return JsonResponse({"ok": True})
@@ -498,7 +366,7 @@ def asset_delete(request, pk):
 @require_POST
 def collection_toggle_visibility(request, pk):
     c = get_object_or_404(Collection, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.collection.{c.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.collection.{c.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
     c.visibility_mode = "public" if c.visibility_mode != "public" else "internal"
     c.save()
@@ -509,7 +377,7 @@ def collection_toggle_visibility(request, pk):
 @require_POST
 def collection_rename(request, pk):
     c = get_object_or_404(Collection, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.collection.{c.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.collection.{c.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
     new_title = (request.POST.get("title") or "").strip()
     new_slug = (request.POST.get("slug") or "").strip()
@@ -529,7 +397,7 @@ def collection_rename(request, pk):
 @require_POST
 def collection_update(request, pk):
     c = get_object_or_404(Collection, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.collection.{c.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.collection.{c.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
     form = CollectionForm(request.POST, instance=c)
     if form.is_valid():
@@ -542,7 +410,7 @@ def collection_update(request, pk):
 @require_POST
 def collection_delete(request, pk):
     col = get_object_or_404(Collection, pk=pk)
-    if not _allowed_for(request.user, f"cms.assets.collection.{col.id}.actions"):
+    if not user_allowed_for(request.user, f"cms.assets.collection.{col.id}.actions"):
         return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
     col.delete()
     return JsonResponse({"ok": True})
@@ -560,7 +428,7 @@ def asset_file(request, pk):
     if not a.file:
         raise Http404("No file on this asset.")
 
-    if not _user_can_view_asset(request.user, a):
+    if not user_can_view_asset(request.user, a):
         # If not logged in, send to login page with return
         if not request.user.is_authenticated:
             login_url = settings.LOGIN_URL if hasattr(settings, "LOGIN_URL") else "/accounts/login/"

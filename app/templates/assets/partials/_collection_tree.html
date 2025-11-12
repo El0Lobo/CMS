@@ -10,14 +10,14 @@
              data-col-visibility="{{ col.visibility_mode }}"
              data-col-groups="{{ col.allowed_group_ids_csv }}"
              data-col-parent="{{ col.parent.id|default_if_none:'' }}"
-             data-toggle-url="{% url 'assets:collection_toggle_visibility' col.id %}"
-             data-update-url="{% url 'assets:collection_update' col.id %}"
-             data-delete-url="{% url 'assets:collection_delete' col.id %}">
+             data-toggle-url="{% url 'api-collections-toggle-visibility' col.id %}"
+             data-update-url="{% url 'api-collections-detail' col.id %}"
+             data-delete-url="{% url 'api-collections-detail' col.id %}">
 
       <header class="collection-header">
         <div class="row-top" style="display:flex; align-items:center; gap:.75rem; width:100%;">
           <div class="left nav-inline" style="position:relative; display:flex; align-items:center; gap:.5rem; min-width:0;">
-            <div class="title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            <div class="title" data-collection-title style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
               {{ col.title }}
             </div>
             {% if request.real_user and request.real_user.is_superuser %}
@@ -26,8 +26,8 @@
           </div>
           {# Row 2: Meta #}
           <div class="meta" style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:.25rem;">
-            <span class="slug">Slug: <span class="slug">{{ col.slug }}</span></span>
-            <span class="tags" style="display:flex; gap:.25rem; flex-wrap:wrap;">
+            <span class="slug">Slug: <span class="slug" data-collection-slug>{{ col.slug }}</span></span>
+            <span class="tags" data-collection-tags style="display:flex; gap:.25rem; flex-wrap:wrap;">
               {% for t in col.tags.all %}
                 <span class="tag">{{ t.name }}</span>
               {% empty %}
@@ -49,7 +49,7 @@
                 <div class="btn-group" style="display:inline-flex; gap:.35rem; border:1px solid #1b1f26; align-items:center; padding:4px 6px;">
                   <button class="btn btn-outline-secondary btn-sm js-toggle-col-vis"
                           title="Toggle Public/Internal"
-                          data-url="{% url 'assets:collection_toggle_visibility' col.id %}">
+                          data-url="{% url 'api-collections-toggle-visibility' col.id %}">
                     Toggle
                   </button>
                   <button class="btn btn-outline-secondary btn-sm js-edit-collection"
@@ -57,7 +57,7 @@
                     Edit
                   </button>
                   <button class="btn btn-outline-secondary btn-sm js-collection-delete"
-                          data-url="{% url 'assets:collection_delete' col.id %}">
+                          data-url="{% url 'api-collections-detail' col.id %}">
                     Delete
                   </button>
                 </div>

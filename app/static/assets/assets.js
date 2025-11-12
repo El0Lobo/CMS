@@ -55,20 +55,62 @@
     if (!base.endsWith("/")) base += "/";
     return base;
   }
+  function getApiBase() {
+    const el = rootEl();
+    let base = el ? el.getAttribute("data-api-base") : "";
+    if (!base) base = "/api/v1/assets/";
+    if (!base.endsWith("/")) base += "/";
+    return base;
+  }
+  function getCollectionsApiBase() {
+    const el = rootEl();
+    let base = el ? el.getAttribute("data-collections-api-base") : "";
+    if (!base) base = "/api/v1/collections/";
+    if (!base.endsWith("/")) base += "/";
+    return base;
+  }
   function getCookie(name) {
     const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
     return m ? decodeURIComponent(m[2]) : "";
   }
   const CSRF = () => getCookie("csrftoken");
 
-  async function postJSON(url, data) {
-    const body =
-      data instanceof FormData ? data :
-      data ? new URLSearchParams(data) : undefined;
-    const headers = { "X-Requested-With": "XMLHttpRequest", "X-CSRFToken": CSRF() };
-    const res = await fetch(url, { method: "POST", headers, body });
+  async function requestJSON(url, options = {}) {
+    const method = (options.method || "POST").toUpperCase();
+    const headers = { "X-Requested-With": "XMLHttpRequest", ...(options.headers || {}) };
+    const init = { method, headers };
+
+    if (options.data !== undefined) {
+      if (options.data instanceof FormData) {
+        init.body = options.data;
+      } else if (options.json === true) {
+        headers["Content-Type"] = "application/json";
+        init.body = JSON.stringify(options.data);
+      } else {
+        headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8";
+        init.body = new URLSearchParams(options.data);
+      }
+    }
+
+    if (method !== "GET" && method !== "HEAD" && !headers["X-CSRFToken"]) {
+      headers["X-CSRFToken"] = CSRF();
+    }
+
+    const res = await fetch(url, init);
+    if (res.status === 204) {
+      return {};
+    }
+    let text = "";
+    try {
+      text = await res.text();
+    } catch {
+      text = "";
+    }
     let payload = {};
-    try { payload = await res.json(); } catch {}
+    if (text) {
+      try { payload = JSON.parse(text); }
+      catch { payload = {}; }
+    }
     if (!res.ok || payload.ok === false) {
       throw new Error(payload.error || `Request failed: ${res.status}`);
     }
@@ -84,6 +126,100 @@
     pill.textContent = newState === "groups" && isCollection ? "Groups" : ucfirst(newState);
     pill.classList.remove("vis-public", "vis-internal", "vis-groups");
     pill.classList.add("vis-" + newState);
+  }
+
+  function setText(el, value) {
+    if (!el) return;
+    el.textContent = value || "";
+  }
+
+  function populateTags(container, tags, opts = {}) {
+    if (!container) return;
+    container.innerHTML = "";
+    const list = Array.isArray(tags) ? tags : [];
+    if (opts.prefixBullet) {
+      container.appendChild(document.createTextNode(" · "));
+    }
+    if (!list.length) {
+      const empty = document.createElement("span");
+      empty.className = "tag tag-empty";
+      empty.textContent = opts.emptyLabel || "no tags";
+      container.appendChild(empty);
+      return;
+    }
+    list.forEach((tag, idx) => {
+      if (idx > 0) container.appendChild(document.createTextNode(" "));
+      const span = document.createElement("span");
+      span.className = "tag";
+      span.textContent = tag.name || tag;
+      container.appendChild(span);
+    });
+  }
+
+  function updateAssetDom(asset) {
+    if (!asset || !asset.id) return;
+    const visValue = asset.effective_visibility || asset.visibility || "internal";
+    document
+      .querySelectorAll(`.asset-card[data-id="${asset.id}"], .asset-card[data-asset-id="${asset.id}"]`)
+      .forEach((card) => {
+        setText(card.querySelector('[data-field="title"]'), asset.title || "");
+        setText(card.querySelector('[data-field="slug"]'), asset.slug || "");
+        const kindEl = card.querySelector("[data-kind-pill]");
+        if (kindEl) {
+          kindEl.textContent = ucfirst(asset.kind || "");
+          kindEl.className = `kind-pill ${asset.kind || ""}-pill`;
+        }
+        const collEl = card.querySelector("[data-collection-name]");
+        if (collEl) {
+          if (asset.collection_title) {
+            collEl.textContent = asset.collection_title;
+            collEl.parentElement && (collEl.parentElement.style.display = "");
+          } else if (collEl.parentElement) {
+            collEl.parentElement.style.display = "none";
+          }
+        }
+        populateTags(card.querySelector("[data-tags-container]"), asset.tags_detail, {
+          prefixBullet: true,
+        });
+        const noteWrap = card.querySelector("[data-note-preview]");
+        if (noteWrap) {
+          if (asset.kind === "note" && asset.text_content) {
+            noteWrap.style.display = "";
+            const pre = noteWrap.querySelector("pre");
+            if (pre) pre.textContent = asset.text_content;
+          } else {
+            noteWrap.style.display = "none";
+          }
+        }
+        updateVisPill(card, visValue, false);
+      });
+
+    document.querySelectorAll(`tr[data-id="${asset.id}"]`).forEach((row) => {
+      setText(row.querySelector('[data-field="title"]'), asset.title || "");
+      setText(row.querySelector('[data-field="slug"]'), asset.slug || "");
+      updateVisPill(row, visValue, false);
+    });
+  }
+
+  function updateCollectionDom(col) {
+    if (!col || !col.id) return;
+    const section = document.querySelector(`.collection-group[data-collection-id="${col.id}"]`);
+    if (!section) return;
+    section.setAttribute("data-col-title", col.title || "");
+    section.setAttribute("data-col-slug", col.slug || "");
+    section.setAttribute("data-col-visibility", col.visibility_mode || "public");
+    if (Array.isArray(col.allowed_groups)) {
+      section.setAttribute("data-col-groups", col.allowed_groups.join(","));
+    } else {
+      section.setAttribute("data-col-groups", "");
+    }
+    section.setAttribute("data-col-parent", col.parent ? String(col.parent) : "");
+    setText(section.querySelector("[data-collection-title]"), col.title || "");
+    setText(section.querySelector("[data-collection-slug]"), col.slug || "");
+    populateTags(section.querySelector("[data-collection-tags]"), col.tags_detail, {
+      emptyLabel: "no tags",
+    });
+    updateVisPill(section, col.visibility_mode || "public", true);
   }
 
   // -------------------- copy text (notes) --------------------
@@ -107,6 +243,7 @@
     const form = document.querySelector(".js-collection-edit-form");
     if (!form || !section) return;
     form.dataset.colId = section.getAttribute("data-collection-id");
+    form.dataset.updateUrl = section.getAttribute("data-update-url") || "";
     form.querySelector('[name="title"]').value = section.getAttribute("data-col-title") || "";
     form.querySelector('[name="slug"]').value  = section.getAttribute("data-col-slug")  || "";
     form.querySelector('[name="visibility_mode"]').value =
@@ -123,6 +260,30 @@
     }
   }
 
+  async function hydrateCollectionEditForm(section) {
+    const form = document.querySelector(".js-collection-edit-form");
+    const id = section && section.getAttribute("data-collection-id");
+    if (!form || !id) return;
+    try {
+      const data = await requestJSON(`${getCollectionsApiBase()}${id}/`, { method: "GET" });
+      form.dataset.colId = id;
+      form.dataset.updateUrl = `${getCollectionsApiBase()}${id}/`;
+      form.querySelector('[name="title"]').value = data.title || "";
+      form.querySelector('[name="slug"]').value = data.slug || "";
+      const vis = form.querySelector('[name="visibility_mode"]');
+      if (vis) vis.value = data.visibility_mode || "public";
+      const parentSel = form.querySelector('[name="parent"]');
+      if (parentSel) parentSel.value = data.parent ? String(data.parent) : "";
+      const groups = new Set((data.allowed_groups || []).map((g) => String(g)));
+      const groupSelect = form.querySelector('[name="allowed_groups"]');
+      if (groupSelect) {
+        Array.from(groupSelect.options).forEach((opt) => { opt.selected = groups.has(opt.value); });
+      }
+    } catch (err) {
+      console.warn("Failed to load collection details", err);
+    }
+  }
+
   document.addEventListener("click", (e) => {
     const opener = e.target.closest("[data-open-modal]");
     if (opener) {
@@ -132,13 +293,17 @@
 
       // Prefill "Edit Collection"
       if (sel === "#modal-collection-edit") {
-        prefillCollectionEditFromSection(opener.closest(".collection-group"));
+        const section = opener.closest(".collection-group");
+        prefillCollectionEditFromSection(section);
+        hydrateCollectionEditForm(section);
       }
 
       // Prefill "Add Asset" -> collection
       if (sel === "#modal-asset") {
         const form = document.querySelector("#modal-asset form");
         if (form) {
+          delete form.dataset.apiUpdate;
+          delete form.dataset.assetId;
           const colId = opener.getAttribute("data-collection") || "";
           const colTitle = opener.getAttribute("data-collection-title") || "";
           const csel = form.querySelector('select[name="collection"]');
@@ -186,10 +351,31 @@
     const form = document.querySelector(".js-collection-edit-form");
     const id = form && form.dataset.colId;
     if (!id) return;
+    e.preventDefault();
     try {
-      const res = await postJSON(`${getBase()}collections/update/${id}/`, new FormData(form));
-      if (res.ok) window.location.reload();
+      const data = await requestJSON(form.dataset.updateUrl || `${getCollectionsApiBase()}${id}/`, {
+        method: "PATCH",
+        data: new FormData(form),
+      });
+      updateCollectionDom(data);
+      toast("Collection updated");
+      closeModal(form.closest(".modal-overlay"));
     } catch (err) { alert(err.message || "Save failed"); }
+  });
+
+  // Create collection via API
+  document.addEventListener("submit", async (e) => {
+    const form = e.target.closest("#modal-collection-new form");
+    if (!form) return;
+    e.preventDefault();
+    const data = new FormData(form);
+    data.delete("action");
+    try {
+      await requestJSON(getCollectionsApiBase(), { method: "POST", data });
+      toast("Collection created");
+      closeModal(form.closest(".modal-overlay"));
+      window.location.reload();
+    } catch (err) { alert(err.message || "Create failed"); }
   });
 
   // -------------------- asset + collection actions --------------------
@@ -198,13 +384,17 @@
     const tAsset = e.target.closest(".js-toggle-vis");
     if (tAsset) {
       e.preventDefault();
-      const card = tAsset.closest(".asset-card[data-id], .asset-card[data-asset-id]");
-      if (!card) return;
-      const id = card.getAttribute("data-id") || card.getAttribute("data-asset-id");
+      const scope =
+        tAsset.closest(".asset-card[data-id], .asset-card[data-asset-id], tr[data-id]");
+      if (!scope) return;
+      const id = scope.getAttribute("data-id") || scope.getAttribute("data-asset-id");
       try {
-        const data = await postJSON(tAsset.dataset.url || `${getBase()}toggle/${id}/`);
-        updateVisPill(card, data.visibility, false);
-        toast("Visibility: " + data.visibility);
+        const data = await requestJSON(
+          tAsset.dataset.url || `${getApiBase()}${id}/toggle-visibility/`,
+          { method: "POST" }
+        );
+        updateAssetDom(data);
+        toast("Visibility: " + (data.effective_visibility || data.visibility || "updated"));
       } catch (err) { alert(err.message || "Toggle failed"); }
       return;
     }
@@ -214,12 +404,14 @@
     if (dAsset) {
       e.preventDefault();
       if (!confirm("Delete this asset?")) return;
-      const card = dAsset.closest(".asset-card[data-id], .asset-card[data-asset-id]");
-      if (!card) return;
-      const id = card.getAttribute("data-id") || card.getAttribute("data-asset-id");
+      const scope =
+        dAsset.closest(".asset-card[data-id], .asset-card[data-asset-id], tr[data-id]");
+      if (!scope) return;
+      const id = scope.getAttribute("data-id") || scope.getAttribute("data-asset-id");
       try {
-        const data = await postJSON(dAsset.dataset.url || `${getBase()}asset/${id}/delete/`);
-        if (data.ok) card.remove();
+        await requestJSON(dAsset.dataset.url || `${getApiBase()}${id}/`, { method: "DELETE" });
+        scope.remove();
+        document.querySelectorAll(`tr[data-id="${id}"]`).forEach((row) => row.remove());
         toast("Asset deleted");
       } catch (err) { alert(err.message || "Delete failed"); }
       return;
@@ -234,17 +426,18 @@
       const form = modal ? modal.querySelector("form") : null;
       if (!modal || !form) return;
 
-      const dataUrl = eAsset.dataset.editUrl;
-      const updateUrl = eAsset.dataset.updateUrl;
+      const scope =
+        eAsset.closest(".asset-card[data-id], .asset-card[data-asset-id], tr[data-id]");
+      const id = scope && (scope.getAttribute("data-id") || scope.getAttribute("data-asset-id"));
+      const dataUrl = eAsset.dataset.editUrl || (id ? `${getApiBase()}${id}/` : "");
+      const updateUrl = eAsset.dataset.updateUrl || dataUrl;
       if (!dataUrl || !updateUrl) { alert("Missing edit URLs"); return; }
 
       try {
-        const res = await fetch(dataUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
-        const payload = await res.json();
-        if (!res.ok || payload.ok === false) throw new Error(payload.error || "Failed");
-
-        const a = payload.asset;
+        const a = await requestJSON(dataUrl, { method: "GET" });
         form.action = updateUrl;
+        form.dataset.apiUpdate = updateUrl;
+        form.dataset.assetId = String(a.id || "");
 
         const f = (sel) => form.querySelector(sel);
         const set = (sel, v) => { const el = f(sel); if (el) el.value = v ?? ""; };
@@ -258,8 +451,9 @@
         const csel = f('select[name="collection"]'); if (csel) csel.value = (a.collection || "").toString();
         const vsel = f('select[name="visibility"]'); if (vsel) vsel.value = a.visibility || "inherit";
 
-        const tset = new Set((a.tags || []).map(String));
-        form.querySelectorAll('input[name="tags"]').forEach((inp) => { inp.checked = tset.has(String(inp.value)); });
+        const tInputs = form.querySelectorAll('input[name="tags"]');
+        const tset = new Set((a.tags || []).map((val) => (typeof val === "object" ? val.id : val)).map(String));
+        tInputs.forEach((inp) => { inp.checked = tset.has(String(inp.value)); });
 
         const h2 = modal.querySelector("h2"); if (h2) h2.textContent = "Edit Asset";
         modal.hidden = false;
@@ -275,9 +469,11 @@
       if (!section) return;
       const id = section.getAttribute("data-collection-id");
       try {
-        const data = await postJSON(tCol.dataset.url || `${getBase()}collections/toggle/${id}/`);
-        updateVisPill(section, data.visibility, true);
-        section.setAttribute("data-col-visibility", data.visibility);
+        const data = await requestJSON(
+          tCol.dataset.url || `${getCollectionsApiBase()}${id}/toggle-visibility/`,
+          { method: "POST" }
+        );
+        updateCollectionDom(data);
       } catch (err) { alert(err.message || "Toggle failed"); }
       return;
     }
@@ -291,12 +487,29 @@
       if (!section) return;
       const id = section.getAttribute("data-collection-id");
       try {
-        const data = await postJSON(dCol.dataset.url || `${getBase()}collection/${id}/delete/`);
-        if (data.ok) section.remove();
+        await requestJSON(dCol.dataset.url || `${getCollectionsApiBase()}${id}/`, { method: "DELETE" });
+        section.remove();
         toast("Collection deleted");
       } catch (err) { alert(err.message || "Delete failed"); }
       return;
     }
+  });
+
+  // Asset modal form submission (edit via API)
+  document.addEventListener("submit", async (e) => {
+    const form = e.target.closest("#modal-asset form");
+    if (!form) return;
+    const updateUrl = form.dataset.apiUpdate;
+    if (!updateUrl) return; // let create submissions go through Django form
+    e.preventDefault();
+    const data = new FormData(form);
+    data.delete("action");
+    try {
+      const updated = await requestJSON(updateUrl, { method: "PATCH", data });
+      toast("Asset updated");
+      updateAssetDom(updated);
+      closeModal(form.closest(".modal-overlay"));
+    } catch (err) { alert(err.message || "Update failed"); }
   });
 
   // -------------------- font previews --------------------

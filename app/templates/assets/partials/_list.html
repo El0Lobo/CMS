@@ -31,7 +31,8 @@
         <td>{{ a.updated_at|date:"Y-m-d H:i" }}</td>
         <td class="actions">
           {% if request.user.is_superuser or request.user|allow_for:gkey %}
-            <button class="btn btn-outline-secondary btn-sm js-toggle-vis">Toggle</button>
+            <button class="btn btn-outline-secondary btn-sm js-toggle-vis"
+                    data-url="{% url 'api-assets-toggle-visibility' a.id %}">Toggle</button>
           {% endif %}
           {% if a.file %}
             <a class="btn btn-outline-secondary btn-sm" href="{{ a.file.url }}" target="_blank">Open</a>
