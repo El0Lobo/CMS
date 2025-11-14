@@ -5,6 +5,8 @@ from django.utils.text import slugify
 
 from django_ckeditor_5.fields import CKEditor5Field
 
+from django.utils.safestring import mark_safe
+
 from .blocks import render_blocks
 
 
@@ -102,11 +104,26 @@ class Page(models.Model):
         help_text="If enabled, ignore the block builder and render the raw HTML body only.",
     )
 
+    def render_content_segments(self, *, request=None, extra_context=None):
+        """
+        Render the page into main/ footer fragments so templates can place them separately.
+        """
+
+        if self.render_body_only or not self.blocks:
+            html = self.body or ""
+            return mark_safe(html), mark_safe("")
+
+        main_blocks = [block for block in self.blocks if block.get("type") != "footer"]
+        footer_blocks = [block for block in self.blocks if block.get("type") == "footer"]
+
+        main_html = render_blocks(main_blocks, request=request, extra_context=extra_context)
+        footer_html = render_blocks(footer_blocks, request=request, extra_context=extra_context)
+        return main_html, footer_html
+
     def render_content(self, *, request=None, extra_context=None) -> str:
         """
         Render the page blocks to HTML. Falls back to legacy body if flagged or empty.
         """
 
-        if not self.render_body_only and self.blocks:
-            return render_blocks(self.blocks, request=request, extra_context=extra_context)
-        return self.body or ""
+        main_html, footer_html = self.render_content_segments(request=request, extra_context=extra_context)
+        return mark_safe(f"{main_html}{footer_html}")

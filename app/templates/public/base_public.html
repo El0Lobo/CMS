@@ -23,14 +23,7 @@
     <main class="site-main">
       {% block content %}{% endblock %}
     </main>
-
-    <footer class="site-footer">
-      {% if site_settings.org_name %}
-        © {{ site_settings.org_name }} · {{ now|date:"Y" }}
-      {% else %}
-        Powered by Bar OS
-      {% endif %}
-    </footer>
+    {% block after_main %}{% endblock %}
   </div>
 </body>
 </html>

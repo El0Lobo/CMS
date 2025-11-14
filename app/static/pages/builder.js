@@ -205,16 +205,29 @@ const DEFAULT_BLOCK_LIBRARY = [
   },
   {
     type: "footer",
-    icon: "🪪",
+    icon: "🦶",
     label: "Footer",
-    description: "Footer bar with navigation and legal links.",
+    description: "Footer bar with brand, navigation, legal, and social links.",
     defaults: {
-      show_social: true,
+      brand_name: "",
+      brand_tagline: "",
+      brand_logo: "",
+      address_html: "",
       links: [],
       legal: [],
+      social_links: [],
     },
     fields: [
-      { key: "show_social", type: "toggle", label: "Show social icons" },
+      { key: "brand_name", type: "text", label: "Brand name" },
+      { key: "brand_tagline", type: "text", label: "Tagline", help: "Optional short line that appears under the brand." },
+      {
+        key: "brand_logo",
+        type: "url",
+        label: "Logo URL",
+        help: "Paste an image URL from the media library.",
+        assetKinds: ["image"],
+      },
+      { key: "address_html", type: "textarea", label: "Address / notes", rows: 3 },
       {
         key: "links",
         type: "list",
@@ -235,6 +248,18 @@ const DEFAULT_BLOCK_LIBRARY = [
         itemDefaults: { label: "Imprint", href: "#", new_tab: false },
         itemFields: [
           { key: "label", type: "text", label: "Label" },
+          { key: "href", type: "url", label: "URL" },
+          { key: "new_tab", type: "toggle", label: "Open in new tab" },
+        ],
+      },
+      {
+        key: "social_links",
+        type: "list",
+        label: "Social links",
+        itemLabel: "Profile",
+        itemDefaults: { label: "Instagram", href: "#", new_tab: true },
+        itemFields: [
+          { key: "label", type: "text", label: "Platform" },
           { key: "href", type: "url", label: "URL" },
           { key: "new_tab", type: "toggle", label: "Open in new tab" },
         ],
@@ -489,16 +514,18 @@ function schedulePreview(immediate = false) {
 }
 
 function setPreviewHTML(html) {
-  if (!dom.previewFrame) {
+  if (!dom.previewFrames || !dom.previewFrames.length) {
     return;
   }
   const content =
     html && html.trim()
       ? html
       : "<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;padding:2rem;font-family:system-ui;background:#0b1118;color:#f0f4f8;} .muted{color:rgba(255,255,255,0.6);}</style></head><body><p class='muted'>Preview will appear here once you add blocks.</p></body></html>";
-  if (dom.previewFrame.srcdoc !== content) {
-    dom.previewFrame.srcdoc = content;
-  }
+  dom.previewFrames.forEach((frame) => {
+    if (frame.srcdoc !== content) {
+      frame.srcdoc = content;
+    }
+  });
 }
 
 function getCsrfToken() {
@@ -1014,7 +1041,12 @@ function bootstrap() {
   dom.library = document.getElementById("builder-library");
   dom.blockList = document.getElementById("builder-block-list");
   dom.settings = document.getElementById("builder-settings");
-  dom.previewFrame = document.getElementById("builder-preview-frame");
+  dom.previewFrames = Array.from(document.querySelectorAll("[data-preview-frame]"));
+  dom.previewCanvas = document.getElementById("builder-preview-canvas");
+  dom.previewToggle = document.getElementById("builder-preview-toggle");
+  dom.previewModeButtons = dom.previewToggle
+    ? Array.from(dom.previewToggle.querySelectorAll(".preview-toggle__btn"))
+    : [];
   dom.saveButton = document.getElementById("builder-save-btn");
   dom.previewButton = document.getElementById("builder-preview-btn");
 
@@ -1061,6 +1093,25 @@ function bootstrap() {
   }
   if (dom.saveButton) {
     dom.saveButton.addEventListener("click", persistBlocks);
+  }
+
+  function setPreviewMode(mode) {
+    if (!dom.previewCanvas) {
+      return;
+    }
+    dom.previewCanvas.setAttribute("data-preview-mode", mode);
+    dom.previewModeButtons.forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.mode === mode);
+    });
+  }
+
+  if (dom.previewModeButtons.length) {
+    dom.previewModeButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setPreviewMode(btn.dataset.mode || "desktop");
+      });
+    });
+    setPreviewMode("desktop");
   }
 
   document.addEventListener("keydown", (event) => {

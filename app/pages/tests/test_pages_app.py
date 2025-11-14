@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from app.pages.models import Page
+from app.setup.models import SiteSettings
 
 
 class PageRenderContentTests(TestCase):
@@ -106,3 +107,54 @@ class PreviewHtmlApiTests(TestCase):
 
         self.assertIn("Raw preview", data["content_html"])
         self.assertNotIn("page-block--richtext", data["content_html"])
+
+
+class FooterBlockDefaultsTests(TestCase):
+    def setUp(self):
+        self.settings = SiteSettings.get_solo()
+        self.settings.org_name = "Contrast"
+        self.settings.address_street = "Josef-Belli-Weg"
+        self.settings.address_number = "4"
+        self.settings.address_postal_code = "78467"
+        self.settings.address_city = "Konstanz"
+        self.settings.address_country = "Germany"
+        self.settings.social_instagram = "https://instagram.com/contrast"
+        self.settings.social_facebook = "https://facebook.com/contrast"
+        self.settings.save()
+
+    def test_footer_block_autopopulates_from_site_settings(self):
+        page = Page.objects.create(
+            title="Home",
+            slug="home-footer",
+            blocks=[
+                {"id": "hero", "type": "rich_text", "props": {"html": "<p>Body</p>"}},
+                {"id": "footer-1", "type": "footer", "props": {}},
+            ],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        html = page.render_content()
+
+        self.assertIn("Contrast", html)
+        self.assertIn("Josef-Belli-Weg 4", html)
+        self.assertIn("78467 Konstanz", html)
+        self.assertIn("Instagram", html)
+
+    def test_render_content_segments_places_footer_separately(self):
+        page = Page.objects.create(
+            title="Home",
+            slug="home-footer-split",
+            blocks=[
+                {"id": "hero", "type": "rich_text", "props": {"html": "<p>Body</p>"}},
+                {"id": "footer-1", "type": "footer", "props": {}},
+            ],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        main_html, footer_html = page.render_content_segments()
+
+        self.assertIn("Body", main_html)
+        self.assertNotIn("page-block--footer", main_html)
+        self.assertIn("page-block--footer", footer_html)

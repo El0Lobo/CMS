@@ -233,14 +233,20 @@
             <header class="builder-preview__header">
               <div>
                 <h2>Preview</h2>
-                <p class="muted">Updates automatically as you edit.</p>
+                <p class="muted">Toggle between desktop and mobile to spot layout issues early.</p>
               </div>
               <div class="builder-preview__actions">
+                <div class="preview-toggle" id="builder-preview-toggle">
+                  <button type="button" class="preview-toggle__btn is-active" data-mode="desktop">Desktop</button>
+                  <button type="button" class="preview-toggle__btn" data-mode="mobile">Mobile</button>
+                </div>
                 <button type="button" class="btn btn-sm" id="builder-refresh-preview">Refresh</button>
               </div>
             </header>
-            <div class="builder-preview__canvas">
-              <iframe id="builder-preview-frame" title="Page preview" sandbox="allow-same-origin allow-scripts allow-forms" style="width:100%;height:100%;border:0;border-radius:10px;background:#0b1118;"></iframe>
+            <div class="builder-preview__canvas" id="builder-preview-canvas" data-preview-mode="desktop">
+              <div class="builder-preview__viewport">
+                <iframe id="builder-preview-frame" data-preview-frame title="Page preview" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+              </div>
             </div>
           </div>
         </div>

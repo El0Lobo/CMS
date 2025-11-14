@@ -6,6 +6,8 @@ from typing import Any, Dict, Iterable, List, Optional
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
+from app.setup.models import SiteSettings
+
 from . import data_sources
 
 Block = Dict[str, Any]
@@ -104,15 +106,85 @@ def _contact_renderer(*, context: Context, request=None) -> str:
     return _render_template("pages/blocks/contact.html", context)
 
 
+SOCIAL_FIELD_LABELS = [
+    ("social_instagram", "Instagram"),
+    ("social_facebook", "Facebook"),
+    ("social_twitter", "Twitter"),
+    ("social_tiktok", "TikTok"),
+    ("social_youtube", "YouTube"),
+    ("social_spotify", "Spotify"),
+    ("social_soundcloud", "SoundCloud"),
+    ("social_bandcamp", "Bandcamp"),
+    ("social_linkedin", "LinkedIn"),
+    ("social_mastodon", "Mastodon"),
+    ("website_url", "Website"),
+]
+
+
+def _format_address(settings: SiteSettings) -> str:
+    lines: List[str] = []
+    street = " ".join(filter(None, [settings.address_street, settings.address_number])).strip()
+    if street:
+        lines.append(street)
+    city_line = " ".join(filter(None, [settings.address_postal_code, settings.address_city])).strip()
+    if city_line:
+        lines.append(city_line)
+    if settings.address_country:
+        lines.append(settings.address_country)
+    return "\n".join(lines)
+
+
 def _footer_renderer(*, context: Context, request=None) -> str:
-    site = data_sources.get_site_context()
-    site["logo"] = _resolve_media(request, site.get("logo"))
-    props = context["props"]
+    props = {**context["props"]}
+    settings = SiteSettings.get_solo()
+
+    if not props.get("brand_name"):
+        props["brand_name"] = settings.org_name
+    if not props.get("brand_tagline") and settings.mode:
+        props["brand_tagline"] = settings.get_mode_display()
+
+    logo = props.get("brand_logo")
+    if not logo and settings.logo:
+        try:
+            logo = settings.logo.url
+        except Exception:
+            logo = None
+    props["brand_logo_resolved"] = _resolve_media(request, logo)
+
+    if not props.get("address_html"):
+        props["address_html"] = _format_address(settings)
+
+    def _normalise_links(items):
+        normalised = []
+        for item in items or []:
+            if not item:
+                continue
+            href = item.get("href")
+            if href and request and href.startswith("/"):
+                href = request.build_absolute_uri(href)
+            normalised.append(
+                {
+                    "label": item.get("label"),
+                    "href": href,
+                    "new_tab": bool(item.get("new_tab")),
+                }
+            )
+        return [item for item in normalised if item.get("label") or item.get("href")]
+
+    if not props.get("social_links"):
+        socials: List[dict] = []
+        for field, label in SOCIAL_FIELD_LABELS:
+            url = getattr(settings, field, "")
+            if url:
+                socials.append({"label": label, "href": url, "new_tab": True})
+        props["social_links"] = socials
+
     context = {
         **context,
-        "site": site,
-        "links": props.get("links", []),
-        "legal": props.get("legal", []),
+        "props": props,
+        "links": _normalise_links(props.get("links")),
+        "legal": _normalise_links(props.get("legal")),
+        "social_links": _normalise_links(props.get("social_links")),
     }
     return _render_template("pages/blocks/footer.html", context)
 

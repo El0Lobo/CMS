@@ -32,11 +32,12 @@ def _nav_payload_for(page: Page):
 
 
 def _render_page(request, page: Page) -> HttpResponse:
-    rendered = page.render_content(request=request)
+    rendered, footer = page.render_content_segments(request=request)
     nav_entries = _nav_payload_for(page)
     context = {
         "page": page,
         "page_rendered": rendered,
+        "page_footer": footer,
         "nav_label": page.title,
         "public_pages": nav_entries,
         "page_show_nav": bool(nav_entries),
@@ -56,7 +57,12 @@ def home(request):
     _public_enabled_or_404()
     page = _first_available_page()
     if not page:
-        return render(request, "public/empty_site.html", {"page_show_nav": False}, status=404)
+        return render(
+            request,
+            "public/empty_site.html",
+            {"page_show_nav": False, "page_footer": ""},
+            status=404,
+        )
     if page.slug != "home":
         return redirect(page.get_absolute_url())
     return _render_page(request, page)
@@ -79,7 +85,9 @@ class CMSLoginView(LoginView):
         )
         if page:
             context["page"] = page
-            context["page_rendered"] = page.render_content(request=self.request)
+            main_html, footer_html = page.render_content_segments(request=self.request)
+            context["page_rendered"] = main_html
+            context["page_footer"] = footer_html
             if page.show_navigation_bar:
                 nav_payload = build_nav_payload(page.custom_nav_items or [])
             else:
@@ -92,6 +100,7 @@ class CMSLoginView(LoginView):
             context.setdefault("page_show_nav", False)
             context.setdefault("nav_label", "Login")
             context["page_rendered"] = ""
+            context["page_footer"] = ""
         try:
             context["password_reset_url"] = reverse("password_reset")
         except NoReverseMatch:

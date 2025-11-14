@@ -1,35 +1,60 @@
 <footer class="page-block page-block--footer">
   <div class="page-block__container">
     <div class="page-footer">
-      <div class="page-footer__brand">
-        {% if site.logo %}
-          <img src="{{ site.logo }}" alt="{{ site.name }}">
-        {% endif %}
-        {% if site.name %}<strong>{{ site.name }}</strong>{% endif %}
-      </div>
-      {% if links %}
-        <div class="page-footer__links">
-          {% for link in links %}
-            <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
-          {% endfor %}
-        </div>
-      {% endif %}
-      {% if legal %}
-        <div class="page-footer__legal">
-          {% for link in legal %}
-            <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
-          {% endfor %}
-        </div>
-      {% endif %}
-      {% if props.show_social %}
-        <div class="page-footer__socials">
-          {% for key, url in site.social.items %}
-            {% if url %}
-              <a href="{{ url }}" target="_blank" rel="noopener">{{ key|title }}</a>
+      <div class="page-footer__sections">
+        {% if props.brand_logo_resolved or props.brand_name or props.brand_tagline %}
+          <div class="page-footer__section page-footer__brand">
+            {% if props.brand_logo_resolved %}
+              <img src="{{ props.brand_logo_resolved }}" alt="{{ props.brand_name|default:'Logo' }}">
             {% endif %}
-          {% endfor %}
-        </div>
-      {% endif %}
+            <div>
+              {% if props.brand_name %}<strong>{{ props.brand_name }}</strong>{% endif %}
+              {% if props.brand_tagline %}<p>{{ props.brand_tagline }}</p>{% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if props.address_html %}
+          <address class="page-footer__section page-footer__address">
+            {{ props.address_html|linebreaksbr }}
+          </address>
+        {% endif %}
+
+        {% if links %}
+          <div class="page-footer__section page-footer__links">
+            <h4>Explore</h4>
+            <div class="page-footer__linklist">
+              {% for link in links %}
+                <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if legal %}
+          <div class="page-footer__section page-footer__legal">
+            <h4>Legal</h4>
+            <div class="page-footer__linklist">
+              {% for link in legal %}
+                <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if social_links %}
+          <div class="page-footer__section page-footer__socials">
+            <h4>Connect</h4>
+            <div class="page-footer__linklist">
+              {% for item in social_links %}
+                {% if item.href %}
+                  <a href="{{ item.href }}" {% if item.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ item.label }}</a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </div>
 </footer>

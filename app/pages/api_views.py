@@ -12,7 +12,6 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_http_methods
 
 from . import data_sources
-from .blocks import render_blocks
 from .models import Page
 from .navigation import build_nav_payload
 from .serializers import serialize_page
@@ -190,13 +189,6 @@ def preview_html(request):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
-    render_raw = bool(payload.get("render_body_only", False))
-    body_html = payload.get("body") or ""
-    if not render_raw and blocks:
-        rendered_body = render_blocks(blocks, request=request, extra_context={"preview": True})
-    else:
-        rendered_body = body_html
-
     nav_override = payload.get("custom_nav_items")
     if not isinstance(nav_override, list):
         nav_override = []
@@ -213,12 +205,17 @@ def preview_html(request):
         custom_nav_items=nav_override,
     )
 
+    main_html, footer_html = preview_page.render_content_segments(
+        request=request, extra_context={"preview": True}
+    )
+
     nav_payload = []
     if preview_page.show_navigation_bar:
         nav_payload = build_nav_payload(nav_override)
     context = {
         "page": preview_page,
-        "page_rendered": rendered_body,
+        "page_rendered": main_html,
+        "page_footer": footer_html,
         "nav_label": preview_page.title,
         "is_preview": True,
         "public_pages": nav_payload,
@@ -226,4 +223,4 @@ def preview_html(request):
     }
 
     html = render_to_string("public/page_detail.html", context, request=request)
-    return JsonResponse({"html": html, "content_html": rendered_body})
+    return JsonResponse({"html": html, "content_html": main_html})

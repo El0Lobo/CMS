@@ -234,7 +234,7 @@ def preview(request):
             _ = page.hero_image.url
     except Exception:
         page.hero_image = None
-    rendered = page.render_content(request=request)
+    rendered_main, rendered_footer = page.render_content_segments(request=request)
 
     return render(
         request,
@@ -243,6 +243,7 @@ def preview(request):
             "page": page,
             "nav_label": page.title,
             "is_preview": True,
-            "page_rendered": rendered,
+            "page_rendered": rendered_main,
+            "page_footer": rendered_footer,
         },
     )

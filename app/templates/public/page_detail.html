@@ -22,3 +22,9 @@
     </article>
   {% endif %}
 {% endblock %}
+
+{% block after_main %}
+  {% if page_footer %}
+    {{ page_footer|safe }}
+  {% endif %}
+{% endblock %}

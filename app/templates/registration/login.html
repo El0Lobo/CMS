@@ -39,3 +39,9 @@
     </form>
   </section>
 {% endblock %}
+
+{% block after_main %}
+  {% if page_footer %}
+    {{ page_footer|safe }}
+  {% endif %}
+{% endblock %}
