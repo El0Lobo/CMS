@@ -184,7 +184,8 @@ def visibility_picker(request):
     if request.method == "POST":
         selected = request.POST.getlist("groups")
         rule.allowed_groups.set(Group.objects.filter(id__in=selected))
-        rule.is_enabled = True
+        is_disabled = request.POST.get("is_disabled")
+        rule.is_enabled = not bool(is_disabled)
         rule.save()
         saved = True
     else:
@@ -198,3 +199,25 @@ def visibility_picker(request):
         "key": key,
     }, request=request)
     return HttpResponse(html)
+
+
+@login_required
+@user_passes_test(superuser_required)
+def visibility_disabled(request):
+    """
+    List of disabled visibility entries with a quick enable action.
+    """
+    rules = VisibilityRule.objects.filter(is_enabled=False).order_by("label", "key")
+    if request.method == "POST":
+        rule_id = request.POST.get("rule_id")
+        rule = get_object_or_404(VisibilityRule, id=rule_id)
+        rule.is_enabled = True
+        rule.save()
+        messages.success(request, f"Re-enabled {rule.label or rule.key}.")
+        return redirect("setup:visibility_disabled")
+
+    return render(
+        request,
+        "setup/visibility_disabled.html",
+        {"rules": rules},
+    )

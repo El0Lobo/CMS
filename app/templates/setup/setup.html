@@ -104,12 +104,18 @@
 
   /* Stronger horizontal separator where used */
   .rule { border: 0; border-top: var(--setup-border) solid var(--setup-border-color); margin: 16px 0; }
+
+  .visibility-anchor {
+    position: relative;
+    display: inline-flex;
+    margin-left: .4rem;
+  }
 </style>
 
 <div id="setup-root" data-mode="{{ current_mode|default:'venue' }}" class="stack-lg">
 
   <div class="stack">
-    <h1 class="mb-0">CMS Setup {% visibility_cog 'cms.setup.page' 'CMS Setup Page' %}</h1>
+    <h1 class="mb-0">CMS Setup <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.page' 'CMS Setup Page' target='.visibility-anchor' %}</span></h1>
     <p class="lead-muted">Configure global settings (mode, address, socials, membership, opening times, roles).</p>
   </div>
 
@@ -120,7 +126,7 @@
     <section class="card" data-collapsible-key="setup:general">
       <h2>
         <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
-        General {% visibility_cog 'cms.setup.general' 'General' %}
+        General <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.general' 'General' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         {{ form.non_field_errors }}
@@ -141,7 +147,7 @@
     <section class="card only-venue only-band" data-collapsible-key="setup:address">
       <h2>
         <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Address {% visibility_cog 'cms.setup.address' 'Address' %}
+        Address <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.address' 'Address' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         <div class="address-ui address-ui--stacked stack">
@@ -169,7 +175,7 @@
     <section class="card" data-collapsible-key="setup:socials">
       <h2>
         <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Socials & Contact {% visibility_cog 'cms.setup.socials' 'Socials' %}
+        Socials & Contact <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.socials' 'Socials' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         <div class="grid-2">
@@ -197,7 +203,7 @@
     <section class="card only-venue only-band" data-collapsible-key="setup:schema">
       <h2>
         <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Standards {% visibility_cog 'cms.setup.schema' 'Schema' %}
+        Standards <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.schema' 'Schema' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         <div class="grid-3">
@@ -232,7 +238,7 @@
     <section class="card only-venue" data-collapsible-key="setup:policies">
       <h2>
         <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Policies & Accessibility {% visibility_cog 'cms.setup.policies' 'Policies' %}
+        Policies & Accessibility <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.policies' 'Policies' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         <div class="grid-3">
@@ -300,7 +306,7 @@
 
         <button type="button" class="collapse-toggle"><span class="chev">&#9656;</span></button>
 
-        Public Pages {% visibility_cog 'cms.setup.public' 'Public site' %}
+        Public Pages <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.public' 'Public site' target='.visibility-anchor' %}</span>
 
       </h2>
 
@@ -338,7 +344,7 @@
     <section class="card" data-collapsible-key="setup:membership">
       <h2>
         <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Membership {% visibility_cog 'cms.setup.membership' 'Membership' %}
+        Membership <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.membership' 'Membership' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         <div class="control-inline">
@@ -375,7 +381,7 @@
     <section class="card only-venue" data-collapsible-key="setup:opening">
       <h2 style="display:flex; align-items:center; gap:.75rem;">
         <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Opening Times {% visibility_cog 'cms.setup.opening' 'Opening Times' %}
+        Opening Times <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.opening' 'Opening Times' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         <label style="margin-left:auto; display:flex; align-items:center; gap:.4rem; font-size:.95rem;">
@@ -406,7 +412,7 @@
     <section class="card" id="roles" data-collapsible-key="setup:roles">
       <h2>
         <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Roles (Groups) {% visibility_cog 'cms.setup.roles' 'Roles' %}
+        Roles (Groups) <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.roles' 'Roles' target='.visibility-anchor' %}</span>
       </h2>
       <div class="card__body stack">
         {{ roles.management_form }}

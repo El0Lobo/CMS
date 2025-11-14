@@ -1,0 +1,34 @@
+{% extends "cms/base_cms.html" %}
+{% block content %}
+<h1>Disabled Items</h1>
+<p class="muted">These navigation/items were disabled via the visibility picker. Re-enable them to make them available again.</p>
+
+{% if rules %}
+  <table class="table" style="margin-top:1rem;">
+    <tr>
+      <th>Key</th>
+      <th>Label</th>
+      <th>Notes</th>
+      <th>Actions</th>
+    </tr>
+    {% for rule in rules %}
+      <tr>
+        <td><code>{{ rule.key }}</code></td>
+        <td>{{ rule.label|default:"—" }}</td>
+        <td>{{ rule.notes|default:"—" }}</td>
+        <td>
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="rule_id" value="{{ rule.id }}">
+            <button type="submit" class="btn btn-primary btn-sm">Re-enable</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+{% else %}
+  <p><em>No disabled items.</em></p>
+{% endif %}
+
+<p style="margin-top:1rem;"><a class="btn btn-secondary" href="{% url 'setup:visibility_list' %}">Back to Visibility Rules</a></p>
+{% endblock %}

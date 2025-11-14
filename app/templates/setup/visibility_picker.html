@@ -54,7 +54,18 @@
         {{ g.name }}
       </label><br>
     {% endfor %}
+            <p class="muted" style="margin:0.25rem 0 0;">
+        Check those who should have access to this item.
+      </p>
   </div>
+  <label style="display:flex;gap:.4rem;align-items:center;margin-top:.5rem;color:#f88;">
+    <input type="checkbox" name="is_disabled" value="1" {% if not rule.is_enabled %}checked{% endif %}>
+    <span>Disable this item completely</span>
+  </label>
+  <p class="muted" style="margin:0.25rem 0 0;">
+    Disabled items are hidden everywhere. Re-enable them later from:
+    <a href="{% url 'setup:visibility_disabled' %}" target="_blank" rel="noopener">Disabled items</a>
+  </p>
   <div style="margin-top:8px;">
     <button type="submit" class="btn btn-primary">Save</button>
   </div>
