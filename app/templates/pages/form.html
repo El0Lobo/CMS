@@ -16,7 +16,7 @@
       display: grid;
       gap: .5rem;
     }
-    .nav-item {
+    .nav-builder__item {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -25,19 +25,19 @@
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 8px;
     }
-    .nav-item label {
+    .nav-builder__item label {
       display: flex;
       gap: .5rem;
       align-items: center;
       margin: 0;
       flex: 1;
     }
-    .nav-order {
+    .nav-builder__order {
       width: 1.5rem;
       text-align: center;
       font-variant-numeric: tabular-nums;
     }
-    .nav-actions {
+    .nav-builder__actions {
       display: flex;
       gap: .25rem;
     }
@@ -135,13 +135,13 @@
       <div id="nav-builder" class="nav-builder">
         <div class="nav-builder__list" data-role="nav-list">
           {% for item in nav_builder_items %}
-            <div class="nav-item" data-slug="{{ item.slug }}">
+            <div class="nav-builder__item" data-slug="{{ item.slug }}">
               <label>
-                <span class="nav-order">-</span>
+                <span class="nav-builder__order">-</span>
                 <input type="checkbox" class="nav-check" {% if item.checked %}checked{% endif %}>
                 <span class="nav-label">{{ item.title }}</span>
               </label>
-              <div class="nav-actions">
+              <div class="nav-builder__actions">
                 <button type="button" class="btn btn-xs btn-outline-secondary" data-move="-1" aria-label="Move up">▲</button>
                 <button type="button" class="btn btn-xs btn-outline-secondary" data-move="1" aria-label="Move down">▼</button>
               </div>
@@ -305,7 +305,7 @@
 
     function currentSelection(){
       const slugs = [];
-      list.querySelectorAll('.nav-item').forEach(item => {
+      list.querySelectorAll('.nav-builder__item').forEach(item => {
         const cb = item.querySelector('.nav-check');
         if (cb && cb.checked) {
           slugs.push(item.dataset.slug);
@@ -321,8 +321,8 @@
 
     function renumber(selection){
       let idx = 1;
-      list.querySelectorAll('.nav-item').forEach(item => {
-        const orderEl = item.querySelector('.nav-order');
+      list.querySelectorAll('.nav-builder__item').forEach(item => {
+        const orderEl = item.querySelector('.nav-builder__order');
         if (!orderEl) return;
         if (selection.includes(item.dataset.slug)){
           orderEl.textContent = String(idx++).padStart(2, '0');
@@ -356,7 +356,7 @@
       const btn = e.target.closest('[data-move]');
       if (!btn) return;
       e.preventDefault();
-      move(btn.closest('.nav-item'), Number(btn.dataset.move));
+      move(btn.closest('.nav-builder__item'), Number(btn.dataset.move));
     });
 
     function applyState(selection){

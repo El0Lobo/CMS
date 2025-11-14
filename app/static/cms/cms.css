@@ -56,6 +56,14 @@ a {
 .cms-nav nav a:hover {
   background: #0f1419;
 }
+.cms-nav nav a.is-active {
+  background: #0f1419;
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.cms-nav nav a.is-active .icon {
+  color: var(--accent);
+}
 .cms-nav .section {
   margin: 0.9rem 0 0.4rem;
   color: var(--muted);

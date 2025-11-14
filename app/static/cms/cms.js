@@ -37,6 +37,49 @@
     }
   }
 
+  function normalisePath(path) {
+    if (!path) return "/";
+    try {
+      const url = new URL(path, window.location.origin);
+      path = url.pathname;
+    } catch (e) {
+      // leave as-is
+    }
+    if (path.length > 1 && path.endsWith("/")) {
+      path = path.slice(0, -1);
+    }
+    return path || "/";
+  }
+
+  function highlightActiveNav() {
+    const current = normalisePath(window.location.pathname);
+    const links = document.querySelectorAll(".cms-nav nav a[href]");
+    let winner = null;
+    let bestScore = 0;
+
+    links.forEach((link) => {
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("#")) {
+        return;
+      }
+      let target = normalisePath(href);
+      if (target === "/") {
+        return;
+      }
+      const match =
+        current === target || current.startsWith(target + "/");
+      if (match && target.length > bestScore) {
+        winner = link;
+        bestScore = target.length;
+      }
+    });
+
+    if (winner) {
+      winner.classList.add("is-active");
+      winner.setAttribute("aria-current", "page");
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     restoreMini();
     if (btn) btn.addEventListener("click", toggle);
@@ -45,6 +88,7 @@
       // leave mobile open state when resizing back to desktop
       if (!isMobile()) closeMobileNav();
     });
+    highlightActiveNav();
   });
   document.addEventListener('click', function(e){
   const pop = e.target.closest('.popover');
@@ -73,4 +117,3 @@ document.addEventListener('DOMContentLoaded', function () {
     if (link) link.classList.toggle('has-unread', anyUnread);
   });
 });
-
