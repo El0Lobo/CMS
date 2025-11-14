@@ -1,7 +1,7 @@
 {% extends "cms/base_cms.html" %}
 {% block content %}
 <h1>Disabled Items</h1>
-<p class="muted">These navigation/items were disabled via the visibility picker. Re-enable them to make them available again.</p>
+<p class="muted">These navigation/items were disabled. Re-enable them to make them available again.</p>
 
 {% if rules %}
   <table class="table" style="margin-top:1rem;">
@@ -30,5 +30,4 @@
   <p><em>No disabled items.</em></p>
 {% endif %}
 
-<p style="margin-top:1rem;"><a class="btn btn-secondary" href="{% url 'setup:visibility_list' %}">Back to Visibility Rules</a></p>
 {% endblock %}

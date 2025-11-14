@@ -59,7 +59,6 @@ a {
 .cms-nav nav a.is-active {
   background: #0f1419;
   color: #fff;
-  box-shadow: inset 3px 0 0 var(--accent);
 }
 .cms-nav nav a.is-active .icon {
   color: var(--accent);
