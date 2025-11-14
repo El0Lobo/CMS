@@ -190,7 +190,12 @@ def preview_html(request):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
-    rendered_body = render_blocks(blocks, request=request, extra_context={"preview": True})
+    render_raw = bool(payload.get("render_body_only", False))
+    body_html = payload.get("body") or ""
+    if not render_raw and blocks:
+        rendered_body = render_blocks(blocks, request=request, extra_context={"preview": True})
+    else:
+        rendered_body = body_html
 
     nav_override = payload.get("custom_nav_items")
     if not isinstance(nav_override, list):
@@ -221,4 +226,4 @@ def preview_html(request):
     }
 
     html = render_to_string("public/page_detail.html", context, request=request)
-    return JsonResponse({"html": html})
+    return JsonResponse({"html": html, "content_html": rendered_body})

@@ -9,7 +9,14 @@ from .models import Page
 class PageForm(forms.ModelForm):
     body = forms.CharField(
         required=False,
-        widget=forms.HiddenInput(),
+        widget=forms.Textarea(
+            attrs={
+                "rows": 18,
+                "spellcheck": "false",
+                "class": "code-input",
+            }
+        ),
+        help_text="When raw rendering is enabled this HTML replaces the block builder output.",
     )
     blocks = forms.CharField(
         required=False,

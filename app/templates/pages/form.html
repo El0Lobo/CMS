@@ -48,6 +48,34 @@
       pointer-events: none;
       filter: grayscale(.2);
     }
+    .raw-html-editor textarea {
+      font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      min-height: 280px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1rem;
+      color: inherit;
+    }
+    .raw-html-editor.is-disabled {
+      opacity: .55;
+    }
+    .raw-html-editor.is-disabled textarea {
+      pointer-events: none;
+      filter: grayscale(.2);
+    }
+    .raw-html-editor__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .raw-html-editor__actions {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
   </style>
 {% endblock %}
 
@@ -74,9 +102,27 @@
       </div>
     {% endif %}
     {{ form.blocks }}
-    <div style="display:none;">
-      {{ form.body }}
-    </div>
+    <section id="raw-html-editor" class="card raw-html-editor">
+      <div class="raw-html-editor__header">
+        <div>
+          <h2 style="margin:0;">Raw HTML body</h2>
+          <p class="muted" style="margin:.25rem 0 0;">Enable “Render raw HTML” below to use this editor instead of the block builder.</p>
+        </div>
+        <div class="raw-html-editor__actions">
+          <button type="button" class="btn btn-xs btn-outline-secondary" id="capture-html-from-builder">Copy current layout into HTML</button>
+        </div>
+      </div>
+      <div style="margin-top:1rem;">
+        <label class="form-label" for="{{ form.body.id_for_label }}">HTML</label>
+        {{ form.body }}
+        {% if form.body.help_text %}
+          <p class="hint">{{ form.body.help_text }}</p>
+        {% endif %}
+        {% if form.body.errors %}
+          <div class="field-error">{{ form.body.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+    </section>
 
     <section class="card" style="margin-bottom:1.5rem;">
       <h2 style="margin-top:0;">Navigation</h2>
@@ -337,14 +383,101 @@
   (function(){
     const toggle = document.getElementById('{{ form.render_body_only.id_for_label }}') || document.getElementById('id_render_body_only');
     const builder = document.getElementById('page-builder');
+    const htmlSection = document.getElementById('raw-html-editor');
+    const htmlField = document.getElementById('id_body');
+
     function apply(){
-      if (!builder || !toggle) return;
-      builder.classList.toggle('is-disabled', !!toggle.checked);
+      if (builder && toggle){
+        builder.classList.toggle('is-disabled', !!toggle.checked);
+      }
+      const rawEnabled = toggle ? !!toggle.checked : false;
+      if (htmlSection){
+        htmlSection.classList.toggle('is-disabled', !rawEnabled);
+      }
+      if (htmlField){
+        htmlField.readOnly = !rawEnabled;
+        htmlField.setAttribute('aria-disabled', (!rawEnabled).toString());
+      }
     }
+
     if (toggle){
       toggle.addEventListener('change', apply);
-      apply();
     }
+    apply();
+  })();
+  </script>
+
+  <script>
+  (function(){
+    const copyBtn = document.getElementById('capture-html-from-builder');
+    const htmlField = document.getElementById('id_body');
+    const toggle = document.getElementById('id_render_body_only') || document.getElementById('{{ form.render_body_only.id_for_label }}');
+    const config = window.__PAGE_BUILDER__ || {};
+
+    if (!copyBtn || !config.urls || !config.urls.preview) {
+      return;
+    }
+
+    function getCsrfToken(){
+      const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      return input ? input.value : '';
+    }
+
+    function parseJSONField(fieldId, fallback){
+      const field = document.getElementById(fieldId);
+      if (!field){
+        return fallback;
+      }
+      try {
+        return JSON.parse(field.value || '[]');
+      } catch (error) {
+        console.warn(`Could not parse ${fieldId}`, error);
+        return fallback;
+      }
+    }
+
+    copyBtn.addEventListener('click', async () => {
+      const previewUrl = config.urls.preview;
+      if (!previewUrl){
+        return;
+      }
+      copyBtn.disabled = true;
+      copyBtn.textContent = 'Copying…';
+      try {
+        const payload = {
+          blocks: parseJSONField('id_blocks', []),
+          custom_nav_items: parseJSONField('id_custom_nav_items', []),
+          show_navigation_bar: !!(document.getElementById('id_show_navigation_bar') && document.getElementById('id_show_navigation_bar').checked),
+          body: htmlField ? htmlField.value : '',
+          render_body_only: false,
+        };
+        const response = await fetch(previewUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok){
+          throw new Error(`Preview failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.content_html && htmlField){
+          htmlField.value = data.content_html.trim();
+          if (toggle && !toggle.checked){
+            toggle.checked = true;
+            toggle.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Could not copy the current layout into the HTML editor. Please try again.');
+      } finally {
+        copyBtn.disabled = false;
+        copyBtn.textContent = 'Copy current layout into HTML';
+      }
+    });
   })();
   </script>
 {% endblock %}
