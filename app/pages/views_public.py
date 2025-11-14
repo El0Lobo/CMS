@@ -1,127 +1,99 @@
-# app/pages/views_public.py
-from django.shortcuts import render, get_object_or_404
-from django.apps import apps
-from django.utils import timezone
-from django.db.models import Q
+from __future__ import annotations
 
-# Helper: try to load a model if that app exists
-def _get_model(label, model_name):
-    try:
-        return apps.get_model(label, model_name)
-    except Exception:
-        return None
+from django.contrib.auth.views import LoginView
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import NoReverseMatch, reverse
+
+from app.setup.models import SiteSettings
+
+from .models import Page
+from .navigation import build_nav_payload
+
+
+def _public_enabled_or_404() -> SiteSettings:
+    settings_obj = SiteSettings.get_solo()
+    if not settings_obj.public_pages_enabled:
+        raise Http404("Public site is disabled.")
+    return settings_obj
+
+
+def _published_queryset():
+    return Page.objects.filter(status=Page.Status.PUBLISHED, is_visible=True)
+
+
+def _nav_payload_for(page: Page):
+    if not page.show_navigation_bar:
+        return []
+    override = [slug for slug in (page.custom_nav_items or []) if slug]
+    if not override:
+        return []
+    return build_nav_payload(override)
+
+
+def _render_page(request, page: Page) -> HttpResponse:
+    rendered = page.render_content(request=request)
+    nav_entries = _nav_payload_for(page)
+    context = {
+        "page": page,
+        "page_rendered": rendered,
+        "nav_label": page.title,
+        "public_pages": nav_entries,
+        "page_show_nav": bool(nav_entries),
+    }
+    return render(request, "public/page_detail.html", context)
+
+
+def _first_available_page():
+    qs = _published_queryset()
+    home = qs.filter(slug="home").first()
+    if home:
+        return home
+    return qs.order_by("navigation_order", "title").first()
+
 
 def home(request):
-    return render(request, "public/home.html", {})
+    _public_enabled_or_404()
+    page = _first_available_page()
+    if not page:
+        return render(request, "public/empty_site.html", {"page_show_nav": False}, status=404)
+    if page.slug != "home":
+        return redirect(page.get_absolute_url())
+    return _render_page(request, page)
 
-def events(request):
-    Event = _get_model("app.events", "Event")
-    events = Event.objects.upcoming() if Event and hasattr(Event.objects, "upcoming") else (Event.objects.all() if Event else [])
-    return render(request, "public/events.html", {"events": events})
-
-def blog(request):
-    Post = _get_model("app.blog", "Post")
-    posts = Post.objects.published().order_by("-published_at") if Post and hasattr(Post.objects, "published") else (Post.objects.all().order_by("-id") if Post else [])
-    return render(request, "public/blog.html", {"posts": posts})
-
-def about(request):
-    return render(request, "public/about.html", {})
-
-def contact(request):
-    return render(request, "public/contact.html", {})
-
-def menu(request):
-    # Expect structure: [{"title": "...", "items": [{"name": "...", "price_display": "..."}]}]
-    MenuSection = _get_model("app.cms", "MenuSection") or _get_model("app.pos", "MenuSection")
-    if MenuSection:
-        sections = MenuSection.objects.prefetch_related("items").all()
-        menu_sections = [{"title": s.title, "items": [{"name": i.name, "price_display": getattr(i, "price_display", str(getattr(i, "price_minor", "")))} for i in s.items.all()]} for s in sections]
-    else:
-        menu_sections = []
-    return render(request, "public/menu.html", {"menu_sections": menu_sections})
-
-def gallery(request):
-    # Expect simple list of images with url/caption
-    GalleryImage = _get_model("app.cms", "GalleryImage") or _get_model("app.publicthemes", "GalleryImage")
-    images = GalleryImage.objects.all() if GalleryImage else []
-    return render(request, "public/gallery.html", {"images": images})
-
-def shows(request):
-    Show = _get_model("app.events", "Show") or _get_model("app.band", "Show")
-    shows = Show.objects.all().order_by("date") if Show else []
-    return render(request, "public/shows.html", {"shows": shows})
-
-def music(request):
-    return render(request, "public/music.html", {})
-
-def videos(request):
-    Video = _get_model("app.social", "Video") or _get_model("app.cms", "Video")
-    videos = Video.objects.all().order_by("-id") if Video else []
-    return render(request, "public/videos.html", {"videos": videos})
-
-def store(request):
-    Product = _get_model("app.merch", "Product") or _get_model("app.pos", "Product")
-    products = Product.objects.available() if Product and hasattr(Product.objects, "available") else (Product.objects.all() if Product else [])
-    return render(request, "public/store.html", {"products": products})
-
-def posts(request):
-    Post = _get_model("app.blog", "Post")
-    posts = Post.objects.published().order_by("-published_at") if Post and hasattr(Post.objects, "published") else (Post.objects.all().order_by("-id") if Post else [])
-    return render(request, "public/posts.html", {"posts": posts})
-
-def archive(request):
-    # Build a simple archive structure: [(month_start_date, [posts])]
-    Post = _get_model("app.blog", "Post")
-    archive = []
-    if Post:
-        qs = Post.objects.published() if hasattr(Post.objects, "published") else Post.objects.all()
-        qs = qs.order_by("-published_at")
-        buckets = {}
-        for p in qs:
-            if not getattr(p, "published_at", None):
-                continue
-            key = p.published_at.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            buckets.setdefault(key, []).append(p)
-        archive = sorted(buckets.items(), key=lambda kv: kv[0], reverse=True)
-    return render(request, "public/archive.html", {"archive": archive})
 
 def page_detail(request, slug):
-    # Generic CMS page fallback
-    Page = _get_model("app.pages", "Page") or _get_model("app.cms", "Page")
-    if Page:
-        page = get_object_or_404(Page, slug=slug)
-        rendered = getattr(page, "render_content", lambda **kwargs: getattr(page, "body", ""))(request=request)
-        return render(
-            request,
-            "public/page_detail.html",
-            {
-                "page": page,
-                "page_rendered": rendered,
-            },
-        )
-    # If no Page model, render a minimal stand-in
-    fake = type("Page", (), {"title": slug.replace("-", " ").title(), "body": "<p>Content coming soon.</p>", "created_at": timezone.now()})
-    return render(
-        request,
-        "public/page_detail.html",
-        {
-            "page": fake,
-            "page_rendered": getattr(fake, "body", ""),
-        },
-    )
+    _public_enabled_or_404()
+    page = get_object_or_404(_published_queryset(), slug=slug)
+    return _render_page(request, page)
 
-from django.shortcuts import render
-from app.menu.models import Category
 
-def menu(request):
-    roots = (
-        Category.objects
-        .filter(parent__isnull=True)
-        .prefetch_related(
-            "children__children",
-            "items__variants",
-            "children__items__variants",
+class CMSLoginView(LoginView):
+    template_name = "registration/login.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = (
+            Page.objects.filter(slug="login", status=Page.Status.PUBLISHED, is_visible=True)
+            .first()
         )
-        .order_by("name")
-    )
-    return render(request, "public/menu.html", {"roots": roots})
+        if page:
+            context["page"] = page
+            context["page_rendered"] = page.render_content(request=self.request)
+            if page.show_navigation_bar:
+                nav_payload = build_nav_payload(page.custom_nav_items or [])
+            else:
+                nav_payload = []
+            context["public_pages"] = nav_payload
+            context["page_show_nav"] = bool(nav_payload)
+            context["nav_label"] = page.title
+        else:
+            context.setdefault("public_pages", [])
+            context.setdefault("page_show_nav", False)
+            context.setdefault("nav_label", "Login")
+            context["page_rendered"] = ""
+        try:
+            context["password_reset_url"] = reverse("password_reset")
+        except NoReverseMatch:
+            context["password_reset_url"] = None
+        return context

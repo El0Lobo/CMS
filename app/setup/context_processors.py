@@ -3,26 +3,15 @@ from __future__ import annotations
 from django.utils.text import slugify
 
 from .models import SiteSettings
-from app.pages.navigation import ensure_pages_from_settings, get_navigation_entries
+from app.pages.navigation import get_navigation_entries, serialize_nav_entries
 
 
 def site_settings_context(request):
     settings_obj = SiteSettings.get_solo()
 
-    # Ensure legacy required_pages entries exist as Page records
-    ensure_pages_from_settings(settings_obj)
-
-    nav_entries = get_navigation_entries()
-    pages = [
-        {
-            "title": entry.title,
-            "slug": entry.slug,
-            "url": entry.url,
-            "pretty_slug": entry.pretty_slug,
-            "pretty_url": entry.pretty_url,
-        }
-        for entry in nav_entries
-    ]
+    nav_entries = get_navigation_entries() if settings_obj.public_pages_enabled else []
+    pages = serialize_nav_entries(nav_entries)
+    page_show_nav = bool(pages)
 
     # Determine active nav item
     req_slug = None
@@ -55,6 +44,7 @@ def site_settings_context(request):
     return {
         "site_settings": settings_obj,
         "public_pages": pages,
+        "page_show_nav": page_show_nav,
         "current_nav_title": current_nav_title,
         "site_address_has_any": has_any,
         "site_address_line1": line1,

@@ -14,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 from . import data_sources
 from .blocks import render_blocks
 from .models import Page
-from .navigation import get_navigation_entries
+from .navigation import build_nav_payload
 from .serializers import serialize_page
 
 
@@ -84,14 +84,18 @@ def _apply_page_payload(page: Page, data: Dict[str, Any], *, user) -> None:
         "title",
         "summary",
         "status",
-        "is_visible",
-        "show_in_navigation",
         "navigation_order",
         "body",
+        "render_body_only",
     ]
     for field in simple_fields:
         if field in data:
             setattr(page, field, data[field])
+
+    bool_fields = ["is_visible", "show_navigation_bar", "render_body_only"]
+    for field in bool_fields:
+        if field in data:
+            setattr(page, field, bool(data[field]))
 
     if "slug" in data:
         slug_value = data["slug"]
@@ -105,6 +109,19 @@ def _apply_page_payload(page: Page, data: Dict[str, Any], *, user) -> None:
             page.navigation_order = int(data["navigation_order"])
         except (TypeError, ValueError):
             page.navigation_order = 0
+
+    if "custom_nav_items" in data:
+        nav_items = data["custom_nav_items"]
+        if not isinstance(nav_items, list):
+            raise ValueError("custom_nav_items must be an array")
+        cleaned = []
+        for slug in nav_items:
+            if not isinstance(slug, str):
+                continue
+            slug_norm = slugify(slug) or slug.strip()
+            if slug_norm and slug_norm not in cleaned:
+                cleaned.append(slug_norm)
+        page.custom_nav_items = cleaned
 
     if page.status == Page.Status.PUBLISHED and not page.published_at:
         page.published_at = timezone.now()
@@ -175,6 +192,10 @@ def preview_html(request):
 
     rendered_body = render_blocks(blocks, request=request, extra_context={"preview": True})
 
+    nav_override = payload.get("custom_nav_items")
+    if not isinstance(nav_override, list):
+        nav_override = []
+
     preview_page = Page(
         title=payload.get("title") or payload.get("page", {}).get("title") or "Preview",
         slug=slugify(payload.get("slug") or payload.get("page", {}).get("slug") or "preview"),
@@ -182,25 +203,21 @@ def preview_html(request):
         blocks=blocks,
         status=payload.get("status") or Page.Status.DRAFT,
         is_visible=True,
-        show_in_navigation=True,
+        show_navigation_bar=payload.get("show_navigation_bar", True),
+        render_body_only=payload.get("render_body_only", False),
+        custom_nav_items=nav_override,
     )
 
-    nav_entries = get_navigation_entries()
+    nav_payload = []
+    if preview_page.show_navigation_bar:
+        nav_payload = build_nav_payload(nav_override)
     context = {
         "page": preview_page,
         "page_rendered": rendered_body,
         "nav_label": preview_page.title,
         "is_preview": True,
-        "public_pages": [
-            {
-                "title": entry.title,
-                "slug": entry.slug,
-                "url": entry.url,
-                "pretty_slug": entry.pretty_slug,
-                "pretty_url": entry.pretty_url,
-            }
-            for entry in nav_entries
-        ],
+        "public_pages": nav_payload,
+        "page_show_nav": bool(nav_payload),
     }
 
     html = render_to_string("public/page_detail.html", context, request=request)

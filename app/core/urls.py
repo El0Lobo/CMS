@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from app.pages.views_public import CMSLoginView
 from .views import health
 
 urlpatterns = [
@@ -12,6 +13,7 @@ urlpatterns = [
     path("api/v1/", include("app.api.urls")),
 
     # Auth
+    path("accounts/login/", CMSLoginView.as_view(), name="login"),
     path("accounts/", include("django.contrib.auth.urls")),
 
     # -------- Public --------
@@ -19,13 +21,11 @@ urlpatterns = [
     path("", include(("app.pages.urls_public", "public"), namespace="public")),
     # Public merch (e.g. /shop/…)
     path("", include(("app.merch.urls_public", "merch_public"), namespace="merch_public")),
-    # Public menu (e.g. /menu/…)
-    path("menu/", include(("app.public.menu.urls", "public_menu"), namespace="public_menu")),
 
     # -------- CMS --------
     path("cms/", include("app.cms.urls")),
     path("cms/pages/", include("app.pages.urls")),
-    path("cms/ckeditor/", include("ckeditor_uploader.urls")),
+    path("cms/ckeditor5/", include("django_ckeditor_5.urls")),
     path("cms/blog/", include("app.blog.urls")),
     path("cms/events/", include("app.events.urls")),
     path("cms/shifts/", include("app.shifts.urls")),

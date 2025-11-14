@@ -510,8 +510,26 @@ async function fetchPreview() {
   if (!config.urls || !config.urls.preview) {
     return;
   }
+  const navField = document.getElementById("id_custom_nav_items");
+  const showNavField = document.getElementById("id_show_navigation_bar");
+  let navItems = [];
+  if (navField) {
+    try {
+      navItems = JSON.parse(navField.value || "[]");
+    } catch (error) {
+      console.warn("Could not parse navigation items for preview", error);
+      navItems = [];
+    }
+  }
+  const showNav = showNavField ? !!showNavField.checked : false;
+  const bodyField = document.getElementById("id_body");
+  const renderRawField = document.getElementById("id_render_body_only");
   const payload = {
     blocks: state.blocks,
+    custom_nav_items: navItems,
+    show_navigation_bar: showNav,
+    render_body_only: renderRawField ? !!renderRawField.checked : false,
+    body: bodyField ? bodyField.value : "",
   };
   if (previewInflight) {
     previewInflight.abort();

@@ -9,7 +9,7 @@ All templates extend: `public/base_public.html`
 
 They read data from the `SiteSettings` context processor:
 - `site_settings`: your global config (name, address, socials, currency, etc.)
-- `public_pages`: list of pages derived from `SiteSettings.required_pages`
+- `public_pages`: navigation-ready list of published `app.pages.Page` entries
 
 Suggested URL mapping (adjust to your apps):
 - /               -> public/home.html

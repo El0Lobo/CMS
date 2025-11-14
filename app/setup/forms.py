@@ -11,7 +11,6 @@ from django.conf import settings as dj_settings
 from django.contrib.auth.models import Group
 from django.forms import ModelForm
 from django.forms.models import inlineformset_factory, modelformset_factory
-from django.utils.text import slugify
 
 from .models import SiteSettings, MembershipTier, OpeningHour, VisibilityRule
 
@@ -39,19 +38,7 @@ def _update_widget(field: forms.Field, **attrs) -> None:
 
 
 class SettingsForm(ModelForm):
-    """
-    Primary form for global site settings.
-
-    'required_pages' is persisted as newline-separated *pairs* in order:
-        slug|label
-    We prefer POST arrays `required_pages_slug[]` and `required_pages_label[]`
-    (submitted by setup.html) so changing the label won't change the URL.
-
-    Backward compatible:
-      - If only `required_pages` is posted:
-          • parse "slug|label" when present
-          • otherwise treat the value as a label and derive slug via slugify
-    """
+    """Primary form for global site settings."""
 
     currency_text = forms.CharField(
         required=False,
@@ -90,7 +77,7 @@ class SettingsForm(ModelForm):
         model = SiteSettings
         fields = [
             # General
-            "mode", "org_name", "logo", "publish_opening_times",
+            "mode", "org_name", "logo", "publish_opening_times", "public_pages_enabled",
             # Address & geodata
             "address_street", "address_number", "address_postal_code", "address_city",
             "address_country", "address_autocomplete",
@@ -105,8 +92,6 @@ class SettingsForm(ModelForm):
             "same_as",
             # Membership
             "membership_enabled", "membership_hint",
-            # Public pages (stored as newline-separated slug|label pairs)
-            "required_pages",
             # Policies & accessibility
             "smoking_allowed", "pets_allowed_text", "typical_age_range", "minors_policy_note",
             "acc_step_free", "acc_wheelchair", "acc_accessible_wc",
@@ -176,49 +161,6 @@ class SettingsForm(ModelForm):
         cur = (cur_from_post or cur_from_clean or cur_from_model_field or guess_default_currency() or "EUR").upper()
         data["default_currency"] = cur
         self.cleaned_data["default_currency"] = cur
-
-        # ---- Public pages (ordered pairs)
-        pairs = []
-
-        slugs  = [s.strip() for s in self.data.getlist("required_pages_slug") if s.strip()]
-        labels = [s.strip() for s in self.data.getlist("required_pages_label") if s.strip()]
-
-        if slugs and labels and len(slugs) == len(labels):
-            for s, lbl in zip(slugs, labels):
-                s_norm = slugify(s) or slugify(lbl) or "page"
-                pairs.append((s_norm, lbl))
-        else:
-            # Backward compatibility: `required_pages` may be:
-            #  - "slug|label" lines
-            #  - plain labels -> derive slug (URL will follow label in this legacy path)
-            raw = [s for s in self.data.getlist("required_pages") if s]
-            for item in raw:
-                line = item.strip()
-                if not line:
-                    continue
-                if "|" in line:
-                    s, lbl = line.split("|", 1)
-                    s_norm = slugify(s) or slugify(lbl) or "page"
-                    pairs.append((s_norm, lbl.strip()))
-                else:
-                    lbl = line
-                    s_norm = slugify(lbl) or "page"
-                    pairs.append((s_norm, lbl))
-
-        # De-dupe by slug while preserving first occurrence order
-        seen = set()
-        deduped = []
-        for s, lbl in pairs:
-            if s in seen:
-                continue
-            seen.add(s)
-            deduped.append((s, lbl))
-
-        if deduped:
-            # Persist as newline-separated "slug|label" lines
-            joined = "\n".join(f"{s}|{lbl}" for s, lbl in deduped)
-            data["required_pages"] = joined
-            self.cleaned_data["required_pages"] = joined
 
         return data
 

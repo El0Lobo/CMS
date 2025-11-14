@@ -60,9 +60,15 @@ class SiteSettings(models.Model):
         max_length=200, blank=True, help_text=_("Short label shown next to money icon.")
     )
 
-    # Pages (for auto-create)
+    public_pages_enabled = models.BooleanField(
+        default=True,
+        help_text=_("Expose the public-facing site powered by the Pages app."),
+    )
+
+    # Legacy field (kept to avoid data loss, no longer edited in the UI)
     required_pages = models.TextField(
-        blank=True, help_text=_("One page title per line (created if app.pages.Page exists).")
+        blank=True,
+        help_text=_("Legacy field for auto-created pages; no longer used by the UI."),
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -171,5 +177,4 @@ class VisibilityRule(models.Model):
 
     def __str__(self):
         return self.label or self.key
-
 

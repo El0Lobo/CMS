@@ -5,6 +5,50 @@
 {% block extra_head %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'pages/builder.css' %}">
+  <style>
+    .nav-builder {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .nav-builder__list {
+      display: grid;
+      gap: .5rem;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      padding: .5rem .75rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+    }
+    .nav-item label {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      margin: 0;
+      flex: 1;
+    }
+    .nav-order {
+      width: 1.5rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .nav-actions {
+      display: flex;
+      gap: .25rem;
+    }
+    .nav-builder.is-disabled { opacity: .5; }
+    .nav-builder.is-disabled { opacity: .5; }
+    .page-builder.is-disabled {
+      opacity: .35;
+      pointer-events: none;
+      filter: grayscale(.2);
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -34,6 +78,43 @@
       {{ form.body }}
     </div>
 
+    <section class="card" style="margin-bottom:1.5rem;">
+      <h2 style="margin-top:0;">Navigation</h2>
+      <p class="muted">Select the links you want to show on this page’s navbar. If you leave them all unchecked, the bar stays hidden even if enabled.</p>
+      <label class="form-label checkbox" style="margin-bottom:.75rem;">
+        {{ form.show_navigation_bar }} Show navigation bar on this page
+      </label>
+      <p class="text-warning" id="nav-empty-hint" hidden>Select at least one link to render the navigation bar.</p>
+      {{ form.custom_nav_items }}
+      <div id="nav-builder" class="nav-builder">
+        <div class="nav-builder__list" data-role="nav-list">
+          {% for item in nav_builder_items %}
+            <div class="nav-item" data-slug="{{ item.slug }}">
+              <label>
+                <span class="nav-order">-</span>
+                <input type="checkbox" class="nav-check" {% if item.checked %}checked{% endif %}>
+                <span class="nav-label">{{ item.title }}</span>
+              </label>
+              <div class="nav-actions">
+                <button type="button" class="btn btn-xs btn-outline-secondary" data-move="-1" aria-label="Move up">▲</button>
+                <button type="button" class="btn btn-xs btn-outline-secondary" data-move="1" aria-label="Move down">▼</button>
+              </div>
+            </div>
+          {% empty %}
+            <p class="muted" style="margin:0;">Create more pages to build a custom navigation menu.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:1.5rem;">
+      <h2 style="margin-top:0;">Rendering mode</h2>
+      <label class="form-label checkbox" style="margin-bottom:.5rem;">
+        {{ form.render_body_only }} Render raw HTML body only (ignore builder)
+      </label>
+      <p class="hint">When enabled, the block builder below is disabled and only the “Body” field is rendered on the public site.</p>
+    </section>
+
     <div class="card" style="padding:1.25rem; margin-bottom:1.25rem;">
       <div class="grid" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
         <div>
@@ -46,7 +127,7 @@
         <div>
           <label for="{{ form.slug.id_for_label }}" class="form-label">Slug</label>
           {{ form.slug }}
-          <p class="hint">Used in the URL, e.g. <code>/pages/&lt;slug&gt;/</code>.</p>
+          <p class="hint">Used in the URL, e.g. <code>/&lt;slug&gt;/</code>.</p>
           {% if form.slug.errors %}
             <div class="field-error">{{ form.slug.errors|join:", " }}</div>
           {% endif %}
@@ -62,9 +143,6 @@
         <div>
           <label class="form-label checkbox">{{ form.is_visible }} Visible</label>
           <p class="hint">Keep disabled while drafting.</p>
-        </div>
-        <div>
-          <label class="form-label checkbox">{{ form.show_in_navigation }} Show in navigation</label>
         </div>
       </div>
 
@@ -142,10 +220,18 @@
       </div>
     </div>
 
-    <div class="form-actions" style="margin-top:1.5rem; display:flex; gap:.75rem; flex-wrap:wrap;">
-      <button type="submit" class="btn btn-primary" id="builder-save-btn">Save</button>
-      <button type="button" class="btn btn-secondary" id="builder-preview-btn">Preview in place</button>
-      <a class="btn" href="{% url 'pages_index' %}">Cancel</a>
+    <div class="form-actions" style="margin-top:1.5rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary" id="builder-save-btn">Save</button>
+        <button type="button" class="btn btn-secondary" id="builder-preview-btn">Preview in place</button>
+        <a class="btn" href="{% url 'pages_index' %}">Cancel</a>
+      </div>
+      {% if page %}
+        <form method="post" action="{% url 'pages_delete' slug=page.slug %}" onsubmit="return confirm('Delete this page?');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-outline">Delete page</button>
+        </form>
+      {% endif %}
     </div>
   </form>
 {% endblock %}
@@ -156,4 +242,109 @@
     window.__PAGE_BUILDER__ = {{ builder_boot|safe }};
   </script>
   <script type="module" src="{% static 'pages/builder.js' %}"></script>
+  <script>
+  (function(){
+    const wrapper = document.getElementById('nav-builder');
+    if(!wrapper) return;
+    const list = wrapper.querySelector('[data-role="nav-list"]');
+    const hidden = document.getElementById('{{ form.custom_nav_items.id_for_label }}') || document.getElementById('id_custom_nav_items');
+    const toggle = document.getElementById('{{ form.show_navigation_bar.id_for_label }}') || document.getElementById('id_show_navigation_bar');
+    const emptyHint = document.getElementById('nav-empty-hint');
+
+    function currentSelection(){
+      const slugs = [];
+      list.querySelectorAll('.nav-item').forEach(item => {
+        const cb = item.querySelector('.nav-check');
+        if (cb && cb.checked) {
+          slugs.push(item.dataset.slug);
+        }
+      });
+      return slugs;
+    }
+
+    function syncHidden(selection){
+      if (!hidden) return;
+      hidden.value = JSON.stringify(selection);
+    }
+
+    function renumber(selection){
+      let idx = 1;
+      list.querySelectorAll('.nav-item').forEach(item => {
+        const orderEl = item.querySelector('.nav-order');
+        if (!orderEl) return;
+        if (selection.includes(item.dataset.slug)){
+          orderEl.textContent = String(idx++).padStart(2, '0');
+        } else {
+          orderEl.textContent = '–';
+        }
+      });
+    }
+
+    function move(item, delta){
+      const items = Array.from(list.children);
+      const idx = items.indexOf(item);
+      if (idx === -1) return;
+      const nextIndex = Math.max(0, Math.min(items.length - 1, idx + delta));
+      if (idx === nextIndex) return;
+      if (delta > 0){
+        list.insertBefore(item, items[nextIndex].nextElementSibling);
+      } else {
+        list.insertBefore(item, items[nextIndex]);
+      }
+      refresh();
+    }
+
+    list.addEventListener('change', function(e){
+      if (e.target.classList.contains('nav-check')){
+        refresh();
+      }
+    });
+
+    list.addEventListener('click', function(e){
+      const btn = e.target.closest('[data-move]');
+      if (!btn) return;
+      e.preventDefault();
+      move(btn.closest('.nav-item'), Number(btn.dataset.move));
+    });
+
+    function applyState(selection){
+      const navEnabled = toggle ? !!toggle.checked : true;
+      wrapper.classList.toggle('is-disabled', !navEnabled);
+      list.querySelectorAll('input,button').forEach(el => {
+        el.disabled = !navEnabled;
+      });
+      if (emptyHint){
+        emptyHint.hidden = !(navEnabled && selection.length === 0);
+      }
+    }
+
+    function refresh(){
+      const selection = currentSelection();
+      syncHidden(selection);
+      renumber(selection);
+      applyState(selection);
+    }
+
+    if (toggle){
+      toggle.addEventListener('change', refresh);
+    }
+
+    refresh();
+  })();
+  </script>
+
+  <script>
+  (function(){
+    const toggle = document.getElementById('{{ form.render_body_only.id_for_label }}') || document.getElementById('id_render_body_only');
+    const builder = document.getElementById('page-builder');
+    function apply(){
+      if (!builder || !toggle) return;
+      builder.classList.toggle('is-disabled', !!toggle.checked);
+    }
+    if (toggle){
+      toggle.addEventListener('change', apply);
+      apply();
+    }
+  })();
+  </script>
 {% endblock %}

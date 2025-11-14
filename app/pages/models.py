@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 
-from ckeditor_uploader.fields import RichTextUploadingField
+from django_ckeditor_5.fields import CKEditor5Field
 
 from .blocks import render_blocks
 
@@ -25,7 +25,7 @@ class Page(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     summary = models.TextField(blank=True)
-    body = RichTextUploadingField(blank=True)
+    body = CKEditor5Field("Body", blank=True, config_name="default")
     blocks = models.JSONField(
         default=list,
         blank=True,
@@ -36,11 +36,16 @@ class Page(models.Model):
         default=True,
         help_text="If disabled the page stays in drafts and is hidden from navigation.",
     )
-    show_in_navigation = models.BooleanField(
-        default=True,
-        help_text="Show in public navigation if the page is published and visible.",
-    )
     navigation_order = models.PositiveIntegerField(default=0)
+    show_navigation_bar = models.BooleanField(
+        default=True,
+        help_text="Display the navigation bar on this page.",
+    )
+    custom_nav_items = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Ordered list of page slugs to display when this page renders (leave empty to hide the navigation bar).",
+    )
     hero_image = models.ImageField(upload_to="pages/heroes/", blank=True, null=True)
     published_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -92,11 +97,16 @@ class Page(models.Model):
 
         return reverse("public:page-detail", kwargs={"slug": self.slug})
 
+    render_body_only = models.BooleanField(
+        default=False,
+        help_text="If enabled, ignore the block builder and render the raw HTML body only.",
+    )
+
     def render_content(self, *, request=None, extra_context=None) -> str:
         """
-        Render the page blocks to HTML. Falls back to legacy body if no blocks are defined.
+        Render the page blocks to HTML. Falls back to legacy body if flagged or empty.
         """
 
-        if self.blocks:
+        if not self.render_body_only and self.blocks:
             return render_blocks(self.blocks, request=request, extra_context=extra_context)
         return self.body or ""

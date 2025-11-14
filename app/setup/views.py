@@ -3,11 +3,9 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.models import Group
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
-from django.apps import apps
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
-from django.db.models import Q
 from django.db.models.functions.text import StrIndex
 from django.db.models import F, Value, Case, When, CharField, Q
 from django.db.models.functions import Substr
@@ -32,23 +30,10 @@ def ensure_hours_for(settings_obj):
 @transaction.atomic
 def setup_view(request):
     """
-    CMS Setup: edits SiteSettings + inline formsets, and controls which public pages appear.
-
-    - Checkbox order on this page determines nav order (saved as newline-separated text).
-    - Contact is automatically moved to the end when saving.
+    CMS Setup: edits SiteSettings + inline formsets.
     """
     settings_obj = SiteSettings.get_solo()
     ensure_hours_for(settings_obj)
-
-    # Mode-specific public pages (display order for the checkboxes)
-    mode = (settings_obj.mode or "VENUE").upper()
-    PAGES_BY_MODE = {
-        # includes Shows/Music/Videos/Store so they can be selected when useful
-        "VENUE":  ["Home", "Events", "Menu", "Gallery", "Blog", "About", "Shows", "Music", "Videos", "Store", "Contact"],
-        "BAND":   ["Home", "Shows", "Music", "Videos", "Blog", "About", "Store", "Contact"],
-        "PERSON": ["Home", "Posts", "About", "Contact"],
-    }
-    available_pages = PAGES_BY_MODE.get(mode, PAGES_BY_MODE["VENUE"])
 
     if request.method == "POST":
         form = SettingsForm(request.POST, request.FILES, instance=settings_obj)
@@ -64,11 +49,6 @@ def setup_view(request):
 
         if main_ok:
             settings_saved = form.save()
-
-            # If nothing selected, auto-populate with all for the current mode
-            if not (settings_saved.required_pages or "").strip():
-                settings_saved.required_pages = "\n".join(available_pages)
-                settings_saved.save(update_fields=["required_pages"])
 
             skipped = []
 
@@ -87,24 +67,7 @@ def setup_view(request):
             else:
                 skipped.append("Roles")
 
-            # Auto-create public pages (if a Page model exists)
-            created_pages = []
-            try:
-                Page = apps.get_model("app.pages", "Page")
-            except Exception:
-                Page = None
-
-            titles = [t.strip() for t in (settings_saved.required_pages or "").splitlines() if t.strip()]
-            if Page:
-                for title in titles:
-                    slug = title.lower().strip().replace(" ", "-")
-                    obj, created = Page.objects.get_or_create(slug=slug, defaults={"title": title})
-                    if created:
-                        created_pages.append(title)
-
             msg = "Settings saved."
-            if created_pages:
-                msg += " Created pages: " + ", ".join(created_pages) + "."
             messages.success(request, msg)
 
             if skipped:
@@ -120,17 +83,12 @@ def setup_view(request):
         hours = HourFormSet(instance=settings_obj, prefix="hours")
         roles = GroupFormSet(queryset=Group.objects.all().order_by("name"), prefix="roles")
 
-    # Build selected list from stored newline-separated text (used by template for checked state)
-    selected_pages = [t.strip() for t in (form.instance.required_pages or "").splitlines() if t.strip()]
-
     current_mode = (form.instance.mode or "VENUE").lower()
     return render(request, "setup/setup.html", {
         "form": form,
         "tiers": tiers,
         "hours": hours,
         "roles": roles,
-        "available_pages": available_pages,
-        "selected_pages": selected_pages,   # used in template to mark checkboxes
         "current_mode": current_mode,
     })
 

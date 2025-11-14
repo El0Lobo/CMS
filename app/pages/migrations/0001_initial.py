@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import ckeditor_uploader.fields
+import django_ckeditor_5.fields
 
 
 class Migration(migrations.Migration):
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 ("title", models.CharField(max_length=200)),
                 ("slug", models.SlugField(max_length=200, unique=True)),
                 ("summary", models.TextField(blank=True)),
-                ("body", ckeditor_uploader.fields.RichTextUploadingField(blank=True)),
+                ("body", django_ckeditor_5.fields.CKEditor5Field(blank=True, config_name="default", verbose_name="Body")),
                 (
                     "status",
                     models.CharField(

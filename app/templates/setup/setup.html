@@ -93,36 +93,6 @@
   .table tr:hover td { background: var(--setup-card-bg-strong); }
   .table th { background: rgba(255,255,255,0.06); font-weight: 600; }
 
-  /* ===== Pages grid ===== */
-  #pages-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(220px, 1fr));
-    gap: 8px;
-  }
-
-  .page-item {
-    border: 1px solid var(--setup-border-color);
-    border-radius: 6px;
-    padding: 8px;
-    background-color: var(--setup-card-bg);
-  }
-
-  .page-item .row {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-  }
-  .order-num {
-    width: 2ch;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-  .page-actions {
-    margin-left: auto;
-    display: flex;
-    gap: .25rem;
-  }
-
   /* ===== Mode-based visibility ===== */
   .only-venue, .only-band, .only-blog { display: none; }
   #setup-root[data-mode="venue"] .only-venue { display: block; }
@@ -323,37 +293,45 @@
     </section>
 
     <!-- ===== Section: Public Pages ===== -->
-    <section class="card" data-collapsible-key="setup:public-pages">
+
+    <section class="card" data-collapsible-key="setup:public-pages-toggle">
+
       <h2>
-        <button type="button" class="collapse-toggle"><span class="chev">▸</span></button>
-        Public Pages {% visibility_cog 'cms.setup.public' 'Public' %}
+
+        <button type="button" class="collapse-toggle"><span class="chev">&#9656;</span></button>
+
+        Public Pages {% visibility_cog 'cms.setup.public' 'Public site' %}
+
       </h2>
 
+
+
       <div class="card__body stack">
+
         <p class="text-muted mb-0">
-          Tick to include. Use arrows to set the nav order. You can rename the label.
-          URLs keep their underlying slug. The numbers show the order of checked items.
+
+          Enable the customer-facing site. Content and navigation now come entirely from the Pages app.
+
         </p>
 
-        <div id="pages-hidden" aria-hidden="true"></div>
-        {{ selected_pages|json_script:"selected-pages" }}
+        <label class="form-label checkbox" style="display:flex;align-items:center;gap:.4rem;">
 
-        <div id="pages-grid">
-          {% for p in available_pages %}
-            <div class="page-item" data-slug="">
-              <label class="row">
-                <span class="order-num">–</span>
-                <input type="checkbox" class="page-check" {% if p in selected_pages %}checked{% endif %} />
-                <input type="text" class="form-control form-control-sm page-title" value="{{ p }}" style="max-width: 12rem;" />
-                <span class="page-actions">
-                  <button type="button" class="btn btn-xs btn-outline-secondary up"   aria-label="Move up">↑</button>
-                  <button type="button" class="btn btn-xs btn-outline-secondary down" aria-label="Move down">↓</button>
-                </span>
-              </label>
-            </div>
-          {% endfor %}
-        </div>
+          {{ form.public_pages_enabled }} Enable public pages
+
+        </label>
+
+        <p class="mt-1 mb-0">
+
+          <a class="btn btn-xs btn-outline-secondary" href="/cms/pages/" target="_blank" rel="noopener">
+
+            Manage pages
+
+          </a>
+
+        </p>
+
       </div>
+
     </section>
 
     <!-- ===== Section: Membership ===== -->
@@ -526,165 +504,7 @@ function markFormRowDeleted(btn){
 })();
 </script>
 
-<script>
-/* ===== Public Pages editor (label-only) =====
-   - We keep a stable slug per row in dataset: row.dataset.slug
-   - On save we submit hidden inputs in the form "slug|Label" in DOM order
-   - Renaming the label never changes the slug
-*/
-(function(){
-  const grid   = document.getElementById('pages-grid');
-  const hidden = document.getElementById('pages-hidden');
-  if(!grid || !hidden) return;
 
-  function slugify(s){
-    return (s || "")
-      .toString()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9\s_-]/g, '')
-      .replace(/[\s_]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-  }
-
-  // Parse a stored "slug|Label" OR plain "Label"
-  function parseLine(line){
-    const raw = (line || '').trim();
-    if (!raw) return null;
-    if (raw.includes('|')){
-      const idx = raw.indexOf('|');
-      const slug  = raw.slice(0, idx).trim();
-      const label = (raw.slice(idx+1).trim()) || slug || 'page';
-      return { slug: slug || slugify(label) || 'page', label };
-    } else {
-      const label = raw;
-      return { slug: slugify(label) || 'page', label };
-    }
-  }
-
-  // Read saved order from server
-  let saved = [];
-  const dataEl = document.getElementById('selected-pages');
-  if (dataEl) {
-    try { saved = JSON.parse(dataEl.textContent || '[]'); } catch(e) { saved = []; }
-  }
-  const savedItems = saved.map(parseLine).filter(Boolean);
-
-  // Build ordered grid reflecting saved (slug + label), then append leftovers
-  function realizeSavedOrder(){
-    const ordered = [];
-
-    // Helper to create a row
-    function makeRow(label, slug, checked){
-      const row = document.createElement('div');
-      row.className = 'page-item';
-      row.dataset.slug = slug || '';
-      row.innerHTML = `
-        <label class="row">
-          <span class="order-num">–</span>
-          <input type="checkbox" class="page-check" ${checked ? 'checked' : ''} />
-          <input type="text" class="form-control form-control-sm page-title" value="${label}" style="max-width: 12rem;" />
-          <span class="page-actions">
-            <button type="button" class="btn btn-xs btn-outline-secondary up"   aria-label="Move up">↑</button>
-            <button type="button" class="btn btn-xs btn-outline-secondary down" aria-label="Move down">↓</button>
-          </span>
-        </label>`;
-      return row;
-    }
-
-    // 1) Add saved items first (checked & in order)
-    savedItems.forEach(it => {
-      ordered.push(makeRow(it.label, it.slug, true));
-    });
-
-    // 2) Collect existing titles from the initial grid to avoid duplicates
-    const seenSlugs = new Set(savedItems.map(i => i.slug));
-    const initialRows = Array.from(grid.children);
-    initialRows.forEach(r => {
-      const label = r.querySelector('.page-title')?.value || '';
-      const slug  = slugify(label);
-      if (seenSlugs.has(slug)) return; // already rendered from saved
-      ordered.push(makeRow(label, slug, false));
-    });
-
-    // 3) Replace grid content
-    grid.innerHTML = '';
-    ordered.forEach(r => grid.appendChild(r));
-  }
-
-  function renumber(){
-    let n = 0;
-    Array.from(grid.children).forEach(it => {
-      const cb  = it.querySelector('.page-check');
-      const num = it.querySelector('.order-num');
-      if (cb && cb.checked) { n += 1; num.textContent = String(n) + '.'; }
-      else { num.textContent = '–'; }
-    });
-  }
-
-  function move(el, dir){
-    if(!el) return;
-    const sib = (dir === -1) ? el.previousElementSibling : el.nextElementSibling;
-    if(!sib) return;
-    if (dir === -1) grid.insertBefore(el, sib);
-    else grid.insertBefore(sib, el);
-    renumber();
-  }
-
-  // Build hidden inputs: "required_pages" = "slug|Label" in checked DOM order
-  function buildHidden(){
-    hidden.innerHTML = '';
-    Array.from(grid.children).forEach(it => {
-      const cb = it.querySelector('.page-check');
-      if (!cb || !cb.checked) return;
-
-      const label = (it.querySelector('.page-title')?.value || '').trim();
-      let slug = (it.dataset.slug || '').trim();
-      if (!slug) {
-        slug = slugify(label) || 'page';
-        it.dataset.slug = slug; // persist first-time slug
-      }
-
-      const input = document.createElement('input');
-      input.type  = 'hidden';
-      input.name  = 'required_pages';
-      input.value = slug + '|' + (label || slug);
-      hidden.appendChild(input);
-    });
-  }
-
-  // Initialize
-  realizeSavedOrder();
-  renumber();
-
-  // Wire controls
-  grid.addEventListener('click', function(e){
-    const t = e.target;
-    if (t.classList.contains('up'))   move(t.closest('.page-item'), -1);
-    if (t.classList.contains('down')) move(t.closest('.page-item'), +1);
-  });
-  grid.addEventListener('change', function(e){
-    if (e.target.classList.contains('page-check') || e.target.classList.contains('page-title')) {
-      renumber();
-    }
-  });
-  grid.addEventListener('input', function(e){
-    if (e.target.classList.contains('page-title')) {
-      // label edits do NOT change slug; we only ensure a slug exists when saving
-    }
-  });
-
-  // Before submit: synthesize ordered hidden inputs
-  const form = grid.closest('form');
-  if (form){
-    form.addEventListener('submit', function(){
-      renumber();
-      buildHidden();
-    });
-  }
-})();
-</script>
 
 <script>
 /* ===== Collapsible cards with persistence ===== */
