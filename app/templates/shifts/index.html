@@ -7,11 +7,7 @@
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'shifts/shifts.css' %}">
   <style>
-    .visibility-anchor {
-      display: inline-flex;
-      position: relative;
-      margin-left: .4rem;
-    }
+
     .collapse-toggle {
       border: 0;
       background: none;
@@ -60,10 +56,7 @@
     <p class="sub">Track staffing needs and assignments per event.</p>
   </div>
   {% if request.user|allow_for:'cms.shifts.templates' %}
-    <div class="module-actions">
-      <span class="visibility-anchor">{% visibility_cog_inline 'cms.shifts.templates.button' 'Create standard shift button' target='.visibility-anchor' %}</span>
-      <button class="btn btn-secondary" data-open-modal="#modal-create-template">+ New standard shift</button>
-    </div>
+
   {% endif %}
 </section>
 
@@ -119,14 +112,34 @@
 {% if request.user|allow_for:'cms.shifts.templates' %}
 <section class="templates-panel card collapsible" data-collapse-key="shifts:templates" aria-expanded="false">
   <header class="templates-panel__header">
-    <div class="title-row" style="display:flex;align-items:center;gap:.5rem;">
-      <button type="button" class="collapse-toggle" data-collapse-toggle aria-label="Toggle standard shifts">
-        <span class="chev">▶</span>
-      </button>
-      <h2 style="margin:0;">Standard shifts</h2>
-      <span class="visibility-anchor">{% visibility_cog_inline 'cms.shifts.templates' 'Standard shift controls' target='.visibility-anchor' %}</span>
-    <p class="quiet" style="margin-top:.5rem;">Define reusable shifts (door, bar, etc.) that event creators can toggle.</p>
-          <button class="btn btn-secondary" data-open-modal="#modal-create-template">+ New standard shift</button>
+<div class="title-row" style="display:flex;align-items:center;gap:.5rem;max-width:100%;">
+  <button type="button" class="collapse-toggle" data-collapse-toggle="" aria-label="Toggle standard shifts">
+    <span class="chev">▶</span>
+  </button>
+
+  <h2 style="margin:0;">Standard shifts</h2>
+
+  <span class="visibility-anchor">
+    <span class="cfg-cog"
+          title="Visibility for cms.shifts.templates"
+          role="button"
+          tabindex="0"
+          hx-get="/cms/settings/visibility/picker/?key=cms.shifts.templates&amp;label=Standard shift controls"
+          hx-trigger="click consume"
+          hx-target="closest .visibility-anchor"
+          hx-swap="beforeend">⚙️</span>
+  </span>
+
+  <p class="quiet" style="margin-top:.5rem;">Define reusable shifts (door, bar, etc.) that event creators can toggle.</p>
+
+  <!-- Button aligned right -->
+  <button class="btn btn-secondary"
+          data-open-modal="#modal-create-template"
+          style="margin-left:auto;">
+    + New standard shift
+  </button>
+</div>
+
 
   </header>
 
@@ -259,10 +272,10 @@
           </div>
           <footer class="shift-card-footer">
             <a class="btn btn-outline" href="{% url 'shifts:manage_event' bundle.event.slug %}">Manage shifts</a>
-            <span class="visibility-anchor">{% visibility_cog_inline "cms.shifts.assign" "Assign shift controls" target='.visibility-anchor' %}</span>
             {% if bundle.has_shift_options and request.user|allow_for:"cms.shifts.assign" %}
               <button class="btn btn-outline" data-open-modal="#modal-assign" data-event-id="{{ bundle.event.id }}" data-event-title="{{ bundle.event.title }}" data-assign-options='{{ bundle.assign_options_json|escape }}'>Assign shifts</button>
             {% endif %}
+            <span class="visibility-anchor">{% visibility_cog_inline "cms.shifts.assign" "Assign shift controls" target='.visibility-anchor' %}</span>
           </footer>
         </article>
       {% endfor %}
@@ -292,6 +305,7 @@
   </div>
 {% endfor %}
 
+{% if request.user|allow_for:'cms.shifts.stats' %}
 <section class="stats-panel">
   <header>
     <h2>Shift statistics <span class="visibility-anchor">{% visibility_cog_inline 'cms.shifts.stats' 'Shift statistics' target='.visibility-anchor' %}</span></h2>
@@ -319,6 +333,7 @@
     </tbody>
   </table>
 </section>
+{% endif %}
 
 <!-- Assignment modal -->
 <div class="modal-overlay" id="modal-assign" hidden>

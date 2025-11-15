@@ -261,7 +261,6 @@ body.cms.nav-open .backdrop {
 /* app/static/cms/cms.css */
 .cfg-cog {
   display: inline-block;
-  margin-left: 0.35rem;
   opacity: 0.6;
   cursor: pointer;
   font-size: 0.95em;
@@ -287,20 +286,8 @@ body.cms.nav-open .backdrop {
   margin-left: 0;
   border: none !important; 
 } /* we control spacing via gap */
-.cfg-cog {
-  display: inline-block;
-  opacity: 0.6;
-  cursor: pointer;
-  font-size: 0.95em;
-  line-height: 1;
-  user-select: none;
-}
-.cfg-cog:hover {
-  opacity: 0.95;
-}
-.cfg-cog.muted {
-  opacity: 0.5;
-}
+
+
 .dietary-grid {
   display: grid;
   gap: 1rem;

@@ -149,9 +149,9 @@ class ShiftStatsFilterForm(forms.Form):
 
 class ShiftFilterForm(forms.Form):
     class Timeframe(models.TextChoices):
-        WEEK = "week", "This week"
-        MONTH = "month", "This month"
-        YEAR = "year", "This year"
+        WEEK = "week", "Week"
+        MONTH = "month", "Month"
+        YEAR = "year", "Year"
         ALL = "all", "All"
 
     timeframe = forms.ChoiceField(choices=Timeframe.choices, initial=Timeframe.WEEK)

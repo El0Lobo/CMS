@@ -11,10 +11,15 @@ from django.db.models import F, Value, Case, When, CharField, Q
 from django.db.models.functions import Substr
 from .models import SiteSettings, OpeningHour, VisibilityRule
 from .forms import SettingsForm, TierFormSet, HourFormSet, GroupFormSet, VisibilityRuleForm
+from .helpers import is_allowed
 
 
-def superuser_required(u):
-    return u.is_superuser
+def setup_access_required(u):
+    if not getattr(u, "is_authenticated", False):
+        return False
+    if u.is_superuser:
+        return True
+    return is_allowed(u, "cms.nav.setup")
 
 
 def ensure_hours_for(settings_obj):
@@ -26,7 +31,7 @@ def ensure_hours_for(settings_obj):
 
 
 @login_required
-@user_passes_test(superuser_required)
+@user_passes_test(setup_access_required)
 @transaction.atomic
 def setup_view(request):
     """
@@ -94,7 +99,7 @@ def setup_view(request):
 
 
 @login_required
-@user_passes_test(superuser_required)
+@user_passes_test(setup_access_required)
 def visibility_list(request):
     q = request.GET.get("q", "").strip()
     sort = request.GET.get("sort", "key")
@@ -139,7 +144,7 @@ def visibility_list(request):
 
     return render(request, "setup/visibility_list.html", ctx)
 @login_required
-@user_passes_test(superuser_required)
+@user_passes_test(setup_access_required)
 def visibility_edit(request):
     key = request.GET.get("key", "")
     label = request.GET.get("label", "")
@@ -156,7 +161,7 @@ def visibility_edit(request):
 
 
 @login_required
-@user_passes_test(superuser_required)
+@user_passes_test(setup_access_required)
 def visibility_delete(request, rule_id):
     rule = get_object_or_404(VisibilityRule, id=rule_id)
     rule.delete()
@@ -165,7 +170,7 @@ def visibility_delete(request, rule_id):
 
 
 @login_required
-@user_passes_test(superuser_required)
+@user_passes_test(setup_access_required)
 @require_http_methods(["GET", "POST"])
 def visibility_picker(request):
     """
@@ -202,7 +207,7 @@ def visibility_picker(request):
 
 
 @login_required
-@user_passes_test(superuser_required)
+@user_passes_test(setup_access_required)
 def visibility_disabled(request):
     """
     List of disabled visibility entries with a quick enable action.

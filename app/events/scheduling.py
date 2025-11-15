@@ -135,6 +135,7 @@ def build_occurrence_series(
     *,
     max_occurrences: int = 6,
     include_past: bool = False,
+    horizon_end: Optional[datetime] = None,
 ) -> List[EventOccurrenceData]:
     """Return upcoming occurrences for an event based on its recurrence settings."""
 
@@ -145,6 +146,7 @@ def build_occurrence_series(
     now = timezone.now()
     doors_offset, ends_offset, curfew_offset = _compute_offsets(event)
     occurrences: List[EventOccurrenceData] = []
+    horizon = _ensure_aware(horizon_end)
 
     if event.recurrence_frequency == Event.RecurrenceFrequency.NONE:
         occurrence = EventOccurrenceData(
@@ -153,7 +155,7 @@ def build_occurrence_series(
             end=_apply_offset(start, ends_offset),
             curfew=_apply_offset(start, curfew_offset),
         )
-        if include_past or occurrence.start >= now:
+        if (not horizon or occurrence.start <= horizon) and (include_past or occurrence.start >= now):
             occurrences.append(occurrence)
         return occurrences
 
@@ -167,6 +169,8 @@ def build_occurrence_series(
             end=_apply_offset(current, ends_offset),
             curfew=_apply_offset(current, curfew_offset),
         )
+        if horizon and occurrence.start > horizon:
+            break
         if include_past or occurrence.start >= now:
             occurrences.append(occurrence)
             if len(occurrences) >= max_occurrences:
@@ -180,10 +184,20 @@ def build_occurrence_series(
     return occurrences
 
 
-def refresh_event_schedule(event: Event, *, max_occurrences: int = 6) -> List[EventOccurrenceData]:
+def refresh_event_schedule(
+    event: Event,
+    *,
+    max_occurrences: int = 6,
+    horizon_end: Optional[datetime] = None,
+) -> List[EventOccurrenceData]:
     """Recalculate and persist the next scheduled start if needed, returning occurrences."""
 
-    occurrences = build_occurrence_series(event, max_occurrences=max_occurrences, include_past=True)
+    occurrences = build_occurrence_series(
+        event,
+        max_occurrences=max_occurrences,
+        include_past=True,
+        horizon_end=horizon_end,
+    )
     next_start = None
     now = timezone.now()
     for occurrence in occurrences:

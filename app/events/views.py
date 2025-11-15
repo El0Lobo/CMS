@@ -58,6 +58,7 @@ def index(request: HttpRequest) -> HttpResponse:
     tz = timezone.get_current_timezone()
     now = timezone.now()
     local_now = timezone.localtime(now, tz)
+    recurrence_horizon = _add_months(now, 6)
     include_past = bool(filters.get("include_past"))
     timeframe = filters.get("timeframe") or EventFilterForm.Timeframe.MONTH
     offset = filters.get("period_offset") or 0
@@ -68,6 +69,17 @@ def index(request: HttpRequest) -> HttpResponse:
         if timezone.is_naive(dt):
             return timezone.make_aware(dt, tz)
         return timezone.localtime(dt, tz)
+
+    def build_card(event_obj, start_dt, doors_dt):
+        start_local = to_local(start_dt)
+        doors_local = to_local(doors_dt)
+        return {
+            "event": event_obj,
+            "start": start_local,
+            "start_label": start_local.strftime("%a, %b %d · %H:%M") if start_local else "TBD",
+            "doors_label": doors_local.strftime("%H:%M") if doors_local else "",
+            "has_shifts": event_obj.requires_shifts,
+        }
 
     future_placeholder = now + timedelta(days=365 * 10)
     start_local = None
@@ -157,8 +169,17 @@ def index(request: HttpRequest) -> HttpResponse:
         event_start_local = to_local(start_val)
 
         if event.is_recurring:
-            refresh_event_schedule(event, max_occurrences=12)
-            occurrences = build_occurrence_series(event, max_occurrences=12, include_past=True)
+            refresh_event_schedule(
+                event,
+                max_occurrences=64,
+                horizon_end=recurrence_horizon,
+            )
+            occurrences = build_occurrence_series(
+                event,
+                max_occurrences=64,
+                include_past=True,
+                horizon_end=recurrence_horizon,
+            )
             visible = []
             for occ in occurrences:
                 if window_start and occ.start < window_start:
@@ -171,6 +192,10 @@ def index(request: HttpRequest) -> HttpResponse:
             event.recurrence_has_any = has_any
             event.recurrence_has_window = has_visible
             event.recurrence_preview = visible[:4]
+            for occ in visible:
+                scheduled_cards.append(
+                    build_card(event, occ.start, occ.doors)
+                )
             if event.pk not in recurring_seen:
                 recurring_series.append(event)
                 recurring_seen.add(event.pk)
@@ -178,14 +203,7 @@ def index(request: HttpRequest) -> HttpResponse:
 
         event.recurrence_preview = []
 
-        doors_local = to_local(event.doors_at)
-        card = {
-            "event": event,
-            "start": event_start_local,
-            "start_label": event_start_local.strftime("%a, %b %d · %H:%M") if event_start_local else "TBD",
-            "doors_label": doors_local.strftime("%H:%M") if doors_local else "",
-            "has_shifts": event.requires_shifts,
-        }
+        card = build_card(event, start_val, event.doors_at)
 
         if event_start_local:
             scheduled_cards.append(card)
@@ -273,7 +291,7 @@ def edit(request: HttpRequest, slug: str) -> HttpResponse:
             event = form.save()
             formset.save()
             form.save_m2m()
-            sync_event_standard_shifts(event, user=request.user, max_occurrences=4)
+            sync_event_standard_shifts(event, user=request.user, max_occurrences=64)
             messages.success(request, "Event updated.")
             if request.htmx:
                 response = HttpResponse(status=204)
@@ -298,7 +316,12 @@ def edit(request: HttpRequest, slug: str) -> HttpResponse:
 @login_required
 def detail(request: HttpRequest, slug: str) -> HttpResponse:
     event = get_object_or_404(Event.objects.prefetch_related("performers", "categories"), slug=slug)
-    occurrences = build_occurrence_series(event, max_occurrences=6, include_past=True)
+    occurrences = build_occurrence_series(
+        event,
+        max_occurrences=64,
+        include_past=True,
+        horizon_end=_add_months(timezone.now(), 6),
+    )
     return render(request, "events/detail.html", {"event": event, "occurrences": occurrences})
 
 

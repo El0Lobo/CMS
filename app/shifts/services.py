@@ -3,22 +3,46 @@
 from __future__ import annotations
 
 from typing import Optional
+import calendar
 
 from django.utils import timezone
 
-from app.events.scheduling import refresh_event_schedule
+from app.events.scheduling import build_occurrence_series, refresh_event_schedule
 from app.shifts.models import Shift, ShiftTemplate
 
 
-def sync_event_standard_shifts(event, *, user=None, max_occurrences: int = 4) -> None:
+def _add_months(dt, delta):
+    month = dt.month - 1 + delta
+    year = dt.year + month // 12
+    month = month % 12 + 1
+    day = min(dt.day, calendar.monthrange(year, month)[1])
+    return dt.replace(year=year, month=month, day=day)
+
+
+def sync_event_standard_shifts(event, *, user=None, max_occurrences: int = 64) -> None:
     """Ensure standard shift template selections are reflected in actual shifts."""
 
-    occurrences_all = refresh_event_schedule(event, max_occurrences=max_occurrences)
-    now = timezone.now()
-    occurrences = [occ for occ in occurrences_all if occ.start >= now]
-    if not occurrences and occurrences_all:
-        # Keep the most recent occurrence to avoid deleting historical shifts outright.
-        occurrences = [occurrences_all[-1]]
+    horizon_end = _add_months(timezone.now(), 6)
+    refresh_event_schedule(
+        event,
+        max_occurrences=max_occurrences,
+        horizon_end=horizon_end,
+    )
+    occurrences = build_occurrence_series(
+        event,
+        max_occurrences=max_occurrences,
+        include_past=False,
+        horizon_end=horizon_end,
+    )
+    if not occurrences:
+        fallback = build_occurrence_series(
+            event,
+            max_occurrences=1,
+            include_past=True,
+            horizon_end=horizon_end,
+        )
+        if fallback:
+            occurrences = [fallback[-1]]
 
     template_ids = list(event.standard_shifts.values_list("id", flat=True))
 

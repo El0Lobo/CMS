@@ -157,11 +157,7 @@
   border:1px solid rgba(119,189,247,.35);
 }
 
-.nav-inline {
-  display:flex;
-  align-items:center;
-  gap:.75rem;
-}
+
 .assignment-badges .pill { font-size:.85rem; }
 /* Shift cards layout */
 .shift-schedule .shift-grid { display:grid; gap:1.1rem; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); align-items:stretch; }
