@@ -287,6 +287,12 @@ body.cms.nav-open .backdrop {
   border: none !important; 
 } /* we control spacing via gap */
 
+.visibility-anchor {
+  position: relative;
+  display: inline-flex;
+  margin-left: 0.4rem;
+}
+
 
 .dietary-grid {
   display: grid;

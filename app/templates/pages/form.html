@@ -13,35 +13,92 @@
       margin-top: 1rem;
     }
     .nav-builder__list {
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       gap: .5rem;
     }
     .nav-builder__item {
+      flex: 1 1 280px;
+      max-width: 220px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: .75rem;
-      padding: .5rem .75rem;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 8px;
-    }
-    .nav-builder__item label {
-      display: flex;
       gap: .5rem;
-      align-items: center;
-      margin: 0;
-      flex: 1;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: .5rem .6rem;
+      background: rgba(0,0,0,0.12);
     }
     .nav-builder__order {
-      width: 1.5rem;
-      text-align: center;
       font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      font-size: .9rem;
+      padding: .2rem .45rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
     }
+    .nav-builder__label {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      margin: 0;
+      font-weight: 500;
+      font-size: .95rem;
+      flex: 0 1 auto;
+      line-height: 1.1;
+      justify-content: center;
+      text-align: center;
+    }
+    .nav-builder__label input { margin: 0; }
+    .nav-label { display: inline-block; line-height: 1.1; }
     .nav-builder__actions {
-      display: flex;
-      gap: .25rem;
+      display: inline-flex;
+      gap: .2rem;
+      align-items: center;
     }
-    .nav-builder.is-disabled { opacity: .5; }
+    .nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      margin: 0;
+      font-weight: 500;
+      width: fit-content;
+    }
+    .nav-toggle input {
+      margin: 0;
+      order: -1;
+    }
+    .page-meta-card {
+      padding: 1rem 1.1rem;
+    }
+    .page-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .page-field {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+    }
+    .page-field--checkbox .form-label {
+
+    }
+    .page-field--checkbox .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .15rem 0;
+      font-weight: 500;
+    }
+    .page-field--checkbox .checkbox-label input { margin: 0; }
+    .page-field--wide {
+      grid-column: span 2;
+    }
+    @media (max-width: 640px) {
+      .page-field--wide {
+        grid-column: span 1;
+      }
+    }
     .nav-builder.is-disabled { opacity: .5; }
     .page-builder.is-disabled {
       opacity: .35;
@@ -67,7 +124,7 @@
     .raw-html-editor__header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
     }
@@ -75,6 +132,60 @@
       display: flex;
       gap: .5rem;
       align-items: center;
+      flex-wrap: wrap;
+    }
+    .raw-html-editor__body {
+      margin-top: .5rem;
+    }
+    .raw-html-editor [data-builder-collapse] {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+    }
+    .raw-html-editor [data-builder-collapse] span {
+      display: none;
+    }
+    .raw-html-editor [data-builder-collapse][aria-expanded="true"] [data-text-when="open"],
+    .raw-html-editor [data-builder-collapse][aria-expanded="false"] [data-text-when="closed"] {
+      display: inline;
+    }
+    [data-builder-collapsible][aria-expanded="false"] .raw-html-editor__body {
+      display: none;
+    }
+    .card-collapsible {
+      padding: 1rem 1.2rem;
+    }
+    .card-collapsible__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .card-collapsible__header h2 {
+      margin: 0;
+    }
+    .card-collapsible__actions {
+      display: flex;
+      gap: .35rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .card-collapsible__toggle [data-text-when] {
+      display: none;
+    }
+    .card-collapsible__toggle[aria-expanded="true"] [data-text-when="open"],
+    .card-collapsible__toggle[aria-expanded="false"] [data-text-when="closed"] {
+      display: inline;
+    }
+    .card-collapsible__body {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+    .card-collapsible[aria-expanded="false"] .card-collapsible__body {
+      display: none;
     }
   </style>
 {% endblock %}
@@ -102,75 +213,68 @@
       </div>
     {% endif %}
     {{ form.blocks }}
-    <section id="raw-html-editor" class="card raw-html-editor">
-      <div class="raw-html-editor__header">
-        <div>
-          <h2 style="margin:0;">Raw HTML body</h2>
-          <p class="muted" style="margin:.25rem 0 0;">Enable “Render raw HTML” below to use this editor instead of the block builder.</p>
-        </div>
-        <div class="raw-html-editor__actions">
-          <button type="button" class="btn btn-xs btn-outline-secondary" id="capture-html-from-builder">Copy current layout into HTML</button>
-        </div>
-      </div>
-      <div style="margin-top:1rem;">
-        <label class="form-label" for="{{ form.body.id_for_label }}">HTML</label>
-        {{ form.body }}
-        {% if form.body.help_text %}
-          <p class="hint">{{ form.body.help_text }}</p>
-        {% endif %}
-        {% if form.body.errors %}
-          <div class="field-error">{{ form.body.errors|join:", " }}</div>
-        {% endif %}
-      </div>
-    </section>
 
-    <section class="card" style="margin-bottom:1.5rem;">
-      <h2 style="margin-top:0;">Navigation</h2>
-      <p class="muted">Select the links you want to show on this page’s navbar. If you leave them all unchecked, the bar stays hidden even if enabled.</p>
-      <label class="form-label checkbox" style="margin-bottom:.75rem;">
-        {{ form.show_navigation_bar }} Show navigation bar on this page
-      </label>
-      <p class="text-warning" id="nav-empty-hint" hidden>Select at least one link to render the navigation bar.</p>
-      {{ form.custom_nav_items }}
-      <div id="nav-builder" class="nav-builder">
-        <div class="nav-builder__list" data-role="nav-list">
-          {% for item in nav_builder_items %}
-            <div class="nav-builder__item" data-slug="{{ item.slug }}">
-              <label>
+
+    <section class="card card-collapsible"
+             data-page-collapse="navigation"
+             aria-expanded="true"
+             style="margin-bottom:1.5rem;">
+      <header class="card-collapsible__header">
+        <div>
+          <h2>Navigation</h2>
+          <p class="muted" style="margin:.25rem 0 0;">Pick which links appear in this page’s navbar. Leave them all unchecked to hide the bar entirely.</p>
+        </div>
+        <div class="card-collapsible__actions">
+          <button type="button"
+                  class="btn btn-xs btn-outline-secondary card-collapsible__toggle"
+                  data-page-collapse-toggle
+                  aria-expanded="true">
+            <span data-text-when="open">Hide</span>
+            <span data-text-when="closed">Show</span>
+          </button>
+        </div>
+      </header>
+      <div class="card-collapsible__body">
+        <label class="form-label checkbox nav-toggle" style="display: block ruby;accent-color: ;">
+          <span>Show navigation bar on this page</span>
+          {{ form.show_navigation_bar }}
+        </label>
+        <p class="text-warning" id="nav-empty-hint" hidden>Select at least one link to render the navigation bar.</p>
+        {{ form.custom_nav_items }}
+        <div id="nav-builder" class="nav-builder">
+          <div class="nav-builder__list" data-role="nav-list">
+            {% for item in nav_builder_items %}
+              <div class="nav-builder__item" data-slug="{{ item.slug }}">
                 <span class="nav-builder__order">-</span>
-                <input type="checkbox" class="nav-check" {% if item.checked %}checked{% endif %}>
-                <span class="nav-label">{{ item.title }}</span>
-              </label>
-              <div class="nav-builder__actions">
-                <button type="button" class="btn btn-xs btn-outline-secondary" data-move="-1" aria-label="Move up">▲</button>
-                <button type="button" class="btn btn-xs btn-outline-secondary" data-move="1" aria-label="Move down">▼</button>
+                <label class="nav-builder__label">
+                  <input type="checkbox" class="nav-check" {% if item.checked %}checked{% endif %}>
+                  <span class="nav-label">{{ item.title }}</span>
+                </label>
+                <div class="nav-builder__actions">
+                  <button type="button" class="btn btn-xs btn-outline-secondary" data-move="-1" aria-label="Move up">▲</button>
+                  <button type="button" class="btn btn-xs btn-outline-secondary" data-move="1" aria-label="Move down">▼</button>
+                </div>
               </div>
-            </div>
-          {% empty %}
-            <p class="muted" style="margin:0;">Create more pages to build a custom navigation menu.</p>
-          {% endfor %}
+            {% empty %}
+              <p class="muted" style="margin:0;">Create more pages to build a custom navigation menu.</p>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="card" style="margin-bottom:1.5rem;">
-      <h2 style="margin-top:0;">Rendering mode</h2>
-      <label class="form-label checkbox" style="margin-bottom:.5rem;">
-        {{ form.render_body_only }} Render raw HTML body only (ignore builder)
-      </label>
-      <p class="hint">When enabled, the block builder below is disabled and only the “Body” field is rendered on the public site.</p>
-    </section>
 
-    <div class="card" style="padding:1.25rem; margin-bottom:1.25rem;">
-      <div class="grid" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
-        <div>
+
+    <div class="card page-meta-card" style="margin-bottom:1.25rem;">
+      <div class="page-meta-grid">
+        <div class="page-field">
           <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
           {{ form.title }}
           {% if form.title.errors %}
             <div class="field-error">{{ form.title.errors|join:", " }}</div>
           {% endif %}
         </div>
-        <div>
+        <div class="page-field">
           <label for="{{ form.slug.id_for_label }}" class="form-label">Slug</label>
           {{ form.slug }}
           <p class="hint">Used in the URL, e.g. <code>/&lt;slug&gt;/</code>.</p>
@@ -178,37 +282,38 @@
             <div class="field-error">{{ form.slug.errors|join:", " }}</div>
           {% endif %}
         </div>
-        <div>
+        <div class="page-field">
           <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
           {{ form.status }}
         </div>
-        <div>
+        <div class="page-field">
           <label for="{{ form.navigation_order.id_for_label }}" class="form-label">Navigation order</label>
           {{ form.navigation_order }}
         </div>
-        <div>
-          <label class="form-label checkbox">{{ form.is_visible }} Visible</label>
+        <div class="page-field page-field--checkbox">
+          <label for="{{ form.is_visible.id_for_label }}" class="form-label">Visibility</label>
+          <label class="checkbox checkbox-label" for="{{ form.is_visible.id_for_label }}">
+            {{ form.is_visible }}
+          </label>
           <p class="hint">Keep disabled while drafting.</p>
         </div>
-      </div>
-
-      <div style="margin-top:1.25rem;">
-        <label for="{{ form.summary.id_for_label }}" class="form-label">Summary</label>
-        {{ form.summary }}
-        {% if form.summary.errors %}
-          <div class="field-error">{{ form.summary.errors|join:", " }}</div>
-        {% endif %}
-      </div>
-
-      <div style="margin-top:1.25rem;">
-        <label for="{{ form.hero_image.id_for_label }}" class="form-label">Hero image</label>
-        {{ form.hero_image }}
-        {% if page and page.hero_image %}
-          <p class="hint">Current: <a href="{{ page.hero_image.url }}" target="_blank" rel="noopener">download</a></p>
-        {% endif %}
-        {% if form.hero_image.errors %}
-          <div class="field-error">{{ form.hero_image.errors|join:", " }}</div>
-        {% endif %}
+        <div class="page-field page-field--wide">
+          <label for="{{ form.summary.id_for_label }}" class="form-label">Summary</label>
+          {{ form.summary }}
+          {% if form.summary.errors %}
+            <div class="field-error">{{ form.summary.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+        <div class="page-field page-field--wide">
+          <label for="{{ form.hero_image.id_for_label }}" class="form-label">Hero image</label>
+          {{ form.hero_image }}
+          {% if page and page.hero_image %}
+            <p class="hint">Current: <a href="{{ page.hero_image.url }}" target="_blank" rel="noopener">download</a></p>
+          {% endif %}
+          {% if form.hero_image.errors %}
+            <div class="field-error">{{ form.hero_image.errors|join:", " }}</div>
+          {% endif %}
+        </div>
       </div>
     </div>
 
@@ -271,7 +376,46 @@
         <div class="asset-browser__grid" id="asset-browser-list"></div>
       </div>
     </div>
-
+    {% with raw_enabled=form.render_body_only.value %}
+    <section id="raw-html-editor"
+             class="card raw-html-editor"
+             data-builder-collapsible
+             aria-expanded="{{ raw_enabled|yesno:'true,false' }}"
+             style="margin-bottom:1.5rem;">
+      <div class="raw-html-editor__header">
+        <div>
+          <h2 style="margin:0;">Raw HTML mode</h2>
+          <p class="muted" style="margin:.25rem 0 0;">Use this when you need full control over the markup instead of the block builder.</p>
+        </div>
+        <div class="raw-html-editor__actions">
+          <label class="form-label checkbox" style="margin:0;">
+            {{ form.render_body_only }} Render raw HTML body only (ignore builder)
+          </label>
+          <button type="button"
+                  class="btn btn-xs btn-outline-secondary"
+                  data-builder-collapse
+                  aria-expanded="{{ raw_enabled|yesno:'true,false' }}">
+            <span data-text-when="open">Hide editor</span>
+            <span data-text-when="closed">Show editor</span>
+          </button>
+          <button type="button" class="btn btn-xs btn-outline-secondary" id="capture-html-from-builder">Copy current layout into HTML</button>
+        </div>
+      </div>
+      <div class="raw-html-editor__body">
+        <p class="hint" style="margin:.25rem 0 0;">When enabled, the block builder is disabled and only the “Body” field below is rendered publicly.</p>
+        <div style="margin-top:1rem;">
+          <label class="form-label" for="{{ form.body.id_for_label }}">HTML</label>
+          {{ form.body }}
+          {% if form.body.help_text %}
+            <p class="hint">{{ form.body.help_text }}</p>
+          {% endif %}
+          {% if form.body.errors %}
+            <div class="field-error">{{ form.body.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+    {% endwith %}
     <div class="form-actions" style="margin-top:1.5rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
       <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
         <button type="submit" class="btn btn-primary" id="builder-save-btn">Save</button>
@@ -391,14 +535,22 @@
     const builder = document.getElementById('page-builder');
     const htmlSection = document.getElementById('raw-html-editor');
     const htmlField = document.getElementById('id_body');
+    const collapseBtn = htmlSection ? htmlSection.querySelector('[data-builder-collapse]') : null;
+
+    function setCollapse(open){
+      if (!htmlSection || !collapseBtn) return;
+      htmlSection.setAttribute('aria-expanded', open ? 'true' : 'false');
+      collapseBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
 
     function apply(){
-      if (builder && toggle){
-        builder.classList.toggle('is-disabled', !!toggle.checked);
+      const rawEnabled = !!(toggle && toggle.checked);
+      if (builder){
+        builder.classList.toggle('is-disabled', rawEnabled);
       }
-      const rawEnabled = toggle ? !!toggle.checked : false;
       if (htmlSection){
         htmlSection.classList.toggle('is-disabled', !rawEnabled);
+        setCollapse(rawEnabled);
       }
       if (htmlField){
         htmlField.readOnly = !rawEnabled;
@@ -406,10 +558,38 @@
       }
     }
 
-    if (toggle){
-      toggle.addEventListener('change', apply);
-    }
+    collapseBtn?.addEventListener('click', function(){
+      const next = collapseBtn.getAttribute('aria-expanded') !== 'true';
+      setCollapse(next);
+    });
+
+    toggle?.addEventListener('change', apply);
     apply();
+  })();
+  </script>
+
+  <script>
+  (function(){
+    const cols = document.querySelectorAll('[data-page-collapse]');
+    cols.forEach(section => {
+      const key = `pages:collapse:${section.dataset.pageCollapse || ''}`;
+      let expanded = section.getAttribute('aria-expanded') !== 'false';
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved !== null) expanded = saved === '1';
+      } catch (e) {}
+      const button = section.querySelector('[data-page-collapse-toggle]');
+      const setState = (next) => {
+        section.setAttribute('aria-expanded', next ? 'true' : 'false');
+        button?.setAttribute('aria-expanded', next ? 'true' : 'false');
+        try { localStorage.setItem(key, next ? '1' : '0'); } catch (e) {}
+      };
+      setState(expanded);
+      button?.addEventListener('click', () => {
+        const next = section.getAttribute('aria-expanded') !== 'true';
+        setState(next);
+      });
+    });
   })();
   </script>
 

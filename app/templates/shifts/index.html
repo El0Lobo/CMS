@@ -42,6 +42,11 @@
       gap: .5rem;
       align-items: center;
     }
+    .visibility-anchor {
+      position: relative;
+      display: inline-flex;
+      margin-left: .4rem;
+    }
   </style>
 {% endblock %}
 
@@ -72,19 +77,24 @@
         <a class="nav-arrow" href="{{ shift_filter_nav_next_url }}" aria-label="Next {{ shift_filter_timeframe_label|default:'period' }}">&#8594;</a>
       {% endif %}
     </div>
-    <div class="filter-grid">
-      <label>
-        <span class="label">Timeframe</span>
-        {{ shift_filter_form.timeframe }}
-      </label>
-      <label class="checkbox">
-        {{ shift_filter_form.include_past }}
-        <span>Include past shifts</span>
-      </label>
-      <div class="filter-actions">
-        <a class="btn btn-outline" href="{% url 'shifts:index' %}">Reset</a>
-      </div>
-    </div>
+<div class="filter-grid" style="display:flex;align-items:center;gap:.5rem;">
+  <label>
+    <span class="label">Timeframe</span>
+    {{ shift_filter_form.timeframe }}
+  </label>
+
+  <label class="checkbox">
+    {{ shift_filter_form.include_past }}
+    <span>Include past shifts</span>
+  </label>
+
+  <a class="btn btn-outline"
+     href="{% url 'shifts:index' %}"
+     style="margin-left:auto;">
+    Reset
+  </a>
+</div>
+
   </form>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
