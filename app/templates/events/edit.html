@@ -27,6 +27,14 @@
   </div>
 </section>
 
+{% if occurrence_mode %}
+  <div class="alert alert-warning">
+    Editing only the occurrence on
+    <strong>{{ occurrence_start|date:"D, M d, H:i" }}</strong>.
+    Changes will not impact other dates in the series.
+  </div>
+{% endif %}
+
 <form method="post" enctype="multipart/form-data" action="" class="page-form">
   {% csrf_token %}
   <div id="event-edit-body">

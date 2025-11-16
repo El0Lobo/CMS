@@ -1,6 +1,6 @@
 """Event domain models."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db import models
@@ -106,6 +106,19 @@ class Event(models.Model):
         choices=RecurrenceFrequency.choices,
         default=RecurrenceFrequency.NONE,
     )
+    recurrence_parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="recurrence_overrides",
+        blank=True,
+        null=True,
+        help_text="If set, this event overrides a single occurrence of the parent recurrence.",
+    )
+    recurrence_parent_start = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Original start datetime for the overridden occurrence.",
+    )
     recurrence_weekday = models.PositiveSmallIntegerField(
         choices=Weekday.choices,
         blank=True,
@@ -206,6 +219,74 @@ class Event(models.Model):
     def is_recurring(self) -> bool:
         return self.recurrence_frequency != self.RecurrenceFrequency.NONE
 
+    @property
+    def is_override(self) -> bool:
+        return self.recurrence_parent_id is not None
+
+    def build_occurrence_slug(self, occurrence_start: datetime) -> str:
+        """Generate a slug for a single-occurrence override."""
+
+        if timezone.is_naive(occurrence_start):
+            occurrence_start = timezone.make_aware(occurrence_start, timezone.get_current_timezone())
+        suffix = timezone.localtime(occurrence_start).strftime("%Y%m%d%H%M")
+        base = f"{self.slug}-{suffix}"
+        slug = base[:220]
+        counter = 1
+        while Event.objects.filter(slug=slug).exists():
+            slug = f"{base}-{counter}"[:220]
+            counter += 1
+        return slug
+
+    def clone_for_occurrence(self, occurrence_start: datetime) -> "Event":
+        """Create a detached event for a specific occurrence."""
+
+        reference = self.starts_at or self.recurrence_next_start_at or occurrence_start
+
+        def offset(value: datetime | None) -> timedelta | None:
+            if value is None or reference is None:
+                return None
+            return value - reference
+
+        doors_offset = offset(self.doors_at)
+        ends_offset = offset(self.ends_at)
+        curfew_offset = offset(self.curfew_at)
+
+        if timezone.is_naive(occurrence_start):
+            occurrence_start = timezone.make_aware(occurrence_start, timezone.get_current_timezone())
+
+        clone = Event.objects.get(pk=self.pk)
+        clone.pk = None
+        clone.slug = self.build_occurrence_slug(occurrence_start)
+        clone.recurrence_frequency = Event.RecurrenceFrequency.NONE
+        clone.recurrence_weekday = None
+        clone.recurrence_week_of_month = None
+        clone.recurrence_day_of_month = None
+        clone.recurrence_next_start_at = None
+        clone.recurrence_parent = self
+        clone.recurrence_parent_start = occurrence_start
+        clone.starts_at = occurrence_start
+        clone.doors_at = occurrence_start + doors_offset if doors_offset else None
+        clone.ends_at = occurrence_start + ends_offset if ends_offset else None
+        clone.curfew_at = occurrence_start + curfew_offset if curfew_offset else None
+        clone.save()
+
+        clone.categories.set(self.categories.all())
+        clone.standard_shifts.set(self.standard_shifts.all())
+
+        for performer in self.performers.all():
+            EventPerformer.objects.create(
+                event=clone,
+                band=performer.band,
+                display_name=performer.display_name,
+                performer_type=performer.performer_type,
+                slot_starts_at=performer.slot_starts_at,
+                slot_ends_at=performer.slot_ends_at,
+                order=performer.order,
+                notes=performer.notes,
+            )
+
+        return clone
+
     def get_recurrence_weekday_display(self) -> str:
         if self.recurrence_weekday is None:
             return ""
@@ -293,3 +374,108 @@ class EventPerformer(models.Model):
     def save(self, *args, **kwargs):
         self.sync_display_name()
         super().save(*args, **kwargs)
+
+
+class EventRecurrenceException(models.Model):
+    """Represents a single occurrence of a recurring event being skipped or overridden."""
+
+    class ExceptionType(models.TextChoices):
+        SKIP = "skip", "Skip occurrence"
+        OVERRIDE = "override", "Override occurrence"
+        HOLIDAY = "holiday", "Holiday blackout"
+
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="recurrence_exceptions",
+    )
+    occurrence_start = models.DateTimeField()
+    exception_type = models.CharField(
+        max_length=16,
+        choices=ExceptionType.choices,
+        default=ExceptionType.SKIP,
+    )
+    override_event = models.OneToOneField(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="recurrence_exception",
+        blank=True,
+        null=True,
+    )
+    note = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-occurrence_start"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "occurrence_start"],
+                name="unique_event_occurrence_exception",
+            )
+        ]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.event.title} @ {self.occurrence_start} ({self.get_exception_type_display()})"
+
+
+class HolidayWindow(models.Model):
+    """Date span where recurring events should automatically be skipped."""
+
+    name = models.CharField(max_length=140)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    applies_to_internal = models.BooleanField(
+        default=True,
+        help_text="If unchecked, internal events will still be scheduled.",
+    )
+    applies_to_public = models.BooleanField(
+        default=True,
+        help_text="If unchecked, public events will still be scheduled.",
+    )
+    note = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="holiday_windows_created",
+        blank=True,
+        null=True,
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="holiday_windows_updated",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ["-starts_at"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.name} ({self.starts_at:%Y-%m-%d} → {self.ends_at:%Y-%m-%d})"
+
+    @classmethod
+    def overlapping(cls, start: datetime | None, end: datetime | None):
+        """Return active windows intersecting the provided timeframe."""
+
+        tz = timezone.get_current_timezone()
+
+        def _normalize(value: datetime | None) -> datetime | None:
+            if not value:
+                return None
+            if timezone.is_naive(value):
+                return timezone.make_aware(value, tz)
+            return value
+
+        start = _normalize(start)
+        end = _normalize(end)
+
+        qs = cls.objects.all()
+        if start:
+            qs = qs.filter(ends_at__gte=start)
+        if end:
+            qs = qs.filter(starts_at__lte=end)
+        return qs

@@ -15,9 +15,16 @@ from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
-from app.events.forms import EventCategoryForm, EventFilterForm, EventForm, EventPerformerFormSet
-from app.events.models import Event, EventCategory
+from app.events.forms import (
+    EventCategoryForm,
+    EventFilterForm,
+    EventForm,
+    EventPerformerFormSet,
+    HolidayWindowForm,
+)
+from app.events.models import Event, EventCategory, EventRecurrenceException, HolidayWindow
 from app.events.scheduling import build_occurrence_series, refresh_event_schedule
 from app.shifts.services import sync_event_standard_shifts
 
@@ -28,6 +35,25 @@ def _add_months(dt, delta):
     month = month % 12 + 1
     day = min(dt.day, calendar.monthrange(year, month)[1])
     return dt.replace(year=year, month=month, day=day)
+
+
+def _parse_occurrence_param(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    parsed = parse_datetime(value)
+    if not parsed:
+        return None
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
+def _serialize_occurrence_param(dt: datetime | None) -> str | None:
+    if not dt:
+        return None
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return timezone.localtime(dt, timezone.get_current_timezone()).isoformat()
 
 
 @login_required
@@ -42,7 +68,7 @@ def index(request: HttpRequest) -> HttpResponse:
 
     events = (
         Event.objects.select_related("created_by", "updated_by")
-        .prefetch_related("categories")
+        .prefetch_related("categories", "recurrence_exceptions__override_event")
         .annotate(
             effective_start=Coalesce(
                 "starts_at",
@@ -50,6 +76,7 @@ def index(request: HttpRequest) -> HttpResponse:
                 output_field=DateTimeField(),
             )
         )
+        .filter(recurrence_parent__isnull=True)
     )
 
     if search_query:
@@ -70,15 +97,38 @@ def index(request: HttpRequest) -> HttpResponse:
             return timezone.make_aware(dt, tz)
         return timezone.localtime(dt, tz)
 
-    def build_card(event_obj, start_dt, doors_dt):
+    def build_card(event_obj, start_dt, doors_dt, *, occurrence=None, base_event=None):
         start_local = to_local(start_dt)
         doors_local = to_local(doors_dt)
+        scope_label = None
+        if occurrence and base_event and base_event.is_recurring:
+            scope_label = "Custom occurrence" if occurrence.is_override else "Single occurrence"
+        occurrence_param = _serialize_occurrence_param(occurrence.start) if occurrence else None
+        query_string = urlencode({"occurrence": occurrence_param}) if occurrence_param else ""
+        if occurrence and base_event and base_event.is_recurring:
+            if occurrence.is_override:
+                edit_url = reverse("events:edit", args=[event_obj.slug])
+            else:
+                edit_url = reverse("events:occurrence_edit", args=[base_event.slug])
+                if query_string:
+                    edit_url = f"{edit_url}?{query_string}"
+            delete_url = reverse("events:occurrence_delete", args=[base_event.slug])
+        else:
+            edit_url = reverse("events:edit", args=[event_obj.slug])
+            delete_url = reverse("events:delete", args=[event_obj.slug])
+
         return {
             "event": event_obj,
             "start": start_local,
             "start_label": start_local.strftime("%a, %b %d · %H:%M") if start_local else "TBD",
             "doors_label": doors_local.strftime("%H:%M") if doors_local else "",
             "has_shifts": event_obj.requires_shifts,
+            "scope_label": scope_label,
+            "occurrence_param": occurrence_param,
+            "is_override": bool(occurrence and occurrence.is_override),
+            "is_occurrence": occurrence is not None,
+            "edit_url": edit_url,
+            "delete_url": delete_url,
         }
 
     future_placeholder = now + timedelta(days=365 * 10)
@@ -154,6 +204,7 @@ def index(request: HttpRequest) -> HttpResponse:
 
     window_start = lower_bound
     window_end = end_local
+    holiday_windows = list(HolidayWindow.overlapping(window_start, recurrence_horizon))
 
     events = events.order_by("effective_start", "title")
     all_events = list(events)
@@ -169,16 +220,21 @@ def index(request: HttpRequest) -> HttpResponse:
         event_start_local = to_local(start_val)
 
         if event.is_recurring:
+            event_exceptions = list(event.recurrence_exceptions.all())
             refresh_event_schedule(
                 event,
                 max_occurrences=64,
                 horizon_end=recurrence_horizon,
+                holiday_windows=holiday_windows,
+                exceptions=event_exceptions,
             )
             occurrences = build_occurrence_series(
                 event,
                 max_occurrences=64,
                 include_past=True,
                 horizon_end=recurrence_horizon,
+                holiday_windows=holiday_windows,
+                exceptions=event_exceptions,
             )
             visible = []
             for occ in occurrences:
@@ -194,7 +250,13 @@ def index(request: HttpRequest) -> HttpResponse:
             event.recurrence_preview = visible[:4]
             for occ in visible:
                 scheduled_cards.append(
-                    build_card(event, occ.start, occ.doors)
+                    build_card(
+                        occ.event,
+                        occ.start,
+                        occ.doors or occ.event.doors_at,
+                        occurrence=occ,
+                        base_event=event,
+                    )
                 )
             if event.pk not in recurring_seen:
                 recurring_series.append(event)
@@ -309,18 +371,29 @@ def edit(request: HttpRequest, slug: str) -> HttpResponse:
             "event": event,
             "event_form": form,
             "performer_formset": formset,
+            "occurrence_mode": event.is_override,
+            "occurrence_start": event.recurrence_parent_start,
+            "occurrence_parent": event.recurrence_parent,
         },
     )
 
 
 @login_required
 def detail(request: HttpRequest, slug: str) -> HttpResponse:
-    event = get_object_or_404(Event.objects.prefetch_related("performers", "categories"), slug=slug)
+    event = get_object_or_404(
+        Event.objects.prefetch_related("performers", "categories", "recurrence_exceptions__override_event"),
+        slug=slug,
+    )
+    horizon = _add_months(timezone.now(), 6)
+    holiday_windows = list(HolidayWindow.overlapping(timezone.now(), horizon))
+    event_exceptions = list(event.recurrence_exceptions.all())
     occurrences = build_occurrence_series(
         event,
         max_occurrences=64,
         include_past=True,
-        horizon_end=_add_months(timezone.now(), 6),
+        horizon_end=horizon,
+        holiday_windows=holiday_windows,
+        exceptions=event_exceptions,
     )
     return render(request, "events/detail.html", {"event": event, "occurrences": occurrences})
 
@@ -332,8 +405,84 @@ def delete(request: HttpRequest, slug: str) -> HttpResponse:
     if request.method != "POST":
         return HttpResponseBadRequest("POST required")
 
+    parent = event.recurrence_parent
+    parent_start = event.recurrence_parent_start
     event.delete()
+    if parent and parent_start:
+        EventRecurrenceException.objects.update_or_create(
+            event=parent,
+            occurrence_start=parent_start,
+            defaults={
+                "exception_type": EventRecurrenceException.ExceptionType.SKIP,
+                "override_event": None,
+            },
+        )
+        refresh_event_schedule(parent, max_occurrences=64, horizon_end=_add_months(timezone.now(), 6))
     messages.success(request, "Event deleted.")
+    return redirect("events:index")
+
+
+@login_required
+@transaction.atomic
+def edit_occurrence(request: HttpRequest, slug: str) -> HttpResponse:
+    event = get_object_or_404(Event, slug=slug)
+    if not event.is_recurring:
+        return redirect("events:edit", slug=event.slug)
+
+    occurrence_value = request.GET.get("occurrence") or request.POST.get("occurrence")
+    occurrence_dt = _parse_occurrence_param(occurrence_value)
+    if not occurrence_dt:
+        return HttpResponseBadRequest("Missing or invalid occurrence.")
+
+    exception = (
+        EventRecurrenceException.objects.select_for_update()
+        .select_related("override_event")
+        .filter(event=event, occurrence_start=occurrence_dt)
+        .first()
+    )
+    override_event = exception.override_event if exception and exception.override_event else None
+
+    if not override_event:
+        override_event = event.clone_for_occurrence(occurrence_dt)
+        EventRecurrenceException.objects.update_or_create(
+            event=event,
+            occurrence_start=occurrence_dt,
+            defaults={
+                "exception_type": EventRecurrenceException.ExceptionType.OVERRIDE,
+                "override_event": override_event,
+            },
+        )
+
+    messages.info(request, "You are editing a single occurrence. Other dates remain unchanged.")
+    return redirect("events:edit", slug=override_event.slug)
+
+
+@login_required
+@transaction.atomic
+def delete_occurrence(request: HttpRequest, slug: str) -> HttpResponse:
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+
+    event = get_object_or_404(Event, slug=slug)
+    occurrence_value = request.POST.get("occurrence")
+    occurrence_dt = _parse_occurrence_param(occurrence_value)
+    if not occurrence_dt:
+        return HttpResponseBadRequest("Missing or invalid occurrence.")
+
+    exception, _ = EventRecurrenceException.objects.select_for_update().get_or_create(
+        event=event,
+        occurrence_start=occurrence_dt,
+        defaults={
+            "exception_type": EventRecurrenceException.ExceptionType.SKIP,
+        },
+    )
+    if exception.override_event:
+        exception.override_event.delete()
+    exception.override_event = None
+    exception.exception_type = EventRecurrenceException.ExceptionType.SKIP
+    exception.save()
+    refresh_event_schedule(event, max_occurrences=64, horizon_end=_add_months(timezone.now(), 6))
+    messages.success(request, "Occurrence removed from the recurrence.")
     return redirect("events:index")
 
 
@@ -375,3 +524,89 @@ def category_create(request: HttpRequest) -> HttpResponse:
         else:
             messages.error(request, "Could not create category.")
     return redirect("events:index")
+
+
+@login_required
+def category_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    category = get_object_or_404(EventCategory, pk=pk)
+    if request.method == "POST":
+        form = EventCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Category '{category.name}' updated.")
+            return redirect("events:categories")
+    else:
+        form = EventCategoryForm(instance=category)
+
+    return render(
+        request,
+        "events/category_edit.html",
+        {
+            "category": category,
+            "category_form": form,
+        },
+    )
+
+
+@login_required
+def category_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    category = get_object_or_404(EventCategory, pk=pk)
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    category.delete()
+    messages.success(request, f"Category '{category.name}' deleted.")
+    return redirect("events:categories")
+
+
+@login_required
+def holidays(request: HttpRequest) -> HttpResponse:
+    holidays_qs = HolidayWindow.objects.order_by("-starts_at")
+    if request.method == "POST":
+        form = HolidayWindowForm(request.POST, user=request.user)
+        if form.is_valid():
+            window = form.save()
+            messages.success(request, f"Holiday '{window.name}' saved.")
+            return redirect("events:holidays")
+    else:
+        form = HolidayWindowForm()
+
+    return render(
+        request,
+        "events/holidays.html",
+        {
+            "holidays": holidays_qs,
+            "holiday_form": form,
+        },
+    )
+
+
+@login_required
+def holiday_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    window = get_object_or_404(HolidayWindow, pk=pk)
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    window.delete()
+    messages.success(request, f"Holiday '{window.name}' removed.")
+    return redirect("events:holidays")
+
+
+@login_required
+def holiday_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    window = get_object_or_404(HolidayWindow, pk=pk)
+    if request.method == "POST":
+        form = HolidayWindowForm(request.POST, instance=window, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Holiday '{window.name}' updated.")
+            return redirect("events:holidays")
+    else:
+        form = HolidayWindowForm(instance=window, user=request.user)
+
+    return render(
+        request,
+        "events/holiday_edit.html",
+        {
+            "holiday": window,
+            "holiday_form": form,
+        },
+    )

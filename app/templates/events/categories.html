@@ -52,6 +52,7 @@
           <th>Description</th>
           <th>Color</th>
           <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -73,6 +74,13 @@
               {% else %}
                 <span class="pill">Inactive</span>
               {% endif %}
+            </td>
+            <td class="row-actions">
+              <a class="btn btn-outline" href="{% url 'events:category_edit' category.pk %}">Edit</a>
+              <form method="post" action="{% url 'events:category_delete' category.pk %}" onsubmit="return confirm('Delete this category?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline btn-danger">Delete</button>
+              </form>
             </td>
           </tr>
         {% endfor %}

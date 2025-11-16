@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from app.bands.models import Band
-from app.events.models import Event, EventCategory, EventPerformer
+from app.events.models import Event, EventCategory, EventPerformer, HolidayWindow
 from app.setup.models import SiteSettings
 from app.shifts.models import ShiftTemplate
 
@@ -75,6 +75,11 @@ class EventForm(forms.ModelForm):
         self.user = user
         tz = timezone.get_current_timezone()
 
+        self.is_occurrence_override = bool(
+            getattr(self.instance, "recurrence_parent_id", None)
+            or getattr(self.instance, "recurrence_parent", None)
+        )
+
         for key in [
             "doors_at",
             "starts_at",
@@ -95,6 +100,20 @@ class EventForm(forms.ModelForm):
             if timezone.is_naive(value):
                 return value.replace(second=0, microsecond=0)
             return timezone.localtime(value).replace(second=0, microsecond=0, tzinfo=None)
+
+        if self.is_occurrence_override:
+            for field_name in [
+                "recurrence_frequency",
+                "recurrence_weekday",
+                "recurrence_week_of_month",
+                "recurrence_day_of_month",
+                "recurrence_next_start_at",
+            ]:
+                if field_name in self.fields:
+                    self.fields[field_name].disabled = True
+                    self.fields[field_name].help_text = "Managed by the recurring series."
+            if "recurrence_frequency" in self.fields:
+                self.initial.setdefault("recurrence_frequency", Event.RecurrenceFrequency.NONE)
 
         if "standard_shifts" in self.fields:
             queryset = ShiftTemplate.objects.order_by("order", "name")
@@ -290,6 +309,7 @@ class EventForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
 
+        is_override = getattr(self, "is_occurrence_override", False)
         event_type = cleaned.get("event_type") or Event.EventType.PUBLIC
         starts_at = cleaned.get("starts_at")
         freq = cleaned.get("recurrence_frequency") or Event.RecurrenceFrequency.NONE
@@ -297,6 +317,12 @@ class EventForm(forms.ModelForm):
         week_of_month = cleaned.get("recurrence_week_of_month")
         day_of_month = cleaned.get("recurrence_day_of_month")
         next_start = cleaned.get("recurrence_next_start_at")
+
+        if is_override:
+            freq = Event.RecurrenceFrequency.NONE
+            cleaned["recurrence_frequency"] = freq
+            next_start = starts_at or next_start
+            cleaned["recurrence_next_start_at"] = next_start
 
         tz = timezone.get_current_timezone()
         reference_start = starts_at or next_start
@@ -311,53 +337,58 @@ class EventForm(forms.ModelForm):
         if event_type != Event.EventType.INTERNAL and not starts_at:
             self.add_error("starts_at", "Start date/time is required for non-internal events.")
 
-        if day_of_month is not None and not 1 <= day_of_month <= 31:
-            self.add_error("recurrence_day_of_month", "Choose a day between 1 and 31.")
+        if not is_override:
+            if day_of_month is not None and not 1 <= day_of_month <= 31:
+                self.add_error("recurrence_day_of_month", "Choose a day between 1 and 31.")
 
-        if freq in {
-            Event.RecurrenceFrequency.WEEKLY,
-            Event.RecurrenceFrequency.BIWEEKLY,
-            Event.RecurrenceFrequency.MONTHLY_WEEKDAY,
-        }:
-            if weekday is None:
-                self.add_error(
-                    "recurrence_weekday",
-                    "Select a weekday for this recurrence pattern.",
+            if freq in {
+                Event.RecurrenceFrequency.WEEKLY,
+                Event.RecurrenceFrequency.BIWEEKLY,
+                Event.RecurrenceFrequency.MONTHLY_WEEKDAY,
+            }:
+                if weekday is None:
+                    self.add_error(
+                        "recurrence_weekday",
+                        "Select a weekday for this recurrence pattern.",
+                    )
+            else:
+                cleaned["recurrence_weekday"] = None
+
+            if freq == Event.RecurrenceFrequency.MONTHLY_DATE:
+                if day_of_month is None:
+                    self.add_error(
+                        "recurrence_day_of_month",
+                        "Select the day of the month for this recurrence.",
+                    )
+            else:
+                cleaned["recurrence_day_of_month"] = (
+                    day_of_month if freq == Event.RecurrenceFrequency.MONTHLY_DATE else None
                 )
-        else:
-            cleaned["recurrence_weekday"] = None
 
-        if freq == Event.RecurrenceFrequency.MONTHLY_DATE:
-            if day_of_month is None:
+            if freq == Event.RecurrenceFrequency.MONTHLY_WEEKDAY:
+                if week_of_month is None:
+                    self.add_error(
+                        "recurrence_week_of_month",
+                        "Select which week of the month applies.",
+                    )
+            else:
+                cleaned["recurrence_week_of_month"] = None
+
+            if freq != Event.RecurrenceFrequency.NONE and not (starts_at or next_start):
                 self.add_error(
-                    "recurrence_day_of_month",
-                    "Select the day of the month for this recurrence.",
+                    "recurrence_next_start_at",
+                    "Provide either a start date/time or the next scheduled start for recurring events.",
                 )
+
+            if freq == Event.RecurrenceFrequency.NONE:
+                cleaned["recurrence_weekday"] = None
+                cleaned["recurrence_week_of_month"] = None
+                cleaned["recurrence_day_of_month"] = None
+                cleaned["recurrence_next_start_at"] = next_start
         else:
-            cleaned["recurrence_day_of_month"] = (
-                day_of_month if freq == Event.RecurrenceFrequency.MONTHLY_DATE else None
-            )
-
-        if freq == Event.RecurrenceFrequency.MONTHLY_WEEKDAY:
-            if week_of_month is None:
-                self.add_error(
-                    "recurrence_week_of_month",
-                    "Select which week of the month applies.",
-                )
-        else:
-            cleaned["recurrence_week_of_month"] = None
-
-        if freq != Event.RecurrenceFrequency.NONE and not (starts_at or next_start):
-            self.add_error(
-                "recurrence_next_start_at",
-                "Provide either a start date/time or the next scheduled start for recurring events.",
-            )
-
-        if freq == Event.RecurrenceFrequency.NONE:
             cleaned["recurrence_weekday"] = None
             cleaned["recurrence_week_of_month"] = None
             cleaned["recurrence_day_of_month"] = None
-            cleaned["recurrence_next_start_at"] = next_start
 
         if event_type == Event.EventType.INTERNAL and freq == Event.RecurrenceFrequency.NONE:
             # Internal, non-recurring events can omit scheduling entirely.
@@ -702,6 +733,49 @@ class EventCategoryForm(forms.ModelForm):
         if commit:
             inst.save()
         return inst
+
+
+class HolidayWindowForm(forms.ModelForm):
+    """Simple form to manage blackout windows for recurring events."""
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+        for key in ["starts_at", "ends_at"]:
+            if key in self.fields:
+                self.fields[key].widget = forms.DateTimeInput(attrs={"type": "datetime-local"})
+
+    class Meta:
+        model = HolidayWindow
+        fields = [
+            "name",
+            "starts_at",
+            "ends_at",
+            "applies_to_public",
+            "applies_to_internal",
+            "note",
+        ]
+        widgets = {
+            "note": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        start = cleaned.get("starts_at")
+        end = cleaned.get("ends_at")
+        if start and end and end <= start:
+            self.add_error("ends_at", "End must be after the start.")
+        return cleaned
+
+    def save(self, commit: bool = True):
+        instance = super().save(commit=False)
+        if self.user:
+            if not instance.pk:
+                instance.created_by = self.user
+            instance.updated_by = self.user
+        if commit:
+            instance.save()
+        return instance
 
 
 class EventFilterForm(forms.Form):

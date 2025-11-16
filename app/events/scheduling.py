@@ -6,21 +6,24 @@ import calendar
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from typing import Iterable, List, Optional
+from typing import List, Optional, Sequence
 
 from django.utils import timezone
 
-from app.events.models import Event
+from app.events.models import Event, EventRecurrenceException, HolidayWindow
 
 
 @dataclass(frozen=True)
 class EventOccurrenceData:
     """Computed occurrence for an event (without persisting to DB)."""
 
+    event: Event
     start: datetime
     doors: Optional[datetime]
     end: Optional[datetime]
     curfew: Optional[datetime]
+    is_override: bool = False
+    source_exception: Optional[EventRecurrenceException] = None
 
     def to_segment_context(self):
         """Return a lightweight object mimicking an Event for template scheduling."""
@@ -136,6 +139,8 @@ def build_occurrence_series(
     max_occurrences: int = 6,
     include_past: bool = False,
     horizon_end: Optional[datetime] = None,
+    exceptions: Optional[Sequence[EventRecurrenceException]] = None,
+    holiday_windows: Optional[Sequence[HolidayWindow]] = None,
 ) -> List[EventOccurrenceData]:
     """Return upcoming occurrences for an event based on its recurrence settings."""
 
@@ -147,9 +152,35 @@ def build_occurrence_series(
     doors_offset, ends_offset, curfew_offset = _compute_offsets(event)
     occurrences: List[EventOccurrenceData] = []
     horizon = _ensure_aware(horizon_end)
+    exception_map = {}
+    if exceptions:
+        for item in exceptions:
+            key = _ensure_aware(item.occurrence_start)
+            if key:
+                exception_map[key] = item
+    holiday_list = list(holiday_windows or [])
+
+    def blocked_by_holiday(start_dt: datetime) -> bool:
+        if not holiday_list or not event.is_recurring:
+            return False
+        for window in holiday_list:
+            applies = (
+                (event.event_type == Event.EventType.PUBLIC and window.applies_to_public)
+                or (event.event_type == Event.EventType.INTERNAL and window.applies_to_internal)
+            )
+            if not applies:
+                continue
+            window_start = _ensure_aware(window.starts_at)
+            window_end = _ensure_aware(window.ends_at)
+            if not window_start or not window_end:
+                continue
+            if window_start <= start_dt <= window_end:
+                return True
+        return False
 
     if event.recurrence_frequency == Event.RecurrenceFrequency.NONE:
         occurrence = EventOccurrenceData(
+            event=event,
             start=start,
             doors=_apply_offset(start, doors_offset),
             end=_apply_offset(start, ends_offset),
@@ -163,18 +194,49 @@ def build_occurrence_series(
     current = start
     while attempts < max_occurrences * 6:
         attempts += 1
-        occurrence = EventOccurrenceData(
-            start=current,
-            doors=_apply_offset(current, doors_offset),
-            end=_apply_offset(current, ends_offset),
-            curfew=_apply_offset(current, curfew_offset),
-        )
-        if horizon and occurrence.start > horizon:
+        if horizon and current > horizon:
             break
-        if include_past or occurrence.start >= now:
-            occurrences.append(occurrence)
-            if len(occurrences) >= max_occurrences:
+
+        exception = exception_map.get(current)
+        if exception and exception.override_event:
+            override = exception.override_event
+            override_start = _ensure_aware(override.starts_at) or current
+            occurrence = EventOccurrenceData(
+                event=override,
+                start=override_start,
+                doors=_ensure_aware(override.doors_at),
+                end=_ensure_aware(override.ends_at),
+                curfew=_ensure_aware(override.curfew_at),
+                is_override=True,
+                source_exception=exception,
+            )
+            if horizon and occurrence.start > horizon:
                 break
+            if include_past or occurrence.start >= now:
+                occurrences.append(occurrence)
+                if len(occurrences) >= max_occurrences:
+                    break
+        elif exception:
+            # Skip this occurrence entirely (skip/holiday).
+            pass
+        else:
+            if blocked_by_holiday(current):
+                next_start = _next_occurrence_start(event, current)
+                if not next_start or next_start == current:
+                    break
+                current = next_start
+                continue
+            occurrence = EventOccurrenceData(
+                event=event,
+                start=current,
+                doors=_apply_offset(current, doors_offset),
+                end=_apply_offset(current, ends_offset),
+                curfew=_apply_offset(current, curfew_offset),
+            )
+            if include_past or occurrence.start >= now:
+                occurrences.append(occurrence)
+                if len(occurrences) >= max_occurrences:
+                    break
 
         next_start = _next_occurrence_start(event, current)
         if not next_start or next_start == current:
@@ -189,6 +251,8 @@ def refresh_event_schedule(
     *,
     max_occurrences: int = 6,
     horizon_end: Optional[datetime] = None,
+    holiday_windows: Optional[Sequence[HolidayWindow]] = None,
+    exceptions: Optional[Sequence[EventRecurrenceException]] = None,
 ) -> List[EventOccurrenceData]:
     """Recalculate and persist the next scheduled start if needed, returning occurrences."""
 
@@ -197,6 +261,8 @@ def refresh_event_schedule(
         max_occurrences=max_occurrences,
         include_past=True,
         horizon_end=horizon_end,
+        holiday_windows=holiday_windows,
+        exceptions=exceptions,
     )
     next_start = None
     now = timezone.now()

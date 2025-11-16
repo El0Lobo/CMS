@@ -7,6 +7,7 @@ import calendar
 
 from django.utils import timezone
 
+from app.events.models import HolidayWindow
 from app.events.scheduling import build_occurrence_series, refresh_event_schedule
 from app.shifts.models import Shift, ShiftTemplate
 
@@ -23,16 +24,22 @@ def sync_event_standard_shifts(event, *, user=None, max_occurrences: int = 64) -
     """Ensure standard shift template selections are reflected in actual shifts."""
 
     horizon_end = _add_months(timezone.now(), 6)
+    holiday_windows = list(HolidayWindow.overlapping(timezone.now(), horizon_end))
+    event_exceptions = list(event.recurrence_exceptions.all())
     refresh_event_schedule(
         event,
         max_occurrences=max_occurrences,
         horizon_end=horizon_end,
+        holiday_windows=holiday_windows,
+        exceptions=event_exceptions,
     )
     occurrences = build_occurrence_series(
         event,
         max_occurrences=max_occurrences,
         include_past=False,
         horizon_end=horizon_end,
+        holiday_windows=holiday_windows,
+        exceptions=event_exceptions,
     )
     if not occurrences:
         fallback = build_occurrence_series(
@@ -40,6 +47,8 @@ def sync_event_standard_shifts(event, *, user=None, max_occurrences: int = 64) -
             max_occurrences=1,
             include_past=True,
             horizon_end=horizon_end,
+            holiday_windows=holiday_windows,
+            exceptions=event_exceptions,
         )
         if fallback:
             occurrences = [fallback[-1]]

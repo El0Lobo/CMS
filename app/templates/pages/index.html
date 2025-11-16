@@ -22,7 +22,6 @@
             <th>Title</th>
             <th>Slug</th>
             <th>Status</th>
-            <th>Visible</th>
             <th>Updated</th>
             <th style="width:1%;">Actions</th>
           </tr>
@@ -48,13 +47,7 @@
                   {% endif %}
                 </form>
               </td>
-              <td>
-                {% if page.is_visible %}
-                  <span class="badge badge-success">Visible</span>
-                {% else %}
-                  <span class="badge badge-warning">Hidden</span>
-                {% endif %}
-              </td>
+
               <td>{{ page.updated_at|date:"M d, Y H:i" }}</td>
               <td>
                 <div class="page-row-actions">
