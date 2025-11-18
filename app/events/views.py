@@ -56,6 +56,68 @@ def _serialize_occurrence_param(dt: datetime | None) -> str | None:
     return timezone.localtime(dt, timezone.get_current_timezone()).isoformat()
 
 
+def _close_shifts_for_window(events, window, *, allow_signup: bool, status: str | None = None):
+    """Batch update shifts in a window to open/close without deleting them."""
+
+    for event in events:
+        qs = event.shifts.filter(
+            start_at__gte=window.starts_at,
+            start_at__lte=window.ends_at,
+        )
+        update_kwargs = {"allow_signup": allow_signup}
+        if status:
+            update_kwargs["status"] = status
+        qs.update(**update_kwargs)
+
+
+def _compute_blackout_exceptions(window, events):
+    """Create holiday exceptions for occurrences inside the window."""
+
+    for event in events:
+        if (event.event_type == Event.EventType.PUBLIC and not window.applies_to_public) or (
+            event.event_type == Event.EventType.INTERNAL and not window.applies_to_internal
+        ):
+            continue
+        occurrences = build_occurrence_series(
+            event,
+            max_occurrences=128,
+            include_past=True,
+            horizon_end=window.ends_at,
+            holiday_windows=[window],
+        )
+        for occ in occurrences:
+            if window.starts_at <= occ.start <= window.ends_at:
+                EventRecurrenceException.objects.update_or_create(
+                    event=event,
+                    occurrence_start=occ.start,
+                    defaults={
+                        "exception_type": EventRecurrenceException.ExceptionType.HOLIDAY,
+                        "override_event": None,
+                    },
+                )
+        refresh_event_schedule(
+            event,
+            max_occurrences=64,
+            horizon_end=_add_months(timezone.now(), 6),
+            holiday_windows=[window],
+            exceptions=event.recurrence_exceptions.all(),
+        )
+
+
+def _affected_recurring_events(window):
+    """Return recurring events that intersect the provided holiday window."""
+
+    recurring = Event.objects.exclude(recurrence_frequency=Event.RecurrenceFrequency.NONE)
+    return recurring.filter(
+        Q(starts_at__range=(window.starts_at, window.ends_at))
+        | Q(recurrence_next_start_at__range=(window.starts_at, window.ends_at))
+        | Q(
+            recurrence_exceptions__occurrence_start__range=(window.starts_at, window.ends_at),
+            recurrence_exceptions__exception_type=EventRecurrenceException.ExceptionType.HOLIDAY,
+        )
+    ).distinct()
+
+
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
     filter_form = EventFilterForm(request.GET or None)
@@ -565,6 +627,15 @@ def holidays(request: HttpRequest) -> HttpResponse:
         form = HolidayWindowForm(request.POST, user=request.user)
         if form.is_valid():
             window = form.save()
+            affected_events = list(_affected_recurring_events(window))
+            _compute_blackout_exceptions(window, affected_events)
+            # Only close shifts for events the window applies to
+            applicable_events = [
+                e for e in affected_events
+                if (e.event_type == Event.EventType.PUBLIC and window.applies_to_public)
+                or (e.event_type == Event.EventType.INTERNAL and window.applies_to_internal)
+            ]
+            _close_shifts_for_window(applicable_events, window, allow_signup=False, status="closed")
             messages.success(request, f"Holiday '{window.name}' saved.")
             return redirect("events:holidays")
     else:
@@ -585,7 +656,38 @@ def holiday_delete(request: HttpRequest, pk: int) -> HttpResponse:
     window = get_object_or_404(HolidayWindow, pk=pk)
     if request.method != "POST":
         return HttpResponseBadRequest("POST required")
+    affected_events = list(_affected_recurring_events(window))
+    # Remove holiday exceptions only for events the window applied to
+    EventRecurrenceException.objects.filter(
+        exception_type=EventRecurrenceException.ExceptionType.HOLIDAY,
+        occurrence_start__range=(window.starts_at, window.ends_at),
+        event__event_type__in=[
+            Event.EventType.PUBLIC if window.applies_to_public else None,
+            Event.EventType.INTERNAL if window.applies_to_internal else None,
+        ],
+    ).exclude(event__event_type=None).delete()
     window.delete()
+    applicable_events = [
+        e for e in affected_events
+        if (e.event_type == Event.EventType.PUBLIC and window.applies_to_public)
+        or (e.event_type == Event.EventType.INTERNAL and window.applies_to_internal)
+    ]
+    _close_shifts_for_window(applicable_events, window, allow_signup=True, status="open")
+    active_holidays = list(HolidayWindow.overlapping(timezone.now(), _add_months(timezone.now(), 6)))
+    for event in affected_events:
+        event_exceptions = list(event.recurrence_exceptions.all())
+        refresh_event_schedule(
+            event,
+            max_occurrences=64,
+            horizon_end=_add_months(timezone.now(), 6),
+            holiday_windows=active_holidays,
+            exceptions=event_exceptions,
+        )
+        sync_event_standard_shifts(
+            event,
+            user=request.user,
+            max_occurrences=64,
+        )
     messages.success(request, f"Holiday '{window.name}' removed.")
     return redirect("events:holidays")
 
