@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
+from model_utils.fields import AutoCreatedField, AutoLastModifiedField
 
 from django_ckeditor_5.fields import CKEditor5Field
 
@@ -50,8 +51,8 @@ class Page(models.Model):
     )
     hero_image = models.ImageField(upload_to="pages/heroes/", blank=True, null=True)
     published_at = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = AutoCreatedField("created at")
+    updated_at = AutoLastModifiedField("updated at")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name="pages_created",

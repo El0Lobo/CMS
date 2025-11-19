@@ -138,6 +138,24 @@
             {% if form.instance.logo %}
               <div class="mt-2"><img src="{{ form.instance.logo.url }}" alt="Logo" style="height:64px"></div>
             {% endif %}
+
+            {{ form.logo_secondary.label_tag }} {{ form.logo_secondary }}
+            {% if form.instance.logo_secondary %}
+              <div class="mt-2"><img src="{{ form.instance.logo_secondary.url }}" alt="Secondary logo" style="height:64px"></div>
+            {% endif %}
+          </div>
+          <div class="field">
+            {{ form.icon_pack.label_tag }} {{ form.icon_pack }}
+            {% if form.icon_pack.help_text %}
+              <p class="text-muted" style="margin:4px 0 0;">{{ form.icon_pack.help_text }}</p>
+            {% endif %}
+            <p class="text-muted" style="margin:4px 0 0;">
+              Generate these files via
+              <a href="https://realfavicongenerator.net/" target="_blank" rel="noopener">
+                RealFaviconGenerator
+              </a>
+              (download the favicon package ZIP) and upload it here.
+            </p>
           </div>
         </div>
       </div>

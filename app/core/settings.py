@@ -55,6 +55,9 @@ INSTALLED_APPS = [
     "django_htmx",
     "django_ckeditor_5",
     "rest_framework",
+    "django.contrib.sites",
+    "robots",
+    "recurrence",
 
     # Project apps
     "app.core",
@@ -144,6 +147,7 @@ STATICFILES_DIRS = [BASE_DIR / "app" / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+SITE_ID = 1
 
 # WYSIWYG / CKEditor 5
 CKEDITOR_5_CONFIGS = {

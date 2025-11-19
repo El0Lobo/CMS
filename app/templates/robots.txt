@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /accounts/
+Disallow: /cms/
+Disallow: /cms/pos/
+Disallow: /cms/events/preview/
+Disallow: /cms/assets/
+Allow: /
+
+# Sitemap: add when available (e.g. https://example.com/sitemap.xml)

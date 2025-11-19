@@ -10,6 +10,9 @@ whitenoise==6.6.0
 gunicorn==21.2.0
 celery==5.4.0
 redis==5.0.4
+django-robots==6.1
+django-recurrence==1.11.1
+django-model-utils==4.5.1
 python-dateutil==2.9.0.post0
 icalendar==5.0.12
 requests==2.32.3

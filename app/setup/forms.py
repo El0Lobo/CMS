@@ -72,12 +72,19 @@ class SettingsForm(ModelForm):
     maximum_attendee_capacity = forms.IntegerField(required=False, min_value=0)
     awareness_team_available = forms.BooleanField(required=False)
     awareness_contact = forms.CharField(required=False, label="Awareness contact (free text)")
+    icon_pack = forms.FileField(
+        required=False,
+        label="Site icon pack (ZIP)",
+        help_text=(
+            "Upload a ZIP containing favicon.ico... Existing icon assets will be replaced."
+        ),
+    )
 
     class Meta:
         model = SiteSettings
         fields = [
             # General
-            "mode", "org_name", "logo", "publish_opening_times", "public_pages_enabled",
+            "mode", "org_name", "logo", "logo_secondary", "publish_opening_times", "public_pages_enabled",
             # Address & geodata
             "address_street", "address_number", "address_postal_code", "address_city",
             "address_country", "address_autocomplete",

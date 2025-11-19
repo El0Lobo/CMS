@@ -5,6 +5,11 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Bar OS{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'public/site.css' %}">
+  {% if site_icon_links %}
+    {% for icon in site_icon_links %}
+      <link rel="{{ icon.rel|default:'icon' }}" href="{{ icon.href }}"{% if icon.type %} type="{{ icon.type }}"{% endif %}{% if icon.sizes %} sizes="{{ icon.sizes }}"{% endif %}>
+    {% endfor %}
+  {% endif %}
 </head>
 <body>
   <div class="site-shell">

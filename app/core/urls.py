@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 
 from app.pages.views_public import CMSLoginView
 from .views import health
@@ -11,6 +12,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health, name="health"),
     path("api/v1/", include("app.api.urls")),
+    path(
+        "robots.txt",
+        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
+    ),
 
     # Auth
     path("accounts/login/", CMSLoginView.as_view(), name="login"),

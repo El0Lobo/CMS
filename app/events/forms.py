@@ -10,6 +10,7 @@ from django.db import models
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 from django.utils.text import slugify
+from recurrence.forms import RecurrenceWidget
 
 from app.bands.models import Band
 from app.events.models import Event, EventCategory, EventPerformer, HolidayWindow
@@ -41,6 +42,7 @@ class EventForm(forms.ModelForm):
             "recurrence_week_of_month",
             "recurrence_day_of_month",
             "recurrence_next_start_at",
+            "recurrence_rule",
             "ticket_url",
             "ticket_price_from",
             "ticket_price_to",
@@ -68,6 +70,7 @@ class EventForm(forms.ModelForm):
             "recurrence_day_of_month": forms.NumberInput(attrs={"min": 1, "max": 31}),
             "recurrence_next_start_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "standard_shifts": forms.CheckboxSelectMultiple(),
+            "recurrence_rule": RecurrenceWidget(),
         }
 
     def __init__(self, *args, user=None, **kwargs):
@@ -90,6 +93,7 @@ class EventForm(forms.ModelForm):
             "recurrence_week_of_month",
             "recurrence_day_of_month",
             "recurrence_next_start_at",
+            "recurrence_rule",
         ]:
             if key in self.fields:
                 self.fields[key].required = False
@@ -108,6 +112,7 @@ class EventForm(forms.ModelForm):
                 "recurrence_week_of_month",
                 "recurrence_day_of_month",
                 "recurrence_next_start_at",
+                "recurrence_rule",
             ]:
                 if field_name in self.fields:
                     self.fields[field_name].disabled = True
@@ -242,6 +247,7 @@ class EventForm(forms.ModelForm):
                     "recurrence_week_of_month",
                     "recurrence_day_of_month",
                     "recurrence_next_start_at",
+                    "recurrence_rule",
                 ],
                 {},
             ),

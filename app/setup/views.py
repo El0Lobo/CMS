@@ -12,6 +12,8 @@ from django.db.models.functions import Substr
 from .models import SiteSettings, OpeningHour, VisibilityRule
 from .forms import SettingsForm, TierFormSet, HourFormSet, GroupFormSet, VisibilityRuleForm
 from .helpers import is_allowed
+from .icon_pack import import_icon_pack, IconPackError
+from .branding_assets import sync_branding_assets
 
 
 def setup_access_required(u):
@@ -54,8 +56,10 @@ def setup_view(request):
 
         if main_ok:
             settings_saved = form.save()
+            sync_branding_assets(settings_saved)
 
             skipped = []
+            icon_msg = None
 
             if tiers_ok:
                 tiers.save()
@@ -72,8 +76,19 @@ def setup_view(request):
             else:
                 skipped.append("Roles")
 
+            icon_pack = form.cleaned_data.get("icon_pack")
+            if icon_pack:
+                try:
+                    import_icon_pack(icon_pack)
+                    icon_msg = "Icon pack uploaded."
+                except IconPackError as exc:
+                    icon_msg = None
+                    messages.error(request, f"Icon pack not processed: {exc}")
+
             msg = "Settings saved."
             messages.success(request, msg)
+            if icon_msg:
+                messages.success(request, icon_msg)
 
             if skipped:
                 messages.warning(request, "Some sections were not saved: " + ", ".join(skipped) + ".")

@@ -7,6 +7,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
+from model_utils.fields import AutoCreatedField, AutoLastModifiedField
+from recurrence.fields import RecurrenceField
 
 
 class EventCategory(models.Model):
@@ -106,6 +108,11 @@ class Event(models.Model):
         choices=RecurrenceFrequency.choices,
         default=RecurrenceFrequency.NONE,
     )
+    recurrence_rule = RecurrenceField(
+        blank=True,
+        null=True,
+        help_text="Advanced recurrence (RRULE/EXDATE). Leave empty to use the basic repeat options.",
+    )
     recurrence_parent = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
@@ -194,8 +201,8 @@ class Event(models.Model):
         blank=True,
         null=True,
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = AutoCreatedField("created at")
+    updated_at = AutoLastModifiedField("updated at")
 
     class Meta:
         ordering = ["-starts_at", "title"]
