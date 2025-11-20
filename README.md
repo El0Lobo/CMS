@@ -1,4 +1,4 @@
-# Kneipe OS
+# Kneipe OS Starter 
 
 **Everything you need to run your place. No bullshit.**
 
