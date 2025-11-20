@@ -134,7 +134,6 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 - **[Architecture](ARCHITECTURE.md)** — How it's built
 - **[Contributing](CONTRIBUTING.md)** — Join in
 - **[Security](SECURITY_AUDIT_REPORT.md)** — Don't get hacked
-- **[Coding Conventions](CODING_CONVENTIONS.md)** — Code style
 - **[bin/ Scripts](bin/README.md)** — Tool docs
 
 ---
