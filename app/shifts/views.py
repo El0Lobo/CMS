@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
-import calendar
 import json
-from urllib.parse import urlencode
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -16,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from app.core.date_utils import add_months
 from app.events.models import Event
 from app.shifts.forms import (
     EventShiftFormSet,
@@ -26,23 +25,12 @@ from app.shifts.forms import (
 )
 from app.shifts.models import Shift, ShiftAssignment, ShiftTemplate
 
-
-def _add_months(dt, delta):
-    month = dt.month - 1 + delta
-    year = dt.year + month // 12
-    month = month % 12 + 1
-    day = min(dt.day, calendar.monthrange(year, month)[1])
-    return dt.replace(year=year, month=month, day=day)
-
 User = get_user_model()
 
 
 def _build_index_context(request):
     filter_form = ShiftFilterForm(request.GET or None)
-    if filter_form.is_valid():
-        filters = filter_form.cleaned_data
-    else:
-        filters = {}
+    filters = filter_form.cleaned_data if filter_form.is_valid() else {}
 
     shifts_qs = (
         Shift.objects.select_related("event", "template")
@@ -68,8 +56,8 @@ def _build_index_context(request):
         end_local = start_local + timedelta(weeks=1)
     elif timeframe == ShiftFilterForm.Timeframe.MONTH:
         base = local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        start_local = _add_months(base, offset)
-        end_local = _add_months(start_local, 1)
+        start_local = add_months(base, offset)
+        end_local = add_months(start_local, 1)
     elif timeframe == ShiftFilterForm.Timeframe.YEAR:
         base = local_now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         start_local = base.replace(year=base.year + offset)
@@ -99,7 +87,9 @@ def _build_index_context(request):
         shifts_qs = shifts_qs.filter(start_at__lte=end_local)
 
     if timeframe == ShiftFilterForm.Timeframe.WEEK and start_local and end_local:
-        range_label = f"{start_local.strftime('%b %d')} – {(end_local - timedelta(days=1)).strftime('%b %d')}"
+        range_label = (
+            f"{start_local.strftime('%b %d')} – {(end_local - timedelta(days=1)).strftime('%b %d')}"
+        )
     elif timeframe == ShiftFilterForm.Timeframe.MONTH and start_local:
         range_label = start_local.strftime("%B %Y")
     elif timeframe == ShiftFilterForm.Timeframe.YEAR and start_local:
@@ -110,6 +100,7 @@ def _build_index_context(request):
     show_navigation = timeframe != ShiftFilterForm.Timeframe.ALL
     nav_prev = nav_next = None
     if show_navigation:
+
         def build_nav(delta: int) -> str:
             params = request.GET.copy()
             params["timeframe"] = timeframe
@@ -137,10 +128,12 @@ def _build_index_context(request):
         for assignment in shift.assignments.all():
             if assignment.status not in assignee_statuses:
                 continue
-            badges.append({
-                "name": assignment.display_name,
-                "user_id": assignment.user_id,
-            })
+            badges.append(
+                {
+                    "name": assignment.display_name,
+                    "user_id": assignment.user_id,
+                }
+            )
         shift.assignment_badges = badges
 
     # Stats filter + bounds
@@ -153,17 +146,10 @@ def _build_index_context(request):
     if since:
         assignments = assignments.filter(assigned_at__gte=since)
 
-    stats_data = (
-        assignments.values("user_id")
-        .annotate(total=Count("id"))
-        .order_by("-total")
-    )
+    stats_data = assignments.values("user_id").annotate(total=Count("id")).order_by("-total")
 
     user_ids = [row["user_id"] for row in stats_data if row["user_id"]]
-    users = {
-        u.id: u
-        for u in User.objects.filter(id__in=user_ids).select_related("profile")
-    }
+    users = {u.id: u for u in User.objects.filter(id__in=user_ids).select_related("profile")}
 
     def _display_name(user):
         if not user:
@@ -198,8 +184,7 @@ def _build_index_context(request):
     template_form = ShiftTemplateForm()
     templates = ShiftTemplate.objects.order_by("order", "name")
     template_edit_forms = {
-        tmpl.id: ShiftTemplateForm(instance=tmpl, prefix=f"tmpl-{tmpl.id}")
-        for tmpl in templates
+        tmpl.id: ShiftTemplateForm(instance=tmpl, prefix=f"tmpl-{tmpl.id}") for tmpl in templates
     }
     template_forms = [(tmpl, template_edit_forms[tmpl.id]) for tmpl in templates]
 
@@ -247,13 +232,17 @@ def _build_index_context(request):
             events_by_key[key] = entry
             events_with_shifts.append(entry)
         else:
-            if shift.start_at and (entry["occurrence_start"] is None or shift.start_at < entry["occurrence_start"]):
+            if shift.start_at and (
+                entry["occurrence_start"] is None or shift.start_at < entry["occurrence_start"]
+            ):
                 entry["occurrence_start"] = shift.start_at
         entry["shifts"].append(shift)
 
     for entry in events_with_shifts:
         if entry["occurrence_start"]:
-            entry["occurrence_label"] = timezone.localtime(entry["occurrence_start"]).strftime("%a %d.%m.%Y %H:%M")
+            entry["occurrence_label"] = timezone.localtime(entry["occurrence_start"]).strftime(
+                "%a %d.%m.%Y %H:%M"
+            )
         elif entry["occurrence_date"]:
             entry["occurrence_label"] = entry["occurrence_date"].strftime("%a %d.%m.%Y")
         else:
@@ -268,7 +257,9 @@ def _build_index_context(request):
             try:
                 start_label = timezone.localtime(s.start_at).strftime("%H:%M")
             except Exception:
-                start_label = s.start_at.strftime("%H:%M") if hasattr(s.start_at, "strftime") else ""
+                start_label = (
+                    s.start_at.strftime("%H:%M") if hasattr(s.start_at, "strftime") else ""
+                )
 
             try:
                 end_label = timezone.localtime(s.end_at).strftime("%H:%M")
@@ -302,10 +293,13 @@ def _build_index_context(request):
         "template_forms": template_forms,
     }
 
+
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
     context = _build_index_context(request)
     return render(request, "shifts/index.html", context)
+
+
 @login_required
 def assign(request: HttpRequest, shift_id: int) -> HttpResponse:
     if not request.user.is_superuser:

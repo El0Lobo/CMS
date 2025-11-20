@@ -1,19 +1,18 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test, login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import Group
-from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
+from django.db.models import Case, CharField, F, Q, Value, When
+from django.db.models.functions import Substr
+from django.db.models.functions.text import StrIndex
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
-from django.db.models.functions.text import StrIndex
-from django.db.models import F, Value, Case, When, CharField, Q
-from django.db.models.functions import Substr
-from .models import SiteSettings, OpeningHour, VisibilityRule
-from .forms import SettingsForm, TierFormSet, HourFormSet, GroupFormSet, VisibilityRuleForm
+
+from .forms import GroupFormSet, HourFormSet, SettingsForm, TierFormSet, VisibilityRuleForm
 from .helpers import is_allowed
-from .icon_pack import import_icon_pack, IconPackError
-from .branding_assets import sync_branding_assets
+from .models import OpeningHour, SiteSettings, VisibilityRule
 
 
 def setup_access_required(u):
@@ -46,7 +45,9 @@ def setup_view(request):
         form = SettingsForm(request.POST, request.FILES, instance=settings_obj)
         tiers = TierFormSet(request.POST, instance=settings_obj, prefix="tiers")
         hours = HourFormSet(request.POST, instance=settings_obj, prefix="hours")
-        roles = GroupFormSet(request.POST, queryset=Group.objects.all().order_by("name"), prefix="roles")
+        roles = GroupFormSet(
+            request.POST, queryset=Group.objects.all().order_by("name"), prefix="roles"
+        )
 
         # Partial-save: save what validates, warn on the rest
         main_ok = form.is_valid()
@@ -55,11 +56,9 @@ def setup_view(request):
         roles_ok = roles.is_valid()
 
         if main_ok:
-            settings_saved = form.save()
-            sync_branding_assets(settings_saved)
+            form.save()
 
             skipped = []
-            icon_msg = None
 
             if tiers_ok:
                 tiers.save()
@@ -76,27 +75,20 @@ def setup_view(request):
             else:
                 skipped.append("Roles")
 
-            icon_pack = form.cleaned_data.get("icon_pack")
-            if icon_pack:
-                try:
-                    import_icon_pack(icon_pack)
-                    icon_msg = "Icon pack uploaded."
-                except IconPackError as exc:
-                    icon_msg = None
-                    messages.error(request, f"Icon pack not processed: {exc}")
-
             msg = "Settings saved."
             messages.success(request, msg)
-            if icon_msg:
-                messages.success(request, icon_msg)
 
             if skipped:
-                messages.warning(request, "Some sections were not saved: " + ", ".join(skipped) + ".")
+                messages.warning(
+                    request, "Some sections were not saved: " + ", ".join(skipped) + "."
+                )
 
             return redirect("setup:setup")
         else:
             # With our permissive form, this should be rare; still show what failed
-            messages.error(request, "Could not save the core settings. Please review the highlighted fields.")
+            messages.error(
+                request, "Could not save the core settings. Please review the highlighted fields."
+            )
     else:
         form = SettingsForm(instance=settings_obj)
         tiers = TierFormSet(instance=settings_obj, prefix="tiers")
@@ -104,13 +96,17 @@ def setup_view(request):
         roles = GroupFormSet(queryset=Group.objects.all().order_by("name"), prefix="roles")
 
     current_mode = (form.instance.mode or "VENUE").lower()
-    return render(request, "setup/setup.html", {
-        "form": form,
-        "tiers": tiers,
-        "hours": hours,
-        "roles": roles,
-        "current_mode": current_mode,
-    })
+    return render(
+        request,
+        "setup/setup.html",
+        {
+            "form": form,
+            "tiers": tiers,
+            "hours": hours,
+            "roles": roles,
+            "current_mode": current_mode,
+        },
+    )
 
 
 @login_required
@@ -123,19 +119,14 @@ def visibility_list(request):
     rules = VisibilityRule.objects.all()
 
     if q:
-        rules = rules.filter(
-            Q(key__icontains=q) |
-            Q(label__icontains=q) |
-            Q(notes__icontains=q)
-        )
+        rules = rules.filter(Q(key__icontains=q) | Q(label__icontains=q) | Q(notes__icontains=q))
 
     rules = rules.annotate(first_dot=StrIndex(F("key"), Value(".")))
     rules = rules.annotate(after_first=Substr(F("key"), F("first_dot") + 1))
     rules = rules.annotate(second_rel=StrIndex(F("after_first"), Value(".")))
     rules = rules.annotate(
         group_name=Case(
-            When(second_rel__gt=1,
-                 then=Substr(F("key"), F("first_dot") + 1, F("second_rel") - 1)),
+            When(second_rel__gt=1, then=Substr(F("key"), F("first_dot") + 1, F("second_rel") - 1)),
             default=Value(""),
             output_field=CharField(),
         )
@@ -158,6 +149,8 @@ def visibility_list(request):
         return render(request, "setup/_visibility_table.html", ctx)
 
     return render(request, "setup/visibility_list.html", ctx)
+
+
 @login_required
 @user_passes_test(setup_access_required)
 def visibility_edit(request):
@@ -171,7 +164,11 @@ def visibility_edit(request):
             messages.success(request, "Visibility saved.")
             return redirect("setup:visibility_list")
     else:
-        form = VisibilityRuleForm(instance=instance) if instance else VisibilityRuleForm(initial={"key": key, "label": label})
+        form = (
+            VisibilityRuleForm(instance=instance)
+            if instance
+            else VisibilityRuleForm(initial={"key": key, "label": label})
+        )
     return render(request, "setup/visibility_edit.html", {"form": form})
 
 
@@ -211,13 +208,17 @@ def visibility_picker(request):
     else:
         saved = False
 
-    html = render_to_string("setup/visibility_picker.html", {
-        "rule": rule,
-        "all_groups": all_groups,
-        "saved": saved,
-        "label": rule.label or label or key,
-        "key": key,
-    }, request=request)
+    html = render_to_string(
+        "setup/visibility_picker.html",
+        {
+            "rule": rule,
+            "all_groups": all_groups,
+            "saved": saved,
+            "label": rule.label or label or key,
+            "key": key,
+        },
+        request=request,
+    )
     return HttpResponse(html)
 
 

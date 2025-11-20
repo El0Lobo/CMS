@@ -16,9 +16,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     allowed_groups = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(), many=True, required=False
     )
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True, required=False
-    )
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
     parent_title = serializers.CharField(source="parent.title", read_only=True)
     tags_detail = TagSerializer(source="tags", many=True, read_only=True)
     allowed_group_names = serializers.SerializerMethodField()
@@ -41,16 +39,20 @@ class CollectionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at", "allowed_group_names", "parent_title", "tags_detail"]
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+            "allowed_group_names",
+            "parent_title",
+            "tags_detail",
+        ]
 
     def get_allowed_group_names(self, obj):
         return list(obj.allowed_groups.values_list("name", flat=True))
 
 
 class AssetSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True, required=False
-    )
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
     collection_title = serializers.CharField(source="collection.title", read_only=True)
     effective_visibility = serializers.CharField(read_only=True)
     file = serializers.FileField(required=False, allow_null=True, write_only=True)

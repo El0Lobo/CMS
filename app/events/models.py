@@ -7,15 +7,13 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
-from model_utils.fields import AutoCreatedField, AutoLastModifiedField
-from recurrence.fields import RecurrenceField
 
 
 class EventCategory(models.Model):
     """High level labels (e.g. live band, DJ night, flea market)."""
 
     name = models.CharField(max_length=120, unique=True)
-    slug = models.SlugField(max_length=140, unique=True)
+    slug = models.SlugField(max_length=140)
     description = models.TextField(blank=True)
     color = models.CharField(
         max_length=16,
@@ -69,16 +67,12 @@ class Event(models.Model):
         FIFTH = 5, "Fifth"
 
     title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=220, unique=True, blank=True)
-    status = models.CharField(
-        max_length=12, choices=Status.choices, default=Status.DRAFT
-    )
+    slug = models.SlugField(max_length=220, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
     event_type = models.CharField(
         max_length=20, choices=EventType.choices, default=EventType.PUBLIC
     )
-    hero_image = models.ImageField(
-        upload_to="events/hero/", blank=True, null=True
-    )
+    hero_image = models.ImageField(upload_to="events/hero/", blank=True, null=True)
     teaser = models.CharField(
         max_length=280,
         blank=True,
@@ -107,11 +101,6 @@ class Event(models.Model):
         max_length=32,
         choices=RecurrenceFrequency.choices,
         default=RecurrenceFrequency.NONE,
-    )
-    recurrence_rule = RecurrenceField(
-        blank=True,
-        null=True,
-        help_text="Advanced recurrence (RRULE/EXDATE). Leave empty to use the basic repeat options.",
     )
     recurrence_parent = models.ForeignKey(
         "self",
@@ -150,12 +139,8 @@ class Event(models.Model):
     )
 
     ticket_url = models.URLField(blank=True)
-    ticket_price_from = models.DecimalField(
-        max_digits=7, decimal_places=2, blank=True, null=True
-    )
-    ticket_price_to = models.DecimalField(
-        max_digits=7, decimal_places=2, blank=True, null=True
-    )
+    ticket_price_from = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True)
+    ticket_price_to = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True)
     is_free = models.BooleanField(default=False)
 
     requires_shifts = models.BooleanField(
@@ -201,8 +186,8 @@ class Event(models.Model):
         blank=True,
         null=True,
     )
-    created_at = AutoCreatedField("created at")
-    updated_at = AutoLastModifiedField("updated at")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-starts_at", "title"]
@@ -234,7 +219,9 @@ class Event(models.Model):
         """Generate a slug for a single-occurrence override."""
 
         if timezone.is_naive(occurrence_start):
-            occurrence_start = timezone.make_aware(occurrence_start, timezone.get_current_timezone())
+            occurrence_start = timezone.make_aware(
+                occurrence_start, timezone.get_current_timezone()
+            )
         suffix = timezone.localtime(occurrence_start).strftime("%Y%m%d%H%M")
         base = f"{self.slug}-{suffix}"
         slug = base[:220]
@@ -259,7 +246,9 @@ class Event(models.Model):
         curfew_offset = offset(self.curfew_at)
 
         if timezone.is_naive(occurrence_start):
-            occurrence_start = timezone.make_aware(occurrence_start, timezone.get_current_timezone())
+            occurrence_start = timezone.make_aware(
+                occurrence_start, timezone.get_current_timezone()
+            )
 
         clone = Event.objects.get(pk=self.pk)
         clone.pk = None
@@ -374,13 +363,13 @@ class EventPerformer(models.Model):
     def __str__(self) -> str:  # pragma: no cover - trivial
         return f"{self.display_name} @ {self.event.title}"
 
-    def sync_display_name(self):
-        if self.band and not self.display_name:
-            self.display_name = self.band.name
-
     def save(self, *args, **kwargs):
         self.sync_display_name()
         super().save(*args, **kwargs)
+
+    def sync_display_name(self):
+        if self.band and not self.display_name:
+            self.display_name = self.band.name
 
 
 class EventRecurrenceException(models.Model):

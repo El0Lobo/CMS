@@ -1,14 +1,20 @@
 from __future__ import annotations
 
-from typing import Iterable, MutableMapping
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, MutableMapping
+else:
+    Iterable = object
+    MutableMapping = object
 
 from django.db.models import Case, CharField, F, Q, QuerySet, When
 
-from .forms import AssetFilterForm
-
-from .models import Asset, Collection
 from app.setup.helpers import is_allowed
 from app.setup.models import VisibilityRule
+
+from .forms import AssetFilterForm
+from .models import Asset, Collection
 
 
 def asset_base_queryset() -> QuerySet[Asset]:
@@ -103,9 +109,8 @@ def user_allowed_for(user, key: str) -> bool:
         return False
     if user.is_superuser:
         return True
-    return (
-        VisibilityRule.objects.filter(key=key, is_enabled=True).exists()
-        and is_allowed(user, key)
+    return VisibilityRule.objects.filter(key=key, is_enabled=True).exists() and is_allowed(
+        user, key
     )
 
 

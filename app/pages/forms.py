@@ -74,7 +74,11 @@ class PageForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        initial_nav = self.instance.custom_nav_items if self.instance and self.instance.custom_nav_items else []
+        initial_nav = (
+            self.instance.custom_nav_items
+            if self.instance and self.instance.custom_nav_items
+            else []
+        )
         try:
             initial_json = json.dumps(initial_nav)
         except TypeError:

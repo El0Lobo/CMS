@@ -4,14 +4,22 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from app.core.encryption import EncryptedCharField, EncryptedDateField, EncryptedEmailField, EncryptedTextField
+
+from app.core.encryption import (
+    EncryptedCharField,
+    EncryptedDateField,
+    EncryptedEmailField,
+    EncryptedTextField,
+)
 
 User = settings.AUTH_USER_MODEL
 
 
 class BadgeDefinition(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    emoji = models.CharField(max_length=8, blank=True, help_text=_("Optional short emoji label (e.g. '🍺')"))
+    emoji = models.CharField(
+        max_length=8, blank=True, help_text=_("Optional short emoji label (e.g. '🍺')")
+    )
     description = models.CharField(max_length=255, blank=True)
 
     class Meta:
@@ -50,6 +58,7 @@ class GroupMeta(models.Model):
     """
     Stores precedence for each auth Group. Lower rank = higher priority (1 is top).
     """
+
     group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name="meta")
     rank = models.PositiveIntegerField(default=1000, help_text=_("Lower = higher priority"))
 
@@ -66,7 +75,9 @@ class UserProfile(models.Model):
     # Identity
     legal_name = EncryptedCharField(max_length=200, blank=True)
     chosen_name = EncryptedCharField(max_length=200, blank=True)
-    pronouns = EncryptedCharField(max_length=64, blank=True, help_text=_("e.g. she/her, he/him, they/them"))
+    pronouns = EncryptedCharField(
+        max_length=64, blank=True, help_text=_("e.g. she/her, he/him, they/them")
+    )
     birth_date = EncryptedDateField(null=True, blank=True)  # replaces 'age'
 
     # Contact
@@ -75,7 +86,9 @@ class UserProfile(models.Model):
     address = EncryptedTextField(blank=True)
 
     # Role/Duties
-    role_title = EncryptedCharField(max_length=120, blank=True, help_text=_("Free-text role label, e.g. 'Bar lead'"))
+    role_title = EncryptedCharField(
+        max_length=120, blank=True, help_text=_("Free-text role label, e.g. 'Bar lead'")
+    )
     duties = EncryptedTextField(blank=True)
     primary_group = models.ForeignKey(
         Group,
@@ -116,7 +129,6 @@ class UserProfile(models.Model):
             return str(self.user_id)
 
 
-
 @property
 def age_years(self):
     """Compute age from birth_date; returns int or None if unknown/invalid."""
@@ -144,6 +156,7 @@ def age_years(self):
     # Use Django's localdate when available (falls back to date.today)
     try:
         from django.utils import timezone
+
         today = timezone.localdate()
     except Exception:
         today = date.today()
@@ -152,6 +165,3 @@ def age_years(self):
     if (today.month, today.day) < (bd.month, bd.day):
         years -= 1
     return years
-
-
-

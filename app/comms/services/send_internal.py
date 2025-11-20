@@ -1,9 +1,8 @@
-
-from django.utils import timezone
 from django.db import transaction
-from typing import List, Dict, Any, Optional
+from django.utils import timezone
 
-from app.comms.models import MessageThread, Message, InternalTarget, AudienceLink
+from app.comms.models import AudienceLink, InternalTarget, Message, MessageThread
+
 
 @transaction.atomic
 def post_internal(author, subject: str, body_text: str, targets: dict) -> MessageThread:
@@ -12,7 +11,7 @@ def post_internal(author, subject: str, body_text: str, targets: dict) -> Messag
     targets: dict with lists 'users', 'groups', 'badges' of ids
     """
     thread = MessageThread.objects.create(type=MessageThread.TYPE_INTERNAL, subject=subject or "")
-    msg = Message.objects.create(
+    Message.objects.create(
         thread=thread,
         direction=Message.DIR_INTERNAL,
         sender_user=author,

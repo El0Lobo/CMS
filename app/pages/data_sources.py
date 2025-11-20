@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from decimal import Decimal
-from typing import Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any
 
 from django.db.models import DateTimeField, Prefetch
 from django.db.models.functions import Coalesce
@@ -11,6 +10,10 @@ from app.assets.models import Asset
 from app.events.models import Event
 from app.menu.models import Category, Item
 from app.setup.models import SiteSettings
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from decimal import Decimal
 
 WEEKDAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -29,7 +32,7 @@ def _decimal_to_str(value: Decimal | None) -> str | None:
     return format(value, "f")
 
 
-def get_events(limit: int = 6, *, include_internal: bool = False) -> List[Dict[str, Any]]:
+def get_events(limit: int = 6, *, include_internal: bool = False) -> list[dict[str, Any]]:
     """Return upcoming events for use in blocks."""
 
     limit = max(1, min(limit, 50))
@@ -51,7 +54,7 @@ def get_events(limit: int = 6, *, include_internal: bool = False) -> List[Dict[s
     if not include_internal:
         queryset = queryset.filter(event_type=Event.EventType.PUBLIC)
 
-    events: List[Dict[str, Any]] = []
+    events: list[dict[str, Any]] = []
     for event in queryset[:limit]:
         categories = [cat.name for cat in event.categories.all()]
         events.append(
@@ -64,9 +67,7 @@ def get_events(limit: int = 6, *, include_internal: bool = False) -> List[Dict[s
                 "doors_at": _iso_datetime(event.doors_at),
                 "ends_at": _iso_datetime(event.ends_at),
                 "curfew_at": _iso_datetime(event.curfew_at),
-                "effective_start": _iso_datetime(
-                    event.recurrence_next_start_at or event.starts_at
-                ),
+                "effective_start": _iso_datetime(event.recurrence_next_start_at or event.starts_at),
                 "recurrence": {
                     "frequency": event.recurrence_frequency,
                     "description": event.recurrence_description,
@@ -87,7 +88,7 @@ def get_events(limit: int = 6, *, include_internal: bool = False) -> List[Dict[s
     return events
 
 
-def _serialize_menu_category(category: Category, *, depth: int = 0) -> Dict[str, Any]:
+def _serialize_menu_category(category: Category, *, depth: int = 0) -> dict[str, Any]:
     children = [
         _serialize_menu_category(child, depth=depth + 1) for child in category.children.all()
     ]
@@ -140,7 +141,7 @@ def _serialize_menu_category(category: Category, *, depth: int = 0) -> Dict[str,
     }
 
 
-def get_menu_structure(category_slugs: Optional[Sequence[str]] = None) -> List[Dict[str, Any]]:
+def get_menu_structure(category_slugs: Sequence[str] | None = None) -> list[dict[str, Any]]:
     """Return structured menu data optionally filtered by category slugs."""
 
     base_qs = Category.objects.prefetch_related(
@@ -162,7 +163,7 @@ def get_menu_structure(category_slugs: Optional[Sequence[str]] = None) -> List[D
     return [_serialize_menu_category(cat, depth=0) for cat in base_qs]
 
 
-def _serialize_opening_hours(settings: SiteSettings) -> List[Dict[str, Any]]:
+def _serialize_opening_hours(settings: SiteSettings) -> list[dict[str, Any]]:
     hours = []
     for entry in settings.hours.order_by("weekday"):
         label = (
@@ -184,7 +185,7 @@ def _serialize_opening_hours(settings: SiteSettings) -> List[Dict[str, Any]]:
     return hours
 
 
-def get_site_context() -> Dict[str, Any]:
+def get_site_context() -> dict[str, Any]:
     settings = SiteSettings.get_solo()
     return {
         "name": settings.org_name,
@@ -236,7 +237,7 @@ def get_site_context() -> Dict[str, Any]:
     }
 
 
-def get_public_assets(kinds: Optional[Sequence[str]] = None) -> List[Dict[str, Any]]:
+def get_public_assets(kinds: Sequence[str] | None = None) -> list[dict[str, Any]]:
     """
     Return public assets filtered by kind for use in page builder blocks.
     """
@@ -245,7 +246,7 @@ def get_public_assets(kinds: Optional[Sequence[str]] = None) -> List[Dict[str, A
     if kinds:
         qs = qs.filter(kind__in=kinds)
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     for asset in qs:
         collection = asset.collection
         effective_visibility = asset.effective_visibility

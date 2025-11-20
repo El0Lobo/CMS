@@ -60,9 +60,7 @@ def _nav_builder_items(form: PageForm):
     slug_value = slugify(slug_value) if slug_value else ""
     title_value = form["title"].value() or "Current page"
 
-    candidates = list(
-        Page.objects.order_by("navigation_order", "title").values("slug", "title")
-    )
+    candidates = list(Page.objects.order_by("navigation_order", "title").values("slug", "title"))
     if slug_value and not any(c["slug"] == slug_value for c in candidates):
         candidates.append({"slug": slug_value, "title": title_value})
 
@@ -74,16 +72,12 @@ def _nav_builder_items(form: PageForm):
             slug_norm = "login"
         for cand in candidates:
             if cand["slug"] == slug_norm and slug_norm not in seen:
-                ordered.append(
-                    {"slug": slug_norm, "title": cand["title"], "checked": True}
-                )
+                ordered.append({"slug": slug_norm, "title": cand["title"], "checked": True})
                 seen.add(slug_norm)
                 break
     for cand in candidates:
         if cand["slug"] not in seen:
-            ordered.append(
-                {"slug": cand["slug"], "title": cand["title"], "checked": False}
-            )
+            ordered.append({"slug": cand["slug"], "title": cand["title"], "checked": False})
     return ordered
 
 

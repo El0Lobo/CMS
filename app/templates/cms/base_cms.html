@@ -10,11 +10,6 @@
   <link rel="stylesheet" href="{% static 'cms/cms.css' %}">
   <script src="{% static 'cms/cms.js' %}" defer></script>
   <script src="https://unpkg.com/htmx.org@2.0.2"></script>
-  {% if site_icon_links %}
-    {% for icon in site_icon_links %}
-      <link rel="{{ icon.rel|default:'icon' }}" href="{{ icon.href }}"{% if icon.type %} type="{{ icon.type }}"{% endif %}{% if icon.sizes %} sizes="{{ icon.sizes }}"{% endif %}>
-    {% endfor %}
-  {% endif %}
 
   {# Hide skip link by default; show on focus for accessibility #}
   <style>
@@ -43,7 +38,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body class="cms {% if request.user.is_superuser %}role-superuser{% else %}role-user{% endif %}">
-  <a href="#main" class="skip-link">Skip to content</a>
+  <a href="#main" class="skip-link">{% trans "Skip to content" %}</a>
 
   {# --- Impersonation banner --- #}
   {% if request.impersonating %}
@@ -74,6 +69,19 @@
         <a class="brand" href="/">Bar OS</a>
       </div>
       <div class="right">
+        {# Language switcher #}
+        {% if enabled_languages|length > 1 %}
+        <form action="{% url 'set_language' %}" method="post" style="display:inline; margin-right: 1rem;">
+          {% csrf_token %}
+          {% get_current_language as LANGUAGE_CODE %}
+          <select name="language" onchange="this.form.submit()" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid #ddd;">
+            {% for code, name in enabled_languages %}
+            <option value="{{ code }}" {% if LANGUAGE_CODE == code %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+        </form>
+        {% endif %}
+
         {% if user.is_authenticated %}
           <form method="post" action="{% url 'logout' %}" style="display:inline">
             {% csrf_token %}

@@ -1,5 +1,7 @@
 from django.urls import path
-from .views import index, create, edit
+
+from .views import create, edit, index
+
 urlpatterns = [
     path("", index, name="door_index"),
     path("create/", create, name="door_create"),

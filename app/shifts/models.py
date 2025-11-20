@@ -58,6 +58,13 @@ class ShiftTemplate(models.Model):
     def __str__(self) -> str:  # pragma: no cover - trivial
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+
+            self.slug = slugify(self.name)[:140]
+        super().save(*args, **kwargs)
+
     def segment_schedule(self, event):
         closing = event.curfew_at or event.ends_at
 
@@ -82,7 +89,9 @@ class ShiftTemplate(models.Model):
                 coverage_end += timedelta(days=1)
             coverage_end = coverage_end - timedelta(minutes=self.end_offset_minutes)
         if not coverage_end or coverage_end <= start:
-            total_minutes = self.duration_minutes * max(self.segment_count, 1) or 180 * max(self.segment_count, 1)
+            total_minutes = self.duration_minutes * max(self.segment_count, 1) or 180 * max(
+                self.segment_count, 1
+            )
             coverage_end = start + timedelta(minutes=total_minutes)
 
         span = coverage_end - start
@@ -98,10 +107,7 @@ class ShiftTemplate(models.Model):
 
         current_start = start
         for idx in range(1, count + 1):
-            if idx == count:
-                seg_end = coverage_end
-            else:
-                seg_end = current_start + seg_duration
+            seg_end = coverage_end if idx == count else current_start + seg_duration
             if seg_end > coverage_end:
                 seg_end = coverage_end
             segments.append(
@@ -143,13 +149,6 @@ class ShiftTemplate(models.Model):
                     )
                 )
         return created
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            from django.utils.text import slugify
-
-            self.slug = slugify(self.name)[:140]
-        super().save(*args, **kwargs)
 
 
 class ShiftPreset(models.Model):
@@ -205,18 +204,14 @@ class ShiftPreset(models.Model):
 class ShiftPresetSlot(models.Model):
     """Single shift definition belonging to a preset."""
 
-    preset = models.ForeignKey(
-        ShiftPreset, on_delete=models.CASCADE, related_name="slots"
-    )
+    preset = models.ForeignKey(ShiftPreset, on_delete=models.CASCADE, related_name="slots")
     title = models.CharField(max_length=120)
     order = models.PositiveIntegerField(default=0)
     start_offset_minutes = models.IntegerField(
         default=0,
         help_text="Minutes relative to event start (negative = before).",
     )
-    duration_minutes = models.PositiveIntegerField(
-        default=120, help_text="Length in minutes."
-    )
+    duration_minutes = models.PositiveIntegerField(default=120, help_text="Length in minutes.")
     capacity = models.PositiveIntegerField(default=1)
     allow_signup = models.BooleanField(
         default=True,
@@ -331,9 +326,7 @@ class ShiftAssignment(models.Model):
         on_delete=models.CASCADE,
         related_name="shift_assignments",
     )
-    status = models.CharField(
-        max_length=12, choices=Status.choices, default=Status.REQUESTED
-    )
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.REQUESTED)
     assigned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -350,18 +343,19 @@ class ShiftAssignment(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - trivial
         return f"{self.user} → {self.shift} ({self.status})"
+
     @property
     def display_name(self) -> str:
-        profile = getattr(self.user, 'profile', None)
+        profile = getattr(self.user, "profile", None)
         if profile:
-            chosen = (getattr(profile, 'chosen_name', '') or '').strip()
+            chosen = (getattr(profile, "chosen_name", "") or "").strip()
             if chosen:
                 return chosen
-            legal = (getattr(profile, 'legal_name', '') or '').strip()
+            legal = (getattr(profile, "legal_name", "") or "").strip()
             if legal:
                 return legal
-        full_name = (getattr(self.user, 'get_full_name', lambda: '')() or '').strip()
+        full_name = (getattr(self.user, "get_full_name", lambda: "")() or "").strip()
         if full_name:
             return full_name
-        username = getattr(self.user, 'get_username', lambda: str(self.user_id))()
+        username = getattr(self.user, "get_username", lambda: str(self.user_id))()
         return username or str(self.user_id)

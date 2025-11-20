@@ -1,10 +1,10 @@
 # app/setup/templatetags/setup_tags.py
 from django import template
-from django.urls import reverse
 from django.contrib.auth.models import Group
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 
-from app.setup.helpers import is_allowed, get_settings
+from app.setup.helpers import get_settings, is_allowed
 
 register = template.Library()
 

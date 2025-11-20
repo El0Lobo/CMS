@@ -122,7 +122,7 @@ class ShiftAssignmentForm(forms.ModelForm):
         user_field.queryset = user_field.queryset.order_by("first_name", "last_name")
         user_field.required = False
         user_field.empty_label = "-- Unassigned --"
-        self.fields['notes'].required = False
+        self.fields["notes"].required = False
 
     class Meta:
         model = ShiftAssignment
@@ -138,9 +138,10 @@ class ShiftStatsFilterForm(forms.Form):
     ]
 
     period = forms.ChoiceField(choices=PERIOD_CHOICES, initial="90")
+
     def get_bounds(self):
-        cleaned = getattr(self, 'cleaned_data', {})
-        period = cleaned.get('period') or self.data.get('period') or '0'
+        cleaned = getattr(self, "cleaned_data", {})
+        period = cleaned.get("period") or self.data.get("period") or "0"
         days = int(period)
         if days <= 0:
             return None
@@ -157,6 +158,8 @@ class ShiftFilterForm(forms.Form):
     timeframe = forms.ChoiceField(choices=Timeframe.choices, initial=Timeframe.WEEK)
     include_past = forms.BooleanField(required=False, initial=False, label="Include past shifts")
     period_offset = forms.IntegerField(required=False, widget=forms.HiddenInput(), initial=0)
+
+
 class ShiftTemplateForm(forms.ModelForm):
     class Meta:
         model = ShiftTemplate

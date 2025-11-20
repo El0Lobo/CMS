@@ -2,39 +2,9 @@ from __future__ import annotations
 
 from django.utils.text import slugify
 
-from .models import SiteSettings
-from .icon_pack import ICON_COLLECTION_SLUG, ICON_FILE_SPECS
-from app.assets.models import Asset
 from app.pages.navigation import get_navigation_entries, serialize_nav_entries
 
-
-def _build_site_icon_links():
-    slug_map = {spec["slug"]: spec for spec in ICON_FILE_SPECS.values()}
-    if not slug_map:
-        return []
-
-    found = []
-    qs = Asset.objects.filter(
-        collection__slug=ICON_COLLECTION_SLUG, slug__in=list(slug_map.keys())
-    )
-    for asset in qs:
-        url = asset.file.url if asset.file else asset.url
-        if not url:
-            continue
-        spec = slug_map.get(asset.slug)
-        if not spec:
-            continue
-        link = {"href": url}
-        link.update(spec.get("link", {}))
-        found.append(link)
-
-    found.sort(
-        key=lambda link: (
-            link.get("rel", ""),
-            link.get("sizes", ""),
-        )
-    )
-    return found
+from .models import SiteSettings
 
 
 def site_settings_context(request):
@@ -82,5 +52,4 @@ def site_settings_context(request):
         "site_address_line2": line2,
         "site_address_line3": line3,
         "site_address_compact": compact,
-        "site_icon_links": _build_site_icon_links(),
     }

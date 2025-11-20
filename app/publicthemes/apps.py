@@ -1,4 +1,6 @@
 from django.apps import AppConfig
+
+
 class PublicthemesConfig(AppConfig):
-    default_auto_field='django.db.models.BigAutoField'
-    name='app.publicthemes'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "app.publicthemes"

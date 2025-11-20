@@ -1,41 +1,43 @@
-﻿# views inbox.py
+# views inbox.py
 
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.db.models import Q, Exists, OuterRef, Value, BooleanField, Case, When, Subquery
-from .models import MessageThread, Draft, Message, UserThreadState, ReadReceipt
+from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Subquery, Value, When
+from django.shortcuts import render
+
+from .models import Draft, Message, MessageThread, ReadReceipt, UserThreadState
 from .services.audience import visible_threads_qs
+
 
 def _with_read_annotations(qs, user):
     """Annotate each thread with is_read_local (for me) and a basic is_ack_by_others."""
     unread_from_others_exists = Exists(
-        Message.objects.filter(thread=OuterRef('pk'))
+        Message.objects.filter(thread=OuterRef("pk"))
         .exclude(sender_user=user)
         .exclude(read_receipts__user=user)
     )
 
     last_outgoing_id = Subquery(
-        Message.objects.filter(thread=OuterRef('pk'), sender_user=user)
-        .order_by('-id').values('id')[:1]
+        Message.objects.filter(thread=OuterRef("pk"), sender_user=user)
+        .order_by("-id")
+        .values("id")[:1]
     )
 
     last_outgoing_read_by_others = Exists(
         ReadReceipt.objects.filter(message_id=last_outgoing_id).exclude(user=user)
     )
 
-    return (
-        qs.annotate(
-            _unread_exists=unread_from_others_exists,
-            is_read_local=Case(
-                When(_unread_exists=True, then=Value(False)),
-                default=Value(True),
-                output_field=BooleanField(),
-            ),
-            is_ack_by_others=last_outgoing_read_by_others,
-        ).distinct()
-    )
+    return qs.annotate(
+        _unread_exists=unread_from_others_exists,
+        is_read_local=Case(
+            When(_unread_exists=True, then=Value(False)),
+            default=Value(True),
+            output_field=BooleanField(),
+        ),
+        is_ack_by_others=last_outgoing_read_by_others,
+    ).distinct()
+
 
 def _attach_display_fields(qs, me):
     """
@@ -55,7 +57,7 @@ def _attach_display_fields(qs, me):
         # partner_name: prefer last sender (not me), else first audience (not me)
         name = None
         if last and last.sender_user_id and last.sender_user_id != me_id:
-            name = getattr(getattr(last, 'sender_user', None), 'username', None)
+            name = getattr(getattr(last, "sender_user", None), "username", None)
         if not name:
             try:
                 for a in t.audiences.all():
@@ -64,7 +66,7 @@ def _attach_display_fields(qs, me):
                         break
             except Exception:
                 pass
-        setattr(t, "partner_name", name or "Conversation")
+        t.partner_name = name or "Conversation"
 
         # legacy: unread based on latest message from others
         last_unread = 0
@@ -74,7 +76,7 @@ def _attach_display_fields(qs, me):
                 last_unread = 0 if seen else 1
             except Exception:
                 last_unread = 1
-        setattr(t, "last_unread_count", last_unread)
+        t.last_unread_count = last_unread
 
         # ---- NEW: names who read my last outgoing message ----
         # find my last outgoing
@@ -102,22 +104,23 @@ def _attach_display_fields(qs, me):
         # de-dupe + stable sort (by name)
         read_names = sorted(set(read_names), key=str.lower)
 
-        setattr(t, "last_out_read_by_names", read_names)
+        t.last_out_read_by_names = read_names
         # Prefer precise names to decide ack flag
-        setattr(t, "is_ack_by_others", bool(read_names))
+        t.is_ack_by_others = bool(read_names)
 
         # safety fallbacks
         if not hasattr(t, "is_read_local"):
-            setattr(t, "is_read_local", last_unread == 0)
+            t.is_read_local = last_unread == 0
 
     return items
+
 
 @login_required
 def inbox(request):
     me = request.user
 
     threads = visible_threads_qs(me, MessageThread.objects.all()).distinct()
-    if getattr(me, 'is_superuser', False) and not getattr(request, 'impersonating', False):
+    if getattr(me, "is_superuser", False) and not getattr(request, "impersonating", False):
         threads = threads.filter(Q(audiences__user=me) | Q(messages__sender_user=me)).distinct()
 
     archived_ids = list(
@@ -131,28 +134,43 @@ def inbox(request):
         "messages__read_receipts__user",
     )
 
-    live_internal = threads.exclude(id__in=archived_ids).filter(type=MessageThread.TYPE_INTERNAL).prefetch_related(*base_prefetch)
-    live_email    = threads.exclude(id__in=archived_ids).filter(type=MessageThread.TYPE_EMAIL).prefetch_related(*base_prefetch)
+    live_internal = (
+        threads.exclude(id__in=archived_ids)
+        .filter(type=MessageThread.TYPE_INTERNAL)
+        .prefetch_related(*base_prefetch)
+    )
+    live_email = (
+        threads.exclude(id__in=archived_ids)
+        .filter(type=MessageThread.TYPE_EMAIL)
+        .prefetch_related(*base_prefetch)
+    )
 
-    arch_internal = threads.filter(id__in=archived_ids, type=MessageThread.TYPE_INTERNAL).prefetch_related(*base_prefetch)
-    arch_email    = threads.filter(id__in=archived_ids, type=MessageThread.TYPE_EMAIL).prefetch_related(*base_prefetch)
+    arch_internal = threads.filter(
+        id__in=archived_ids, type=MessageThread.TYPE_INTERNAL
+    ).prefetch_related(*base_prefetch)
+    arch_email = threads.filter(
+        id__in=archived_ids, type=MessageThread.TYPE_EMAIL
+    ).prefetch_related(*base_prefetch)
 
     # annotate basic booleans
     live_internal = _with_read_annotations(live_internal, me)
-    live_email    = _with_read_annotations(live_email, me)
+    live_email = _with_read_annotations(live_email, me)
     arch_internal = _with_read_annotations(arch_internal, me)
-    arch_email    = _with_read_annotations(arch_email, me)
+    arch_email = _with_read_annotations(arch_email, me)
 
     # attach display fields incl. last_out_read_by_names
     internal_threads = _attach_display_fields(live_internal, me)
-    email_threads    = _attach_display_fields(live_email, me)
+    email_threads = _attach_display_fields(live_email, me)
     archived_internal_threads = _attach_display_fields(arch_internal, me)
-    archived_email_threads    = _attach_display_fields(arch_email, me)
+    archived_email_threads = _attach_display_fields(arch_email, me)
 
-    email_drafts = Draft.objects.filter(author=me, account__isnull=False, status=Draft.STATUS_EDITING)
+    email_drafts = Draft.objects.filter(
+        author=me, account__isnull=False, status=Draft.STATUS_EDITING
+    )
 
     return render(
-        request, "comms/inbox.html",
+        request,
+        "comms/inbox.html",
         {
             "internal_threads": internal_threads,
             "email_threads": email_threads,

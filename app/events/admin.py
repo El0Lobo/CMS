@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from app.events.models import Event, EventCategory, EventPerformer, EventRecurrenceException, HolidayWindow
+from app.events.models import (
+    Event,
+    EventCategory,
+    EventPerformer,
+    EventRecurrenceException,
+    HolidayWindow,
+)
 
 
 class EventPerformerInline(admin.TabularInline):

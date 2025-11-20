@@ -1,8 +1,10 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Band
+
 from .forms import BandForm
+from .models import Band
+
 
 @login_required
 def index(request):
@@ -18,7 +20,10 @@ def index(request):
     if f_pub in {"0", "1"}:
         qs = qs.filter(is_published=(f_pub == "1"))
 
-    return render(request, "bands/index.html", {"bands": qs, "q": q, "f_type": f_type, "f_pub": f_pub})
+    return render(
+        request, "bands/index.html", {"bands": qs, "q": q, "f_type": f_type, "f_pub": f_pub}
+    )
+
 
 @login_required
 def edit(request, pk=None):
@@ -35,6 +40,7 @@ def edit(request, pk=None):
         form = BandForm(instance=instance)
     return render(request, "bands/form.html", {"form": form, "item": instance})
 
+
 @login_required
 def delete(request, pk):
     band = get_object_or_404(Band, pk=pk)
@@ -42,6 +48,7 @@ def delete(request, pk):
         band.delete()
         return redirect("bands:index")
     return render(request, "bands/confirm_delete.html", {"obj": band, "back_url": "bands:index"})
+
 
 # --- NEW ---
 def public_detail(request, slug):

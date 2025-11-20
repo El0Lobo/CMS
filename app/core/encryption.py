@@ -1,8 +1,15 @@
 """Project-level wrappers around django-encrypted-model-fields with safe fallbacks."""
+
 from encrypted_model_fields.fields import (
     EncryptedCharField as _BaseEncryptedCharField,
+)
+from encrypted_model_fields.fields import (
     EncryptedDateField as _BaseEncryptedDateField,
+)
+from encrypted_model_fields.fields import (
     EncryptedEmailField as _BaseEncryptedEmailField,
+)
+from encrypted_model_fields.fields import (
     EncryptedTextField as _BaseEncryptedTextField,
 )
 

@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+
 @login_required
 def dashboard(request):
     # sample cards; replace with real queries
@@ -10,6 +11,7 @@ def dashboard(request):
         {"title": "Low stock", "body": "Limes, IPA Keg"},
     ]
     return render(request, "cms/dashboard.html", {"cards": cards})
+
 
 @login_required
 def account(request):

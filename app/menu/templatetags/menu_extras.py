@@ -1,7 +1,9 @@
-from django import template
 from decimal import Decimal, InvalidOperation
 
+from django import template
+
 register = template.Library()
+
 
 # --------- money ---------
 def _to_decimal(v):
@@ -9,6 +11,7 @@ def _to_decimal(v):
         return Decimal(str(v))
     except (InvalidOperation, TypeError, ValueError):
         return None
+
 
 @register.simple_tag(takes_context=True)
 def money(context, value, position="after"):
@@ -21,14 +24,18 @@ def money(context, value, position="after"):
         return ""
     site = context.get("site_settings") or {}
     symbol = getattr(site, "currency_symbol", None) or site.get("currency_symbol") or "€"
-    pos = (getattr(site, "currency_position", None) or site.get("currency_position") or position).lower()
+    pos = (
+        getattr(site, "currency_position", None) or site.get("currency_position") or position
+    ).lower()
     amount = f"{d:.2f}"
     return f"{symbol}{amount}" if pos == "before" else f"{amount} {symbol}"
+
 
 # --------- label helpers ---------
 @register.filter
 def variant_label(v):
     return str(getattr(v, "label", "") or "")
+
 
 # --------- amount with CMS unit ----------
 def _first_attr(obj, *names):
@@ -48,9 +55,11 @@ def _first_attr(obj, *names):
             pass
     return None
 
+
 def _as_decimal(value):
     d = _to_decimal(value)
     return d
+
 
 def _format_qty_unit(qty, unit):
     """
@@ -62,7 +71,7 @@ def _format_qty_unit(qty, unit):
         return ""
     # clean unit
     u = (str(unit) if unit is not None else "").strip().lower()
-    qty_str = f"{qty}".rstrip("0").rstrip(".") if isinstance(qty, (float, Decimal)) else f"{qty}"
+    qty_str = f"{qty}".rstrip("0").rstrip(".") if isinstance(qty, float | Decimal) else f"{qty}"
 
     if not u:
         return qty_str
@@ -71,6 +80,7 @@ def _format_qty_unit(qty, unit):
     if u in ("piece", "pieces"):
         u = "pcs"
     return f"{qty_str} {u}"
+
 
 def _derive_amount_from_fields(variant):
     """
@@ -107,6 +117,7 @@ def _derive_amount_from_fields(variant):
 
     return None, None
 
+
 def _resolve_unit_from_item_or_category(item, category):
     """
     If the variant didn't carry a unit, try the parent item, then the category.
@@ -115,6 +126,7 @@ def _resolve_unit_from_item_or_category(item, category):
     if unit:
         return unit
     return _first_attr(category, "unit", "uom", "uom_display")
+
 
 @register.simple_tag
 def variant_amount(item, variant):

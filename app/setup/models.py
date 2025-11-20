@@ -1,8 +1,10 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Group
 from django.core.validators import RegexValidator
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
 from app.core.encryption import EncryptedCharField, EncryptedEmailField, EncryptedTextField
+
 
 class SiteSettings(models.Model):
     class Mode(models.TextChoices):
@@ -14,7 +16,6 @@ class SiteSettings(models.Model):
     mode = models.CharField(max_length=10, choices=Mode.choices, default=Mode.VENUE)
     org_name = EncryptedCharField(max_length=200, blank=True)
     logo = models.ImageField(upload_to="logos/", blank=True, null=True)
-    logo_secondary = models.ImageField(upload_to="logos/", blank=True, null=True)
 
     # Address (structured)
     address_street = EncryptedCharField(max_length=200, blank=True)
@@ -66,6 +67,15 @@ class SiteSettings(models.Model):
         help_text=_("Expose the public-facing site powered by the Pages app."),
     )
 
+    # Multilingual settings
+    enabled_languages = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "List of enabled language codes (e.g., ['en', 'es', 'de']). Leave empty to enable all languages."
+        ),
+    )
+
     # Legacy field (kept to avoid data loss, no longer edited in the UI)
     required_pages = models.TextField(
         blank=True,
@@ -114,8 +124,9 @@ class SiteSettings(models.Model):
     publish_opening_times = models.BooleanField(
         default=False,
         verbose_name="Show opening times on public pages",
-        help_text="If checked, opening times will be rendered on public pages."
+        help_text="If checked, opening times will be rendered on public pages.",
     )
+
     def __str__(self):
         return f"Site Settings ({self.get_mode_display()})"
 
@@ -123,6 +134,25 @@ class SiteSettings(models.Model):
     def get_solo(cls):
         obj, _ = cls.objects.get_or_create(id=1)
         return obj
+
+    def get_enabled_languages(self):
+        """
+        Return list of enabled languages.
+        If enabled_languages is empty, return all configured languages from settings.
+        Returns list of tuples: [(code, name), ...]
+        """
+        from django.conf import settings
+
+        all_languages = dict(settings.LANGUAGES)
+
+        # If no languages are explicitly enabled, return all
+        if not self.enabled_languages:
+            return list(settings.LANGUAGES)
+
+        # Return only enabled languages
+        return [
+            (code, all_languages[code]) for code in self.enabled_languages if code in all_languages
+        ]
 
 
 class MembershipTier(models.Model):
@@ -162,16 +192,21 @@ class OpeningHour(models.Model):
 
 class VisibilityRule(models.Model):
     """Attach visibility (allowed groups) to a component key used in templates."""
+
     key = models.CharField(
         max_length=120,
         unique=True,
-            db_index=True,
-            validators=[RegexValidator(
-                r'^[\w\.\-:]+$',
-                'Key may contain letters, numbers, underscores, hyphens, dots, or colons.'
-            )],
+        db_index=True,
+        validators=[
+            RegexValidator(
+                r"^[\w\.\-:]+$",
+                "Key may contain letters, numbers, underscores, hyphens, dots, or colons.",
+            )
+        ],
     )
-    label = models.CharField(max_length=200, blank=True, help_text=_("Human-friendly name; editable."))
+    label = models.CharField(
+        max_length=200, blank=True, help_text=_("Human-friendly name; editable.")
+    )
     is_enabled = models.BooleanField(default=True)
     allowed_groups = models.ManyToManyField(Group, blank=True)
     notes = models.CharField(max_length=255, blank=True)

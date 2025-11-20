@@ -13,7 +13,10 @@ Notes:
 
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, CheckConstraint, F  # F is imported for potential future atomic updates
+from django.db.models import (
+    CheckConstraint,
+    Q,
+)  # F is imported for potential future atomic updates
 from django.utils import timezone
 
 # Using settings.AUTH_USER_MODEL for portability; keep alias for readability.
@@ -28,6 +31,7 @@ class MailAccount(models.Model):
     Represents an email identity / transport config.
     Internal threads will have account = NULL.
     """
+
     name = models.CharField(max_length=120)
     slug = models.SlugField(unique=True)
 
@@ -65,9 +69,7 @@ class MessageThread(models.Model):
 
     # Thread kind and association to an email account (email-only)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default=TYPE_INTERNAL)
-    account = models.ForeignKey(
-        MailAccount, null=True, blank=True, on_delete=models.PROTECT
-    )
+    account = models.ForeignKey(MailAccount, null=True, blank=True, on_delete=models.PROTECT)
 
     # Presentation and lifecycle
     subject = models.CharField(max_length=500, blank=True, default="")
@@ -81,7 +83,8 @@ class MessageThread(models.Model):
         constraints = [
             # Enforce that email threads have an account, and internal threads don't.
             CheckConstraint(
-                check=Q(type='email', account__isnull=False) | Q(type='internal', account__isnull=True),
+                check=Q(type="email", account__isnull=False)
+                | Q(type="internal", account__isnull=True),
                 name="comms_thread_type_account_consistency",
             ),
         ]
@@ -104,9 +107,7 @@ class Message(models.Model):
         (DIR_INTERNAL, "Internal"),
     ]
 
-    thread = models.ForeignKey(
-        MessageThread, on_delete=models.CASCADE, related_name="messages"
-    )
+    thread = models.ForeignKey(MessageThread, on_delete=models.CASCADE, related_name="messages")
 
     # Direction and email account association (internal must remain NULL)
     direction = models.CharField(max_length=10, choices=DIR_CHOICES, default=DIR_INTERNAL)
@@ -123,14 +124,14 @@ class Message(models.Model):
 
     # Timing
     received_at = models.DateTimeField(null=True, blank=True)  # inbound email
-    sent_at = models.DateTimeField(null=True, blank=True)      # outbound email/internal
-    created_at = models.DateTimeField(auto_now_add=True)       # server insert time
+    sent_at = models.DateTimeField(null=True, blank=True)  # outbound email/internal
+    created_at = models.DateTimeField(auto_now_add=True)  # server insert time
 
     # Email-specific metadata (for threading / headers)
-    message_id = models.CharField(max_length=512, blank=True, default="")   # email-only
+    message_id = models.CharField(max_length=512, blank=True, default="")  # email-only
     in_reply_to = models.CharField(max_length=512, blank=True, default="")  # email-only
-    references = models.TextField(blank=True, default="")                   # email-only
-    headers = models.JSONField(blank=True, null=True)                       # email-only
+    references = models.TextField(blank=True, default="")  # email-only
+    headers = models.JSONField(blank=True, null=True)  # email-only
 
     # Body: we keep a text version and (sanitized) HTML version
     body_text = models.TextField(blank=True, default="")
@@ -145,7 +146,10 @@ class Message(models.Model):
         constraints = [
             # Internal messages must not have an account; email in/out are allowed with account.
             CheckConstraint(
-                check=(Q(direction='internal', account__isnull=True) | Q(direction__in=['inbound', 'outbound'])),
+                check=(
+                    Q(direction="internal", account__isnull=True)
+                    | Q(direction__in=["inbound", "outbound"])
+                ),
                 name="comms_message_direction_account_consistency",
             ),
         ]
@@ -161,9 +165,7 @@ class Message(models.Model):
 # Attachments stored independently (scanning, inlining, etc.).
 # ---------------------------------------------------------------------
 class Attachment(models.Model):
-    message = models.ForeignKey(
-        Message, on_delete=models.CASCADE, related_name="attachments"
-    )
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="attachments")
     filename = models.CharField(max_length=255)
     mime_type = models.CharField(max_length=100, blank=True, default="")
     size_bytes = models.BigIntegerField(null=True, blank=True)
@@ -198,9 +200,7 @@ class Attachment(models.Model):
 # Per-user read receipts to track which messages have been viewed.
 # ---------------------------------------------------------------------
 class ReadReceipt(models.Model):
-    message = models.ForeignKey(
-        Message, on_delete=models.CASCADE, related_name="read_receipts"
-    )
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="read_receipts")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comms_reads")
     read_at = models.DateTimeField(default=timezone.now)
 
@@ -216,9 +216,7 @@ class ReadReceipt(models.Model):
 # Optional labels (per account). We keep unique_together to avoid churn.
 # ---------------------------------------------------------------------
 class Label(models.Model):
-    account = models.ForeignKey(
-        MailAccount, null=True, blank=True, on_delete=models.CASCADE
-    )
+    account = models.ForeignKey(MailAccount, null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=80)
     slug = models.SlugField()
     is_system = models.BooleanField(default=False)
@@ -234,12 +232,8 @@ class Label(models.Model):
 # Per-user thread state (archive/star/labels).
 # ---------------------------------------------------------------------
 class UserThreadState(models.Model):
-    thread = models.ForeignKey(
-        MessageThread, on_delete=models.CASCADE, related_name="user_states"
-    )
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="thread_states"
-    )
+    thread = models.ForeignKey(MessageThread, on_delete=models.CASCADE, related_name="user_states")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="thread_states")
 
     archived = models.BooleanField(default=False)
     starred = models.BooleanField(default=False)
@@ -257,8 +251,10 @@ class UserThreadState(models.Model):
 
     def __str__(self) -> str:
         flags = []
-        if self.archived: flags.append("archived")
-        if self.starred: flags.append("starred")
+        if self.archived:
+            flags.append("archived")
+        if self.starred:
+            flags.append("starred")
         flags = ", ".join(flags) or "—"
         return f"{self.user} / {self.thread_id} ({flags})"
 
@@ -271,10 +267,10 @@ class UserThreadState(models.Model):
 class AudienceLink(models.Model):
     """Visibility audiences at thread level (one row per target)."""
 
-    thread = models.ForeignKey(
-        MessageThread, on_delete=models.CASCADE, related_name="audiences"
+    thread = models.ForeignKey(MessageThread, on_delete=models.CASCADE, related_name="audiences")
+    badge = models.ForeignKey(
+        "users.BadgeDefinition", null=True, blank=True, on_delete=models.CASCADE
     )
-    badge = models.ForeignKey("users.BadgeDefinition", null=True, blank=True, on_delete=models.CASCADE)
     group = models.ForeignKey("auth.Group", null=True, blank=True, on_delete=models.CASCADE)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
 
@@ -286,9 +282,9 @@ class AudienceLink(models.Model):
             # Exactly one of badge/group/user must be non-null.
             CheckConstraint(
                 check=(
-                    Q(badge__isnull=False, group__isnull=True, user__isnull=True) |
-                    Q(badge__isnull=True, group__isnull=False, user__isnull=True) |
-                    Q(badge__isnull=True, group__isnull=True, user__isnull=False)
+                    Q(badge__isnull=False, group__isnull=True, user__isnull=True)
+                    | Q(badge__isnull=True, group__isnull=False, user__isnull=True)
+                    | Q(badge__isnull=True, group__isnull=True, user__isnull=False)
                 ),
                 name="comms_audience_exactly_one_target",
             ),
@@ -314,7 +310,9 @@ class InternalTarget(models.Model):
     thread = models.ForeignKey(
         MessageThread, on_delete=models.CASCADE, related_name="internal_targets"
     )
-    badge = models.ForeignKey("users.BadgeDefinition", null=True, blank=True, on_delete=models.CASCADE)
+    badge = models.ForeignKey(
+        "users.BadgeDefinition", null=True, blank=True, on_delete=models.CASCADE
+    )
     group = models.ForeignKey("auth.Group", null=True, blank=True, on_delete=models.CASCADE)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
 
@@ -323,9 +321,9 @@ class InternalTarget(models.Model):
             # Exactly one of badge/group/user must be non-null.
             CheckConstraint(
                 check=(
-                    Q(badge__isnull=False, group__isnull=True, user__isnull=True) |
-                    Q(badge__isnull=True, group__isnull=False, user__isnull=True) |
-                    Q(badge__isnull=True, group__isnull=True, user__isnull=False)
+                    Q(badge__isnull=False, group__isnull=True, user__isnull=True)
+                    | Q(badge__isnull=True, group__isnull=False, user__isnull=True)
+                    | Q(badge__isnull=True, group__isnull=True, user__isnull=False)
                 ),
                 name="comms_internal_target_exactly_one_target",
             ),

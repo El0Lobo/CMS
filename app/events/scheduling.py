@@ -6,7 +6,10 @@ import calendar
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from typing import List, Optional, Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 from django.utils import timezone
 
@@ -19,11 +22,11 @@ class EventOccurrenceData:
 
     event: Event
     start: datetime
-    doors: Optional[datetime]
-    end: Optional[datetime]
-    curfew: Optional[datetime]
+    doors: datetime | None
+    end: datetime | None
+    curfew: datetime | None
     is_override: bool = False
-    source_exception: Optional[EventRecurrenceException] = None
+    source_exception: EventRecurrenceException | None = None
 
     def to_segment_context(self):
         """Return a lightweight object mimicking an Event for template scheduling."""
@@ -36,7 +39,7 @@ class EventOccurrenceData:
         )
 
 
-def _ensure_aware(value: Optional[datetime]) -> Optional[datetime]:
+def _ensure_aware(value: datetime | None) -> datetime | None:
     if value is None:
         return None
     if timezone.is_naive(value):
@@ -44,7 +47,7 @@ def _ensure_aware(value: Optional[datetime]) -> Optional[datetime]:
     return value
 
 
-def _apply_offset(start: datetime, offset: Optional[timedelta]) -> Optional[datetime]:
+def _apply_offset(start: datetime, offset: timedelta | None) -> datetime | None:
     if offset is None:
         return None
     return start + offset
@@ -74,7 +77,7 @@ def _nth_weekday_of_month(year: int, month: int, weekday: int, nth: int) -> int:
     return days[index].day
 
 
-def _next_occurrence_start(event: Event, current: datetime) -> Optional[datetime]:
+def _next_occurrence_start(event: Event, current: datetime) -> datetime | None:
     freq = event.recurrence_frequency
     tz = timezone.get_current_timezone()
     if freq == Event.RecurrenceFrequency.NONE:
@@ -105,7 +108,11 @@ def _next_occurrence_start(event: Event, current: datetime) -> Optional[datetime
         return timezone.make_aware(new_local.replace(tzinfo=None), tz)
 
     if freq == Event.RecurrenceFrequency.MONTHLY_WEEKDAY:
-        weekday = event.recurrence_weekday if event.recurrence_weekday is not None else current_local.weekday()
+        weekday = (
+            event.recurrence_weekday
+            if event.recurrence_weekday is not None
+            else current_local.weekday()
+        )
         week_number = event.recurrence_week_of_month or 1
         year, month = _increment_month(current_local.year, current_local.month)
         day = _nth_weekday_of_month(year, month, weekday, week_number)
@@ -115,16 +122,18 @@ def _next_occurrence_start(event: Event, current: datetime) -> Optional[datetime
     return None
 
 
-def _initial_start(event: Event) -> Optional[datetime]:
+def _initial_start(event: Event) -> datetime | None:
     if event.recurrence_frequency == Event.RecurrenceFrequency.NONE:
         return _ensure_aware(event.starts_at)
     return _ensure_aware(event.recurrence_next_start_at or event.starts_at)
 
 
-def _compute_offsets(event: Event) -> tuple[Optional[timedelta], Optional[timedelta], Optional[timedelta]]:
+def _compute_offsets(
+    event: Event,
+) -> tuple[timedelta | None, timedelta | None, timedelta | None]:
     reference = _ensure_aware(event.starts_at or event.recurrence_next_start_at)
 
-    def offset(value: Optional[datetime]) -> Optional[timedelta]:
+    def offset(value: datetime | None) -> timedelta | None:
         value = _ensure_aware(value)
         if value is None or reference is None:
             return None
@@ -138,10 +147,10 @@ def build_occurrence_series(
     *,
     max_occurrences: int = 6,
     include_past: bool = False,
-    horizon_end: Optional[datetime] = None,
-    exceptions: Optional[Sequence[EventRecurrenceException]] = None,
-    holiday_windows: Optional[Sequence[HolidayWindow]] = None,
-) -> List[EventOccurrenceData]:
+    horizon_end: datetime | None = None,
+    exceptions: Sequence[EventRecurrenceException] | None = None,
+    holiday_windows: Sequence[HolidayWindow] | None = None,
+) -> list[EventOccurrenceData]:
     """Return upcoming occurrences for an event based on its recurrence settings."""
 
     start = _initial_start(event)
@@ -150,7 +159,7 @@ def build_occurrence_series(
 
     now = timezone.now()
     doors_offset, ends_offset, curfew_offset = _compute_offsets(event)
-    occurrences: List[EventOccurrenceData] = []
+    occurrences: list[EventOccurrenceData] = []
     horizon = _ensure_aware(horizon_end)
     exception_map = {}
     if exceptions:
@@ -164,9 +173,8 @@ def build_occurrence_series(
         if not holiday_list or not event.is_recurring:
             return False
         for window in holiday_list:
-            applies = (
-                (event.event_type == Event.EventType.PUBLIC and window.applies_to_public)
-                or (event.event_type == Event.EventType.INTERNAL and window.applies_to_internal)
+            applies = (event.event_type == Event.EventType.PUBLIC and window.applies_to_public) or (
+                event.event_type == Event.EventType.INTERNAL and window.applies_to_internal
             )
             if not applies:
                 continue
@@ -186,7 +194,9 @@ def build_occurrence_series(
             end=_apply_offset(start, ends_offset),
             curfew=_apply_offset(start, curfew_offset),
         )
-        if (not horizon or occurrence.start <= horizon) and (include_past or occurrence.start >= now):
+        if (not horizon or occurrence.start <= horizon) and (
+            include_past or occurrence.start >= now
+        ):
             occurrences.append(occurrence)
         return occurrences
 
@@ -250,10 +260,10 @@ def refresh_event_schedule(
     event: Event,
     *,
     max_occurrences: int = 6,
-    horizon_end: Optional[datetime] = None,
-    holiday_windows: Optional[Sequence[HolidayWindow]] = None,
-    exceptions: Optional[Sequence[EventRecurrenceException]] = None,
-) -> List[EventOccurrenceData]:
+    horizon_end: datetime | None = None,
+    holiday_windows: Sequence[HolidayWindow] | None = None,
+    exceptions: Sequence[EventRecurrenceException] | None = None,
+) -> list[EventOccurrenceData]:
     """Recalculate and persist the next scheduled start if needed, returning occurrences."""
 
     occurrences = build_occurrence_series(

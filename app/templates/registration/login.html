@@ -37,6 +37,20 @@
         {% endif %}
       </div>
     </form>
+
+    {% if show_dev_login %}
+      <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px dashed #ccc;">
+        <form method="post" action="{% url 'dev_force_login' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-secondary" style="width:100%;">
+            🔓 Force Login (Dev)
+          </button>
+          <p style="margin-top:0.5rem;font-size:0.875rem;color:#666;text-align:center;">
+            Development mode only - logs you in as admin
+          </p>
+        </form>
+      </div>
+    {% endif %}
   </section>
 {% endblock %}
 

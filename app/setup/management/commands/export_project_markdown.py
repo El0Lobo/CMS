@@ -1,14 +1,15 @@
 # yourapp/management/commands/export_project_markdown.py
-import json
 import inspect
-from collections import defaultdict, OrderedDict
+import json
+from collections import OrderedDict, defaultdict
+from collections.abc import Iterable
 from datetime import date, datetime
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 from django.apps import apps
 from django.core.management.base import BaseCommand, CommandParser
-from django.urls import get_resolver, URLPattern, URLResolver
-from django.db import models, connections, DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, connections, models
+from django.urls import URLPattern, URLResolver, get_resolver
 
 
 def md_escape(text: Any) -> str:
@@ -24,7 +25,7 @@ def fmt_code(s: Any) -> str:
     return f"`{md_escape(s)}`" if s is not None else ""
 
 
-def fmt_bool(b: Optional[bool]) -> str:
+def fmt_bool(b: bool | None) -> str:
     return "✅" if b else ("❌" if b is False else "")
 
 
@@ -36,7 +37,7 @@ def fmt_default(val: Any) -> str:
             mod = val.__module__
             name = getattr(val, "__name__", repr(val))
             return fmt_code(f"{mod}.{name}()")
-        if isinstance(val, (datetime, date)):
+        if isinstance(val, datetime | date):
             return fmt_code(val.isoformat())
         json.dumps(val)  # if serializable, show as code
         return fmt_code(val)
@@ -44,7 +45,7 @@ def fmt_default(val: Any) -> str:
         return fmt_code(repr(val))
 
 
-def field_db_type(field: models.Field) -> Optional[str]:
+def field_db_type(field: models.Field) -> str | None:
     try:
         conn = connections[DEFAULT_DB_ALIAS]
         return field.db_type(connection=conn)
@@ -52,8 +53,8 @@ def field_db_type(field: models.Field) -> Optional[str]:
         return None
 
 
-def field_info(field: models.Field) -> Dict[str, Any]:
-    base: Dict[str, Any] = OrderedDict()
+def field_info(field: models.Field) -> dict[str, Any]:
+    base: dict[str, Any] = OrderedDict()
     base["name"] = field.name
     base["attname"] = getattr(field, "attname", field.name)
     base["type"] = f"{field.__class__.__module__}.{field.__class__.__name__}"
@@ -81,7 +82,7 @@ def field_info(field: models.Field) -> Dict[str, Any]:
         flat = []
         for c in choices:
             # (value, label) or grouped
-            if isinstance(c, (list, tuple)) and len(c) == 2 and not isinstance(c[1], (list, tuple)):
+            if isinstance(c, list | tuple) and len(c) == 2 and not isinstance(c[1], list | tuple):
                 flat.append({"value": c[0], "label": c[1]})
             else:
                 flat.append(repr(c))
@@ -117,9 +118,9 @@ def field_info(field: models.Field) -> Dict[str, Any]:
     return base
 
 
-def model_info(model: models.Model) -> Dict[str, Any]:
+def model_info(model: models.Model) -> dict[str, Any]:
     meta = model._meta
-    info: Dict[str, Any] = OrderedDict()
+    info: dict[str, Any] = OrderedDict()
     info["app_label"] = meta.app_label
     info["object_name"] = meta.object_name
     info["db_table"] = meta.db_table
@@ -163,11 +164,11 @@ def pattern_text(p) -> str:
         return repr(getattr(p, "pattern", p))
 
 
-def collect_urls(resolver=None) -> List[Dict[str, Any]]:
+def collect_urls(resolver=None) -> list[dict[str, Any]]:
     if resolver is None:
         resolver = get_resolver()
 
-    collected: List[Dict[str, Any]] = []
+    collected: list[dict[str, Any]] = []
     for entry in resolver.url_patterns:
         if isinstance(entry, URLPattern):
             cb = getattr(entry, "callback", None)
@@ -194,7 +195,7 @@ def collect_urls(resolver=None) -> List[Dict[str, Any]]:
     return uniq
 
 
-def render_urls_md(urls: List[Dict[str, Any]]) -> str:
+def render_urls_md(urls: list[dict[str, Any]]) -> str:
     lines = []
     lines.append("## URL Patterns\n")
     lines.append(f"Total: **{len(urls)}**\n")
@@ -207,7 +208,7 @@ def render_urls_md(urls: List[Dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def render_model_section_md(mi: Dict[str, Any]) -> str:
+def render_model_section_md(mi: dict[str, Any]) -> str:
     hdr = f"### {mi['app_label']}.{mi['object_name']}"
     meta_lines = [
         f"- **DB table:** {fmt_code(mi['db_table'])}",
@@ -225,7 +226,9 @@ def render_model_section_md(mi: Dict[str, Any]) -> str:
     rows = []
     for f in mi["fields"]:
         if "error" in f:
-            rows.append(f"| {md_escape(f.get('name'))} |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ⚠️ {md_escape(f['error'])} |  |  |  |  |")
+            rows.append(
+                f"| {md_escape(f.get('name'))} |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ⚠️ {md_escape(f['error'])} |  |  |  |  |"
+            )
             continue
 
         rel = f.get("relation_type") or ""
@@ -267,7 +270,11 @@ def render_model_section_md(mi: Dict[str, Any]) -> str:
                     ch_lines.append(f"    - {fmt_code(c['value'])}: {md_escape(c['label'])}")
                 else:
                     ch_lines.append(f"    - {md_escape(c)}")
-            rows.append("<br/>\n<details><summary>Choices</summary>\n\n" + "\n".join(ch_lines) + "\n\n</details>")
+            rows.append(
+                "<br/>\n<details><summary>Choices</summary>\n\n"
+                + "\n".join(ch_lines)
+                + "\n\n</details>"
+            )
 
     section = [
         hdr,
@@ -281,8 +288,8 @@ def render_model_section_md(mi: Dict[str, Any]) -> str:
     return "\n".join(section)
 
 
-def render_models_md(models_info: Iterable[Dict[str, Any]]) -> str:
-    by_app: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+def render_models_md(models_info: Iterable[dict[str, Any]]) -> str:
+    by_app: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for mi in models_info:
         by_app[mi["app_label"]].append(mi)
 
@@ -330,7 +337,18 @@ class Command(BaseCommand):
             try:
                 models_info.append(model_info(model))
             except Exception as e:
-                models_info.append({"app_label": "?", "object_name": repr(model), "fields": [{"name": "?", "error": repr(e)}], "db_table": "?", "managed": None, "proxy": None, "abstract": None, "pk": None})
+                models_info.append(
+                    {
+                        "app_label": "?",
+                        "object_name": repr(model),
+                        "fields": [{"name": "?", "error": repr(e)}],
+                        "db_table": "?",
+                        "managed": None,
+                        "proxy": None,
+                        "abstract": None,
+                        "pk": None,
+                    }
+                )
 
         # Render Markdown
         parts = [f"# {md_escape(title)}\n"]

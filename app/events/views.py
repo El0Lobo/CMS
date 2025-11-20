@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-import calendar
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -17,6 +16,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
+from app.core.date_utils import add_months
 from app.events.forms import (
     EventCategoryForm,
     EventFilterForm,
@@ -27,14 +27,6 @@ from app.events.forms import (
 from app.events.models import Event, EventCategory, EventRecurrenceException, HolidayWindow
 from app.events.scheduling import build_occurrence_series, refresh_event_schedule
 from app.shifts.services import sync_event_standard_shifts
-
-
-def _add_months(dt, delta):
-    month = dt.month - 1 + delta
-    year = dt.year + month // 12
-    month = month % 12 + 1
-    day = min(dt.day, calendar.monthrange(year, month)[1])
-    return dt.replace(year=year, month=month, day=day)
 
 
 def _parse_occurrence_param(value: str | None) -> datetime | None:
@@ -56,75 +48,10 @@ def _serialize_occurrence_param(dt: datetime | None) -> str | None:
     return timezone.localtime(dt, timezone.get_current_timezone()).isoformat()
 
 
-def _close_shifts_for_window(events, window, *, allow_signup: bool, status: str | None = None):
-    """Batch update shifts in a window to open/close without deleting them."""
-
-    for event in events:
-        qs = event.shifts.filter(
-            start_at__gte=window.starts_at,
-            start_at__lte=window.ends_at,
-        )
-        update_kwargs = {"allow_signup": allow_signup}
-        if status:
-            update_kwargs["status"] = status
-        qs.update(**update_kwargs)
-
-
-def _compute_blackout_exceptions(window, events):
-    """Create holiday exceptions for occurrences inside the window."""
-
-    for event in events:
-        if (event.event_type == Event.EventType.PUBLIC and not window.applies_to_public) or (
-            event.event_type == Event.EventType.INTERNAL and not window.applies_to_internal
-        ):
-            continue
-        occurrences = build_occurrence_series(
-            event,
-            max_occurrences=128,
-            include_past=True,
-            horizon_end=window.ends_at,
-            holiday_windows=[window],
-        )
-        for occ in occurrences:
-            if window.starts_at <= occ.start <= window.ends_at:
-                EventRecurrenceException.objects.update_or_create(
-                    event=event,
-                    occurrence_start=occ.start,
-                    defaults={
-                        "exception_type": EventRecurrenceException.ExceptionType.HOLIDAY,
-                        "override_event": None,
-                    },
-                )
-        refresh_event_schedule(
-            event,
-            max_occurrences=64,
-            horizon_end=_add_months(timezone.now(), 6),
-            holiday_windows=[window],
-            exceptions=event.recurrence_exceptions.all(),
-        )
-
-
-def _affected_recurring_events(window):
-    """Return recurring events that intersect the provided holiday window."""
-
-    recurring = Event.objects.exclude(recurrence_frequency=Event.RecurrenceFrequency.NONE)
-    return recurring.filter(
-        Q(starts_at__range=(window.starts_at, window.ends_at))
-        | Q(recurrence_next_start_at__range=(window.starts_at, window.ends_at))
-        | Q(
-            recurrence_exceptions__occurrence_start__range=(window.starts_at, window.ends_at),
-            recurrence_exceptions__exception_type=EventRecurrenceException.ExceptionType.HOLIDAY,
-        )
-    ).distinct()
-
-
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
     filter_form = EventFilterForm(request.GET or None)
-    if filter_form.is_valid():
-        filters = filter_form.cleaned_data
-    else:
-        filters = {}
+    filters = filter_form.cleaned_data if filter_form.is_valid() else {}
 
     search_query = filters.get("q") or request.GET.get("q", "").strip()
 
@@ -147,7 +74,7 @@ def index(request: HttpRequest) -> HttpResponse:
     tz = timezone.get_current_timezone()
     now = timezone.now()
     local_now = timezone.localtime(now, tz)
-    recurrence_horizon = _add_months(now, 6)
+    recurrence_horizon = add_months(now, 6)
     include_past = bool(filters.get("include_past"))
     timeframe = filters.get("timeframe") or EventFilterForm.Timeframe.MONTH
     offset = filters.get("period_offset") or 0
@@ -205,8 +132,8 @@ def index(request: HttpRequest) -> HttpResponse:
         end_local = start_local + timedelta(weeks=1)
     elif timeframe == EventFilterForm.Timeframe.MONTH:
         base = local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        start_local = _add_months(base, offset)
-        end_local = _add_months(start_local, 1)
+        start_local = add_months(base, offset)
+        end_local = add_months(start_local, 1)
     elif timeframe == EventFilterForm.Timeframe.YEAR:
         base = local_now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         start_local = base.replace(year=base.year + offset)
@@ -227,7 +154,10 @@ def index(request: HttpRequest) -> HttpResponse:
 
     if lower_bound is not None:
         events = events.filter(
-            (single_filter & (Q(effective_start__isnull=True) | Q(effective_start__gte=lower_bound)))
+            (
+                single_filter
+                & (Q(effective_start__isnull=True) | Q(effective_start__gte=lower_bound))
+            )
             | recurring_filter
         )
 
@@ -238,7 +168,9 @@ def index(request: HttpRequest) -> HttpResponse:
         )
 
     if timeframe == EventFilterForm.Timeframe.WEEK and start_local and end_local:
-        range_label = f"{start_local.strftime('%b %d')} – {(end_local - timedelta(days=1)).strftime('%b %d')}"
+        range_label = (
+            f"{start_local.strftime('%b %d')} – {(end_local - timedelta(days=1)).strftime('%b %d')}"
+        )
     elif timeframe == EventFilterForm.Timeframe.MONTH and start_local:
         range_label = start_local.strftime("%B %Y")
     elif timeframe == EventFilterForm.Timeframe.YEAR and start_local:
@@ -249,6 +181,7 @@ def index(request: HttpRequest) -> HttpResponse:
     show_navigation = timeframe != EventFilterForm.Timeframe.ALL
     prev_url = next_url = None
     if show_navigation:
+
         def build_nav(delta: int) -> str:
             params = request.GET.copy()
             params["timeframe"] = timeframe
@@ -443,10 +376,12 @@ def edit(request: HttpRequest, slug: str) -> HttpResponse:
 @login_required
 def detail(request: HttpRequest, slug: str) -> HttpResponse:
     event = get_object_or_404(
-        Event.objects.prefetch_related("performers", "categories", "recurrence_exceptions__override_event"),
+        Event.objects.prefetch_related(
+            "performers", "categories", "recurrence_exceptions__override_event"
+        ),
         slug=slug,
     )
-    horizon = _add_months(timezone.now(), 6)
+    horizon = add_months(timezone.now(), 6)
     holiday_windows = list(HolidayWindow.overlapping(timezone.now(), horizon))
     event_exceptions = list(event.recurrence_exceptions.all())
     occurrences = build_occurrence_series(
@@ -479,7 +414,9 @@ def delete(request: HttpRequest, slug: str) -> HttpResponse:
                 "override_event": None,
             },
         )
-        refresh_event_schedule(parent, max_occurrences=64, horizon_end=_add_months(timezone.now(), 6))
+        refresh_event_schedule(
+            parent, max_occurrences=64, horizon_end=add_months(timezone.now(), 6)
+        )
     messages.success(request, "Event deleted.")
     return redirect("events:index")
 
@@ -543,7 +480,7 @@ def delete_occurrence(request: HttpRequest, slug: str) -> HttpResponse:
     exception.override_event = None
     exception.exception_type = EventRecurrenceException.ExceptionType.SKIP
     exception.save()
-    refresh_event_schedule(event, max_occurrences=64, horizon_end=_add_months(timezone.now(), 6))
+    refresh_event_schedule(event, max_occurrences=64, horizon_end=add_months(timezone.now(), 6))
     messages.success(request, "Occurrence removed from the recurrence.")
     return redirect("events:index")
 
@@ -627,15 +564,6 @@ def holidays(request: HttpRequest) -> HttpResponse:
         form = HolidayWindowForm(request.POST, user=request.user)
         if form.is_valid():
             window = form.save()
-            affected_events = list(_affected_recurring_events(window))
-            _compute_blackout_exceptions(window, affected_events)
-            # Only close shifts for events the window applies to
-            applicable_events = [
-                e for e in affected_events
-                if (e.event_type == Event.EventType.PUBLIC and window.applies_to_public)
-                or (e.event_type == Event.EventType.INTERNAL and window.applies_to_internal)
-            ]
-            _close_shifts_for_window(applicable_events, window, allow_signup=False, status="closed")
             messages.success(request, f"Holiday '{window.name}' saved.")
             return redirect("events:holidays")
     else:
@@ -656,38 +584,7 @@ def holiday_delete(request: HttpRequest, pk: int) -> HttpResponse:
     window = get_object_or_404(HolidayWindow, pk=pk)
     if request.method != "POST":
         return HttpResponseBadRequest("POST required")
-    affected_events = list(_affected_recurring_events(window))
-    # Remove holiday exceptions only for events the window applied to
-    EventRecurrenceException.objects.filter(
-        exception_type=EventRecurrenceException.ExceptionType.HOLIDAY,
-        occurrence_start__range=(window.starts_at, window.ends_at),
-        event__event_type__in=[
-            Event.EventType.PUBLIC if window.applies_to_public else None,
-            Event.EventType.INTERNAL if window.applies_to_internal else None,
-        ],
-    ).exclude(event__event_type=None).delete()
     window.delete()
-    applicable_events = [
-        e for e in affected_events
-        if (e.event_type == Event.EventType.PUBLIC and window.applies_to_public)
-        or (e.event_type == Event.EventType.INTERNAL and window.applies_to_internal)
-    ]
-    _close_shifts_for_window(applicable_events, window, allow_signup=True, status="open")
-    active_holidays = list(HolidayWindow.overlapping(timezone.now(), _add_months(timezone.now(), 6)))
-    for event in affected_events:
-        event_exceptions = list(event.recurrence_exceptions.all())
-        refresh_event_schedule(
-            event,
-            max_occurrences=64,
-            horizon_end=_add_months(timezone.now(), 6),
-            holiday_windows=active_holidays,
-            exceptions=event_exceptions,
-        )
-        sync_event_standard_shifts(
-            event,
-            user=request.user,
-            max_occurrences=64,
-        )
     messages.success(request, f"Holiday '{window.name}' removed.")
     return redirect("events:holidays")
 
