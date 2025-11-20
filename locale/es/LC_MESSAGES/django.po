@@ -1,0 +1,526 @@
+# Spanish translations for Bar OS CMS.
+# Copyright (C) 2025
+# This file is distributed under the same license as the Bar OS package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Bar OS\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-18 00:00+0000\n"
+"PO-Revision-Date: 2025-01-18 00:00+0000\n"
+"Last-Translator: Bar OS Team\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Navigation & Pages
+msgid "Home"
+msgstr "Inicio"
+
+msgid "Menu"
+msgstr "Menú"
+
+msgid "About"
+msgstr "Acerca de"
+
+msgid "Contact"
+msgstr "Contacto"
+
+msgid "Events"
+msgstr "Eventos"
+
+msgid "Login"
+msgstr "Iniciar sesión"
+
+msgid "Logout"
+msgstr "Cerrar sesión"
+
+msgid "Dashboard"
+msgstr "Panel de control"
+
+# Actions
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Delete"
+msgstr "Eliminar"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Add"
+msgstr "Añadir"
+
+msgid "Search"
+msgstr "Buscar"
+
+msgid "Filter"
+msgstr "Filtrar"
+
+msgid "Back"
+msgstr "Volver"
+
+msgid "View"
+msgstr "Ver"
+
+msgid "Update"
+msgstr "Actualizar"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "Remove"
+msgstr "Quitar"
+
+msgid "Clear"
+msgstr "Limpiar"
+
+msgid "Submit"
+msgstr "Enviar"
+
+msgid "Close"
+msgstr "Cerrar"
+
+# Common UI
+msgid "Welcome"
+msgstr "Bienvenido"
+
+msgid "Loading..."
+msgstr "Cargando..."
+
+msgid "Please wait"
+msgstr "Por favor espere"
+
+msgid "Yes"
+msgstr "Sí"
+
+msgid "No"
+msgstr "No"
+
+msgid "OK"
+msgstr "Aceptar"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "None"
+msgstr "Ninguno"
+
+msgid "Select"
+msgstr "Seleccionar"
+
+msgid "Choose"
+msgstr "Elegir"
+
+msgid "Options"
+msgstr "Opciones"
+
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "Help"
+msgstr "Ayuda"
+
+# Django Admin
+msgid "Site administration"
+msgstr "Administración del sitio"
+
+msgid "Change"
+msgstr "Cambiar"
+
+msgid "Add another"
+msgstr "Añadir otro"
+
+msgid "Delete selected"
+msgstr "Eliminar seleccionados"
+
+msgid "Recent actions"
+msgstr "Acciones recientes"
+
+msgid "My actions"
+msgstr "Mis acciones"
+
+msgid "Change password"
+msgstr "Cambiar contraseña"
+
+msgid "Log out"
+msgstr "Cerrar sesión"
+
+msgid "View site"
+msgstr "Ver sitio"
+
+# Status & Messages
+msgid "Success"
+msgstr "Éxito"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Warning"
+msgstr "Advertencia"
+
+msgid "Info"
+msgstr "Información"
+
+msgid "Saved successfully"
+msgstr "Guardado exitosamente"
+
+msgid "Deleted successfully"
+msgstr "Eliminado exitosamente"
+
+msgid "Updated successfully"
+msgstr "Actualizado exitosamente"
+
+msgid "Created successfully"
+msgstr "Creado exitosamente"
+
+# Models - Pages
+msgid "Page"
+msgstr "Página"
+
+msgid "Pages"
+msgstr "Páginas"
+
+msgid "Title"
+msgstr "Título"
+
+msgid "Slug"
+msgstr "Identificador"
+
+msgid "Summary"
+msgstr "Resumen"
+
+msgid "Body"
+msgstr "Cuerpo"
+
+msgid "Content"
+msgstr "Contenido"
+
+msgid "Status"
+msgstr "Estado"
+
+msgid "Published"
+msgstr "Publicado"
+
+msgid "Draft"
+msgstr "Borrador"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Created"
+msgstr "Creado"
+
+msgid "Modified"
+msgstr "Modificado"
+
+msgid "Published at"
+msgstr "Publicado el"
+
+# Models - Events
+msgid "Event"
+msgstr "Evento"
+
+msgid "Event Category"
+msgstr "Categoría de evento"
+
+msgid "Event Categories"
+msgstr "Categorías de eventos"
+
+msgid "Start date"
+msgstr "Fecha de inicio"
+
+msgid "End date"
+msgstr "Fecha de fin"
+
+msgid "Start time"
+msgstr "Hora de inicio"
+
+msgid "End time"
+msgstr "Hora de fin"
+
+msgid "Location"
+msgstr "Ubicación"
+
+msgid "Venue"
+msgstr "Lugar"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "Teaser"
+msgstr "Avance"
+
+msgid "Price"
+msgstr "Precio"
+
+msgid "Tickets"
+msgstr "Entradas"
+
+# Models - Menu
+msgid "Category"
+msgstr "Categoría"
+
+msgid "Categories"
+msgstr "Categorías"
+
+msgid "Item"
+msgstr "Artículo"
+
+msgid "Items"
+msgstr "Artículos"
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Ingredients"
+msgstr "Ingredientes"
+
+msgid "Allergens"
+msgstr "Alérgenos"
+
+msgid "Available"
+msgstr "Disponible"
+
+msgid "Out of stock"
+msgstr "Agotado"
+
+msgid "Variant"
+msgstr "Variante"
+
+msgid "Variants"
+msgstr "Variantes"
+
+msgid "Size"
+msgstr "Tamaño"
+
+msgid "Volume"
+msgstr "Volumen"
+
+# Models - Merchandise
+msgid "Product"
+msgstr "Producto"
+
+msgid "Products"
+msgstr "Productos"
+
+msgid "Stock"
+msgstr "Existencias"
+
+msgid "In stock"
+msgstr "En stock"
+
+msgid "SKU"
+msgstr "SKU"
+
+msgid "Barcode"
+msgstr "Código de barras"
+
+# Models - Bands
+msgid "Band"
+msgstr "Banda"
+
+msgid "Bands"
+msgstr "Bandas"
+
+msgid "Artist"
+msgstr "Artista"
+
+msgid "Artists"
+msgstr "Artistas"
+
+msgid "Genre"
+msgstr "Género"
+
+msgid "Genres"
+msgstr "Géneros"
+
+msgid "Bio"
+msgstr "Biografía"
+
+msgid "Website"
+msgstr "Sitio web"
+
+msgid "Social media"
+msgstr "Redes sociales"
+
+# Common Fields
+msgid "Image"
+msgstr "Imagen"
+
+msgid "Images"
+msgstr "Imágenes"
+
+msgid "File"
+msgstr "Archivo"
+
+msgid "Files"
+msgstr "Archivos"
+
+msgid "Date"
+msgstr "Fecha"
+
+msgid "Time"
+msgstr "Hora"
+
+msgid "Email"
+msgstr "Correo electrónico"
+
+msgid "Phone"
+msgstr "Teléfono"
+
+msgid "Address"
+msgstr "Dirección"
+
+msgid "City"
+msgstr "Ciudad"
+
+msgid "Country"
+msgstr "País"
+
+msgid "Postal code"
+msgstr "Código postal"
+
+msgid "Notes"
+msgstr "Notas"
+
+msgid "Comments"
+msgstr "Comentarios"
+
+msgid "Tags"
+msgstr "Etiquetas"
+
+msgid "Visibility"
+msgstr "Visibilidad"
+
+msgid "Public"
+msgstr "Público"
+
+msgid "Private"
+msgstr "Privado"
+
+msgid "Active"
+msgstr "Activo"
+
+msgid "Inactive"
+msgstr "Inactivo"
+
+msgid "Enabled"
+msgstr "Habilitado"
+
+msgid "Disabled"
+msgstr "Deshabilitado"
+
+# Users & Permissions
+msgid "User"
+msgstr "Usuario"
+
+msgid "Users"
+msgstr "Usuarios"
+
+msgid "Username"
+msgstr "Nombre de usuario"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "First name"
+msgstr "Nombre"
+
+msgid "Last name"
+msgstr "Apellido"
+
+msgid "Staff"
+msgstr "Personal"
+
+msgid "Administrator"
+msgstr "Administrador"
+
+msgid "Permissions"
+msgstr "Permisos"
+
+msgid "Groups"
+msgstr "Grupos"
+
+msgid "Last login"
+msgstr "Último acceso"
+
+msgid "Date joined"
+msgstr "Fecha de registro"
+
+# Errors
+msgid "This field is required"
+msgstr "Este campo es obligatorio"
+
+msgid "Please correct the errors below"
+msgstr "Por favor corrija los errores a continuación"
+
+msgid "Invalid value"
+msgstr "Valor inválido"
+
+msgid "Not found"
+msgstr "No encontrado"
+
+msgid "Access denied"
+msgstr "Acceso denegado"
+
+msgid "Permission denied"
+msgstr "Permiso denegado"
+
+# Misc
+msgid "Show"
+msgstr "Mostrar"
+
+msgid "Hide"
+msgstr "Ocultar"
+
+msgid "More"
+msgstr "Más"
+
+msgid "Less"
+msgstr "Menos"
+
+msgid "Previous"
+msgstr "Anterior"
+
+msgid "Next"
+msgstr "Siguiente"
+
+msgid "First"
+msgstr "Primero"
+
+msgid "Last"
+msgstr "Último"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "of"
+msgstr "de"
+
+msgid "to"
+msgstr "a"
+
+msgid "from"
+msgstr "desde"
+
+msgid "until"
+msgstr "hasta"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Impersonating"
+msgstr "Suplantando"
+
+msgid "Stop"
+msgstr "Detener"
+
+msgid "Skip to content"
+msgstr "Saltar al contenido"
