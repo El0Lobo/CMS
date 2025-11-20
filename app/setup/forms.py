@@ -238,6 +238,8 @@ class SettingsForm(ModelForm):
         _update_widget_fields(
             "address_country", id="country", autocomplete="country", enterkeyhint="done"
         )
+        _update_widget_fields("geo_lat", id="geo-lat", step="0.000001", inputmode="decimal")
+        _update_widget_fields("geo_lng", id="geo-lng", step="0.000001", inputmode="decimal")
 
     def clean(self):
         data = super().clean()
