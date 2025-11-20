@@ -1,4 +1,4 @@
-# Bar OS Starter 
+# Kneipe OS Starter 
 
 This starter adds **templates & placeholder pages for every module** so you
 can immediately see the shape of the app and grow each part.
@@ -31,4 +31,4 @@ docker compose up -d db redis
 
 ## License
 
-[add license here]
+[add license here!]
