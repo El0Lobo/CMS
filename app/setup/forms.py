@@ -71,6 +71,25 @@ class SettingsForm(ModelForm):
     maximum_attendee_capacity = forms.IntegerField(required=False, min_value=0)
     awareness_team_available = forms.BooleanField(required=False)
     awareness_contact = forms.CharField(required=False, label="Awareness contact (free text)")
+    icon_pack = forms.FileField(
+        required=False,
+        label="Site icon pack (ZIP)",
+        help_text=(
+            "Upload favicon.ico, favicon.svg, apple-touch-icon.png, favicon-96x96.png, "
+            "web-app-manifest-192x192.png, web-app-manifest-512x512.png, and site.webmanifest "
+            "(e.g., from RealFaviconGenerator). Replaces previous icons."
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Show current filenames inline on the widgets
+        if getattr(self.instance, "logo", None) and self.instance.logo.name:
+            self.fields["logo"].widget.attrs["data-current"] = self.instance.logo.name
+        if getattr(self.instance, "logo_secondary", None) and self.instance.logo_secondary.name:
+            self.fields["logo_secondary"].widget.attrs["data-current"] = self.instance.logo_secondary.name
+        if getattr(self.instance, "icon_pack_filename", ""):
+            self.fields["icon_pack"].widget.attrs["data-current"] = self.instance.icon_pack_filename
 
     class Meta:
         model = SiteSettings
@@ -79,6 +98,7 @@ class SettingsForm(ModelForm):
             "mode",
             "org_name",
             "logo",
+            "logo_secondary",
             "publish_opening_times",
             "public_pages_enabled",
             # Address & geodata

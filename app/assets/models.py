@@ -168,7 +168,7 @@ class Asset(models.Model):
 
     # one of these three is expected (form enforces exactly one)
     file = models.FileField(upload_to=asset_upload_to, blank=True, null=True)
-    url = models.URLField(blank=True, help_text="External link or embed URL")
+    url = models.URLField(blank=True, null=True, help_text="External link or embed URL")
     text_content = models.TextField(blank=True, help_text="Plain text / note / credentials")
 
     appears_on = models.CharField(

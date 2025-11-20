@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="{% static 'cms/cms.css' %}">
   <script src="{% static 'cms/cms.js' %}" defer></script>
   <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+  {% if site_icon_links %}
+    {% for icon in site_icon_links %}
+      <link rel="{{ icon.rel|default:'icon' }}" href="{{ icon.href }}"{% if icon.type %} type="{{ icon.type }}"{% endif %}{% if icon.sizes %} sizes="{{ icon.sizes }}"{% endif %}>
+    {% endfor %}
+  {% endif %}
 
   {# Hide skip link by default; show on focus for accessibility #}
   <style>

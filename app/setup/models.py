@@ -15,7 +15,9 @@ class SiteSettings(models.Model):
     # General
     mode = models.CharField(max_length=10, choices=Mode.choices, default=Mode.VENUE)
     org_name = EncryptedCharField(max_length=200, blank=True)
-    logo = models.ImageField(upload_to="logos/", blank=True, null=True)
+    logo = models.FileField(upload_to="logos/", blank=True, null=True)
+    logo_secondary = models.FileField(upload_to="logos/", blank=True, null=True)
+    icon_pack_filename = models.CharField(max_length=255, blank=True, help_text="Last uploaded icon pack filename.")
 
     # Address (structured)
     address_street = EncryptedCharField(max_length=200, blank=True)
