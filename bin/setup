@@ -102,6 +102,20 @@ def check_venv_sync():
     # Check if we can import key packages
     python_cmd = str(get_venv_python())
 
+    # If the executable itself is missing (platform mismatch), reset the venv.
+    if not Path(python_cmd).exists():
+        print_info("Virtual environment executable not found (OS/venv mismatch?)")
+        print_info("Removing old virtual environment...")
+        import shutil
+        try:
+            shutil.rmtree(venv_path)
+            print_success("Removed missing/invalid virtual environment")
+        except Exception as e:
+            print_error(f"Failed to remove venv: {e}")
+            print_info("You may need to manually run: rm -rf .venv")
+            sys.exit(1)
+        return
+
     # Try to import Django as a sanity check
     result = run_command(
         [python_cmd, "-c", "import django; import environ"],
@@ -109,7 +123,7 @@ def check_venv_sync():
         capture_output=True,
     )
 
-    if result.returncode != 0:
+    if getattr(result, "returncode", 1) != 0:
         print_info("Virtual environment appears out of sync")
         print_info("Removing old virtual environment...")
 
