@@ -133,7 +133,6 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 - **[Development Guide](DEVELOPMENT.md)** — Testing, code quality, deep dives
 - **[Architecture](ARCHITECTURE.md)** — How it's built
 - **[Contributing](CONTRIBUTING.md)** — Join in
-- **[Security](SECURITY_AUDIT_REPORT.md)** — Don't get hacked
 - **[bin/ Scripts](bin/README.md)** — Tool docs
 
 ---
