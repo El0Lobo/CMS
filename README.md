@@ -67,107 +67,11 @@ You're done. You're running a complete venue management system.
 ./bin/check            # Lint, types, the works
 ```
 
-### Before Pushing
-```bash
-./bin/ci               # Full CI suite locally—catch it before GitHub does
-```
-
----
-
-## Structure
-
-```
-app/
-├── events/      # Events, recurring stuff, tickets
-├── shifts/      # Staff scheduling
-├── pos/         # Point of sale
-├── menu/        # Food and drinks
-├── merch/       # Merch catalog
-├── inventory/   # Stock tracking
-├── bands/       # Artists/performers
-├── comms/       # Messaging + email
-├── assets/      # File manager
-├── pages/       # CMS pages
-├── cms/         # Dashboard
-├── users/       # Profiles, perms
-└── setup/       # Settings
-```
-
----
-
-## Common Tasks
-
-### Add a Feature
-```bash
-./bin/manage startapp yourfeature
-# Edit models, views, whatever
-./bin/manage makemigrations
-./bin/manage migrate
-./bin/test
-```
-
-### Deploy
-```bash
-docker compose up --build
-```
-
----
-
-## Config
-
-Bar OS uses environment variables. Copy `.env.sample` to `.env`:
-
-```env
-DJANGO_ENV=[development|staging|production]
-DEBUG=True
-SECRET_KEY=change-this-in-production
-DATABASE_URL=sqlite:///db.sqlite3
-REDIS_URL=redis://localhost:6379/0
-ALLOWED_HOSTS=localhost,127.0.0.1
-```
-
----
-
-## Docs
-
-- **[Development Guide](DEVELOPMENT.md)** — Testing, code quality, deep dives
-- **[Architecture](ARCHITECTURE.md)** — How it's built
-- **[Contributing](CONTRIBUTING.md)** — Join in
-- **[bin/ Scripts](bin/README.md)** — Tool docs
-
----
-
-## Requirements
-
-- **Python 3.11+** (3.11, 3.12, 3.13 all work)
-- **Git**
-- **Docker** (optional, for PostgreSQL)
-
----
-
-## Platform Notes
-
-Scripts work everywhere. Same commands, same results.
-
-**Unix/Mac:**
-```bash
-./bin/setup
-./bin/dev
-```
-
-**Windows:**
-```cmd
-python bin\setup
-python bin\dev
-```
-
----
-
-## Help
-
-- `./bin/manage --help` — Django commands
-- `make help` — Quick ref (Unix/Mac)
+## Where to start editing
+- CMS layout: `app/templates/cms/base_cms.html`, `app/templates/cms/nav.html`, `app/static/cms/cms.css`
+- Public layout: `app/templates/base_public.html`, public themes under `app/static/publicthemes/themes/`
+- Each module’s templates under `app/templates/<module>/` and views in `app/<module>/views.py`
 
 ## License
 
-[Your license here]
+[add license here]
