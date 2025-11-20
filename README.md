@@ -28,3 +28,7 @@ docker compose up -d db redis
 - CMS layout: `app/templates/cms/base_cms.html`, `app/templates/cms/nav.html`, `app/static/cms/cms.css`
 - Public layout: `app/templates/base_public.html`, public themes under `app/static/publicthemes/themes/`
 - Each module’s templates under `app/templates/<module>/` and views in `app/<module>/views.py`
+
+## License
+
+[add license here]
