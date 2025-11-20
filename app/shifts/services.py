@@ -2,28 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Optional
-import calendar
-
 from django.utils import timezone
 
+from app.core.date_utils import add_months
 from app.events.models import HolidayWindow
 from app.events.scheduling import build_occurrence_series, refresh_event_schedule
 from app.shifts.models import Shift, ShiftTemplate
 
 
-def _add_months(dt, delta):
-    month = dt.month - 1 + delta
-    year = dt.year + month // 12
-    month = month % 12 + 1
-    day = min(dt.day, calendar.monthrange(year, month)[1])
-    return dt.replace(year=year, month=month, day=day)
-
-
 def sync_event_standard_shifts(event, *, user=None, max_occurrences: int = 64) -> None:
     """Ensure standard shift template selections are reflected in actual shifts."""
 
-    horizon_end = _add_months(timezone.now(), 6)
+    horizon_end = add_months(timezone.now(), 6)
     holiday_windows = list(HolidayWindow.overlapping(timezone.now(), horizon_end))
     event_exceptions = list(event.recurrence_exceptions.all())
     refresh_event_schedule(
@@ -59,13 +49,15 @@ def sync_event_standard_shifts(event, *, user=None, max_occurrences: int = 64) -
         event.shifts.filter(template__isnull=False).delete()
         return
 
-    templates = {
-        tmpl.id: tmpl
-        for tmpl in ShiftTemplate.objects.filter(pk__in=template_ids)
-    }
+    templates = {tmpl.id: tmpl for tmpl in ShiftTemplate.objects.filter(pk__in=template_ids)}
 
     existing_by_template = {
-        (shift.template_id, shift.template_segment, shift.template_staff_position, shift.start_at): shift
+        (
+            shift.template_id,
+            shift.template_segment,
+            shift.template_staff_position,
+            shift.start_at,
+        ): shift
         for shift in event.shifts.filter(template__isnull=False)
     }
 
@@ -73,7 +65,7 @@ def sync_event_standard_shifts(event, *, user=None, max_occurrences: int = 64) -
 
     for occurrence in occurrences:
         context = occurrence.to_segment_context()
-        for template_id, template in templates.items():
+        for _template_id, template in templates.items():
             segments = template.segment_schedule(context)
             for segment in segments:
                 segment_start = segment["start"]

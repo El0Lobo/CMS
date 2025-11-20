@@ -1,9 +1,11 @@
 # app/setup/views_alias.py  (or add into your existing views.py)
 from django.http import Http404
 from django.shortcuts import redirect
-from django.urls import reverse, NoReverseMatch
+from django.urls import NoReverseMatch, reverse
 from django.utils.text import slugify
+
 from .models import SiteSettings
+
 
 def page_alias(request, pretty: str):
     s = SiteSettings.get_solo()

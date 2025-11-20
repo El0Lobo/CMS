@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import login
+from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, reverse
+from django.views.decorators.http import require_POST
 
 from app.setup.models import SiteSettings
 
@@ -23,12 +28,24 @@ def _published_queryset():
 
 
 def _nav_payload_for(page: Page):
+    """
+    Get navigation entries for the given page.
+    If custom_nav_items is set, use those slugs.
+    Otherwise, show all visible published pages.
+    """
     if not page.show_navigation_bar:
         return []
+
+    # If custom nav items are specified, use them
     override = [slug for slug in (page.custom_nav_items or []) if slug]
-    if not override:
-        return []
-    return build_nav_payload(override)
+    if override:
+        return build_nav_payload(override)
+
+    # Otherwise, return all visible pages as navigation
+    from .navigation import get_navigation_entries, serialize_nav_entries
+
+    entries = get_navigation_entries(include_hidden=False)
+    return serialize_nav_entries(entries)
 
 
 def _render_page(request, page: Page) -> HttpResponse:
@@ -46,14 +63,24 @@ def _render_page(request, page: Page) -> HttpResponse:
 
 
 def _first_available_page():
+    """
+    Get the home page, using navigation_order to identify it language-agnostically.
+    The home page is marked with navigation_order=0.
+    """
     qs = _published_queryset()
-    home = qs.filter(slug="home").first()
+    # Look for the page with navigation_order=0 (home page)
+    home = qs.filter(navigation_order=0).first()
     if home:
         return home
+    # Fall back to first page by order
     return qs.order_by("navigation_order", "title").first()
 
 
 def home(request):
+    """
+    Render the home page. Always renders directly without redirect to support
+    multilingual URLs (en/home, de/startseite, fr/accueil, etc.).
+    """
     _public_enabled_or_404()
     page = _first_available_page()
     if not page:
@@ -63,8 +90,7 @@ def home(request):
             {"page_show_nav": False, "page_footer": ""},
             status=404,
         )
-    if page.slug != "home":
-        return redirect(page.get_absolute_url())
+    # Render the home page directly (no redirect)
     return _render_page(request, page)
 
 
@@ -79,10 +105,18 @@ class CMSLoginView(LoginView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        page = (
-            Page.objects.filter(slug="login", status=Page.Status.PUBLISHED, is_visible=True)
-            .first()
-        )
+        # Find login page by checking all language-specific slug fields
+        # This supports login, iniciar-sesion, anmelden, connexion across languages
+        from django.db.models import Q
+
+        page = Page.objects.filter(
+            Q(slug_en="login")
+            | Q(slug_es="iniciar-sesion")
+            | Q(slug_de="anmelden")
+            | Q(slug_fr="connexion"),
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        ).first()
         if page:
             context["page"] = page
             main_html, footer_html = page.render_content_segments(request=self.request)
@@ -105,4 +139,36 @@ class CMSLoginView(LoginView):
             context["password_reset_url"] = reverse("password_reset")
         except NoReverseMatch:
             context["password_reset_url"] = None
+
+        # Show dev login button in development/test environments
+        context["show_dev_login"] = settings.ENV in ("development", "test")
+
         return context
+
+
+@require_POST
+def dev_force_login(request):
+    """
+    Force login as admin user in development mode.
+    Only available when DJANGO_ENV=development or test.
+    """
+    # Security check: only allow in development/test environments
+    if settings.ENV not in ("development", "test"):
+        messages.error(request, "Dev login is only available in development mode.")
+        return redirect("login")
+
+    # Get admin user
+    admin_user = User.objects.filter(username="admin", is_superuser=True).first()
+    if not admin_user:
+        # Fallback to any superuser
+        admin_user = User.objects.filter(is_superuser=True).first()
+
+    if admin_user:
+        # Force login
+        login(request, admin_user, backend="django.contrib.auth.backends.ModelBackend")
+        messages.success(request, f"Logged in as {admin_user.username} (dev mode)")
+        # Redirect to CMS dashboard
+        return redirect("/cms/dashboard/")
+    else:
+        messages.error(request, "No admin user found. Run: python manage.py create_dev_admin")
+        return redirect("login")

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -10,30 +10,18 @@ from django.utils import timezone
 from .forms import CategoryForm, ItemForm, ItemVariantFormSet
 from .models import Category, Item
 
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
-from django.shortcuts import get_object_or_404, redirect, render
-
-from .models import Item   
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _roots() -> tuple[Category | None, Category | None]:
     """
     Return the single root 'Drinks' and 'Food' categories, if present.
     We rely on seed data/migrations to have created them.
     """
-    drinks = (
-        Category.objects
-        .filter(parent__isnull=True, kind=Category.KIND_DRINK)
-        .first()
-    )
-    food = (
-        Category.objects
-        .filter(parent__isnull=True, kind=Category.KIND_FOOD)
-        .first()
-    )
+    drinks = Category.objects.filter(parent__isnull=True, kind=Category.KIND_DRINK).first()
+    food = Category.objects.filter(parent__isnull=True, kind=Category.KIND_FOOD).first()
     return drinks, food
 
 
@@ -46,6 +34,7 @@ def _now():
 # CMS: Dashboard & Lists
 # ---------------------------------------------------------------------------
 
+
 @login_required
 def manage_menu(request):
     """
@@ -56,8 +45,7 @@ def manage_menu(request):
     if not drinks_root or not food_root:
         messages.warning(
             request,
-            "Drinks and Food root categories are missing. "
-            "Run migrations/seed to create them."
+            "Drinks and Food root categories are missing. Run migrations/seed to create them.",
         )
     return render(
         request,
@@ -72,8 +60,7 @@ def items_list(request):
     Flat list of all items (useful for quick edits/search).
     """
     items = (
-        Item.objects
-        .select_related("category")
+        Item.objects.select_related("category")
         .prefetch_related("variants")
         .order_by("category__name", "name")
     )
@@ -83,6 +70,7 @@ def items_list(request):
 # ---------------------------------------------------------------------------
 # Categories (create/edit/delete)
 # ---------------------------------------------------------------------------
+
 
 @login_required
 def category_create(request, root=None, parent_slug=None):
@@ -154,6 +142,7 @@ def category_delete(request, slug):
 # Items (create/edit)
 # ---------------------------------------------------------------------------
 
+
 @login_required
 @transaction.atomic
 def item_create(request, parent_slug):
@@ -184,17 +173,11 @@ def item_create(request, parent_slug):
                 formset.instance = saved_item
                 formset.save()
 
-                messages.success(
-                    request,
-                    f"Item “{saved_item.name}” created in {parent.name}."
-                )
+                messages.success(request, f"Item “{saved_item.name}” created in {parent.name}.")
                 return redirect("menu:manage")
 
             except IntegrityError:
-                messages.error(
-                    request,
-                    "Could not save item due to a database integrity error."
-                )
+                messages.error(request, "Could not save item due to a database integrity error.")
                 # fall through to render errors
     else:
         form = ItemForm(instance=item)
@@ -240,10 +223,7 @@ def item_edit(request, slug):
                 return redirect("menu:manage")
 
             except IntegrityError:
-                messages.error(
-                    request,
-                    "Could not update item due to a database integrity error."
-                )
+                messages.error(request, "Could not update item due to a database integrity error.")
                 # fall through to render errors
     else:
         form = ItemForm(instance=item)
@@ -260,6 +240,7 @@ def item_edit(request, slug):
     }
     return render(request, "menu/item_form.html", ctx)
 
+
 @login_required
 @permission_required("menu.delete_item", raise_exception=True)
 def item_delete(request, slug):
@@ -268,6 +249,6 @@ def item_delete(request, slug):
     if request.method == "POST":
         name = item.name
         item.delete()
-        messages.success(request, f'Item “{name}” was deleted.')
-        return redirect("/cms/menu/") 
+        messages.success(request, f"Item “{name}” was deleted.")
+        return redirect("/cms/menu/")
     return render(request, "menu/item_confirm_delete.html", {"item": item})

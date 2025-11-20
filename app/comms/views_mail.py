@@ -1,8 +1,8 @@
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
 
-from app.comms.models import Draft, MessageThread, MailAccount
+from app.comms.models import Draft, MailAccount, MessageThread
 
 
 @login_required
@@ -59,4 +59,3 @@ def reply_email_modal(request, thread_id: int):
 
     messages.success(request, "Reply draft saved.")
     return redirect("comms:thread_detail", thread_id=thread_id)
-

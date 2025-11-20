@@ -1,6 +1,7 @@
 from django.db import models
-from django.utils.text import slugify
 from django.urls import reverse
+from django.utils.text import slugify
+
 
 class Band(models.Model):
     class PerformerType(models.TextChoices):
@@ -23,9 +24,7 @@ class Band(models.Model):
         max_length=10, choices=PerformerType.choices, default=PerformerType.BAND
     )
     name = models.CharField(max_length=200, unique=True)
-    slug = models.SlugField(
-        max_length=220, unique=True, help_text="Auto-filled from name; you can edit."
-    )
+    slug = models.SlugField(max_length=220, help_text="Auto-filled from name; you can edit.")
     description = models.TextField(blank=True)
     photo = models.ImageField(upload_to="bands/", blank=True, null=True)
 
@@ -42,7 +41,11 @@ class Band(models.Model):
         max_length=10, choices=CompensationType.choices, default=CompensationType.UNPAID
     )
     fee_amount = models.DecimalField(
-        max_digits=9, decimal_places=2, blank=True, null=True, help_text="Paid amount for fixed fee."
+        max_digits=9,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Paid amount for fixed fee.",
     )
     entry_price = models.DecimalField(
         max_digits=6, decimal_places=2, blank=True, null=True, help_text="Entry price if door deal."
@@ -51,7 +54,9 @@ class Band(models.Model):
         max_digits=9, decimal_places=2, blank=True, null=True, help_text="Payout amount they got."
     )
 
-    comment_internal = models.TextField(blank=True, help_text="Private notes for staff (not public).")
+    comment_internal = models.TextField(
+        blank=True, help_text="Private notes for staff (not public)."
+    )
 
     is_published = models.BooleanField(default=True)
     published_at = models.DateTimeField(blank=True, null=True)

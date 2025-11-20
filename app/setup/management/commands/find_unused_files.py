@@ -6,9 +6,9 @@ import re
 import shutil
 import sys
 from collections import defaultdict, deque
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
@@ -33,9 +33,14 @@ DIR_EXCLUDES = {
     "node_modules",
 }
 FILE_EXCLUDE_GLOBS = [
-    "*.pyc", "*.pyo", "*.pyd",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
     "*.map",
-    "*.lock", "package-lock.json", "yarn.lock", "pnpm-lock.yaml",
+    "*.lock",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
 ]
 DEFAULT_TRASH_ROOT = ".project_trash"
 
@@ -52,8 +57,10 @@ RE_TEMPLATE_EXTENDS = re.compile(r"""{%\s*extends\s+['"]([^'"]+)['"]\s*%}""")
 RE_TEMPLATE_INCLUDE = re.compile(r"""{%\s*include\s+['"]([^'"]+)['"]\s*%}""")
 RE_CSS_URL = re.compile(r"""url\(\s*['"]?([^'")]+)['"]?\s*\)""")
 
+
 def norm(p: Path) -> Path:
     return p.resolve()
+
 
 def within(root: Path, p: Path) -> bool:
     try:
@@ -62,23 +69,27 @@ def within(root: Path, p: Path) -> bool:
     except Exception:
         return False
 
+
 def is_excluded_dir(name: str) -> bool:
     return name in DIR_EXCLUDES or name in PY_EXCLUDES
 
+
 def glob_any(name: str, patterns: Iterable[str]) -> bool:
     return any(fnmatch.fnmatch(name, pat) for pat in patterns)
+
 
 # -----------------------------
 # Project scan
 # -----------------------------
 
+
 class ProjectScanner:
     def __init__(
         self,
         project_root: Path,
-        apps_root: Optional[Path],
-        include: List[str],
-        exclude: List[str],
+        apps_root: Path | None,
+        include: list[str],
+        exclude: list[str],
     ):
         self.project_root = norm(project_root)
         self.apps_root = norm(apps_root) if apps_root else None
@@ -86,15 +97,15 @@ class ProjectScanner:
         self.exclude = exclude or []
 
         # Discover roots
-        self.template_dirs: List[Path] = []
+        self.template_dirs: list[Path] = []
         for eng in getattr(settings, "TEMPLATES", []):
             for d in eng.get("DIRS", []):
                 self.template_dirs.append(norm(Path(d)))
         # Add app template dirs (app/templates) implicitly by scanning installed apps
-        self.app_template_dirs: List[Path] = []
+        self.app_template_dirs: list[Path] = []
         for app in settings.INSTALLED_APPS:
             try:
-                mod = __import__(app.split(".")[0])
+                __import__(app.split(".")[0])
             except Exception:
                 continue
             # Attempt to locate package path
@@ -106,15 +117,15 @@ class ProjectScanner:
             if tdir.exists():
                 self.app_template_dirs.append(norm(tdir))
 
-        self.static_dirs: List[Path] = []
+        self.static_dirs: list[Path] = []
         # STATICFILES_DIRS (additional)
         for d in getattr(settings, "STATICFILES_DIRS", []):
             self.static_dirs.append(norm(Path(d)))
         # App static dirs
-        self.app_static_dirs: List[Path] = []
+        self.app_static_dirs: list[Path] = []
         for app in settings.INSTALLED_APPS:
             try:
-                mod = __import__(app.split(".")[0])
+                __import__(app.split(".")[0])
             except Exception:
                 continue
             try:
@@ -141,24 +152,24 @@ class ProjectScanner:
             self.code_roots = [norm(p) for p in guess if p.exists()]
 
         # Collected sets
-        self.all_py_modules: Set[Path] = set()
-        self.referenced_modules: Set[Path] = set()
+        self.all_py_modules: set[Path] = set()
+        self.referenced_modules: set[Path] = set()
 
-        self.all_templates: Set[Path] = set()
-        self.referenced_templates: Set[Path] = set()
+        self.all_templates: set[Path] = set()
+        self.referenced_templates: set[Path] = set()
 
-        self.all_static_files: Set[Path] = set()
-        self.referenced_static_files: Set[Path] = set()
+        self.all_static_files: set[Path] = set()
+        self.referenced_static_files: set[Path] = set()
 
         # Map logical template name -> file path(s)
-        self.template_name_to_paths: Dict[str, List[Path]] = defaultdict(list)
+        self.template_name_to_paths: dict[str, list[Path]] = defaultdict(list)
         # Common static prefixes to resolve logical path to files
-        self.static_roots: List[Path] = list({*self.static_dirs, *self.app_static_dirs})
+        self.static_roots: list[Path] = list({*self.static_dirs, *self.app_static_dirs})
 
     # ---------- file collection ----------
 
-    def collect_python_files(self) -> List[Path]:
-        files: List[Path] = []
+    def collect_python_files(self) -> list[Path]:
+        files: list[Path] = []
         for root in (self.apps_root or self.project_root,):
             for dpath, dnames, fnames in os.walk(root):
                 # prune excluded dirs
@@ -177,9 +188,9 @@ class ProjectScanner:
         self.all_py_modules = set(map(norm, files))
         return files
 
-    def collect_template_files(self) -> List[Path]:
+    def collect_template_files(self) -> list[Path]:
         bases = list({*self.template_dirs, *self.app_template_dirs})
-        files: List[Path] = []
+        files: list[Path] = []
         for base in bases:
             if not base.exists():
                 continue
@@ -200,8 +211,8 @@ class ProjectScanner:
         self.all_templates = set(map(norm, files))
         return files
 
-    def collect_static_files(self) -> List[Path]:
-        files: List[Path] = []
+    def collect_static_files(self) -> list[Path]:
+        files: list[Path] = []
         for base in self.static_roots:
             if not base.exists():
                 continue
@@ -224,9 +235,7 @@ class ProjectScanner:
         if self.exclude and glob_any(rel, self.exclude):
             return False
         # Also exclude migrations by default
-        if "migrations" in rel and rel.endswith(".py"):
-            return False
-        return True
+        return not ("migrations" in rel and rel.endswith(".py"))
 
     # ---------- reference discovery ----------
 
@@ -238,7 +247,7 @@ class ProjectScanner:
           - INSTALLED_APPS packages
         """
         # Build map of module name -> file path for your code roots
-        module_index: Dict[str, Path] = {}
+        module_index: dict[str, Path] = {}
         for f in py_files:
             try:
                 pkg_rel = f.relative_to(self.project_root).with_suffix("")
@@ -255,8 +264,8 @@ class ProjectScanner:
         # Build reverse index by filename for resolving relative imports
         path_index = {norm(v): k for k, v in module_index.items()}
 
-        def parse_imports(file_path: Path) -> Set[str]:
-            names: Set[str] = set()
+        def parse_imports(file_path: Path) -> set[str]:
+            names: set[str] = set()
             try:
                 src = file_path.read_text(encoding="utf-8", errors="ignore")
                 tree = ast.parse(src, filename=str(file_path))
@@ -283,7 +292,7 @@ class ProjectScanner:
             return names
 
         # Entry points: installed apps + project packages near manage.py + wsgi/asgi/settings/urls
-        entry_modules: Set[str] = set()
+        entry_modules: set[str] = set()
         # INSTALLED_APPS (top-level package names)
         for app in settings.INSTALLED_APPS:
             entry_modules.add(app)
@@ -295,7 +304,7 @@ class ProjectScanner:
                     entry_modules.add(k)
 
         # BFS walk imports
-        visited: Set[str] = set()
+        visited: set[str] = set()
         q = deque(entry_modules)
 
         while q:
@@ -331,9 +340,11 @@ class ProjectScanner:
             if init.exists():
                 self.referenced_modules.add(norm(init))
 
-    def discover_template_references(self, py_files: Iterable[Path], template_files: Iterable[Path]) -> None:
+    def discover_template_references(
+        self, py_files: Iterable[Path], template_files: Iterable[Path]
+    ) -> None:
         # from Python: render/get_template/TemplateResponse
-        referenced_names: Set[str] = set()
+        referenced_names: set[str] = set()
         for f in py_files:
             try:
                 src = f.read_text(encoding="utf-8", errors="ignore")
@@ -345,7 +356,7 @@ class ProjectScanner:
                         referenced_names.add(g)
 
         # resolve names to files via template dirs
-        def resolve_template_name(name: str) -> List[Path]:
+        def resolve_template_name(name: str) -> list[Path]:
             hits = []
             for base in [*self.template_dirs, *self.app_template_dirs]:
                 p = base / name
@@ -358,7 +369,8 @@ class ProjectScanner:
             uniq = []
             for h in hits:
                 if h not in seen:
-                    uniq.append(h); seen.add(h)
+                    uniq.append(h)
+                    seen.add(h)
             return uniq
 
         # seed queue with directly-referenced templates
@@ -369,7 +381,7 @@ class ProjectScanner:
                 self.referenced_templates.add(norm(p))
 
         # follow extends / include edges
-        def template_edges(p: Path) -> List[str]:
+        def template_edges(p: Path) -> list[str]:
             try:
                 src = p.read_text(encoding="utf-8", errors="ignore")
             except Exception:
@@ -387,8 +399,10 @@ class ProjectScanner:
                         self.referenced_templates.add(hit)
                         q.append(hit)
 
-    def discover_static_references(self, py_files: Iterable[Path], template_files: Iterable[Path]) -> None:
-        referenced_paths: Set[str] = set()
+    def discover_static_references(
+        self, py_files: Iterable[Path], template_files: Iterable[Path]
+    ) -> None:
+        referenced_paths: set[str] = set()
 
         def scan_text_for_static(src: str):
             for m in RE_DJANGO_STATIC_TAG.finditer(src):
@@ -414,7 +428,7 @@ class ProjectScanner:
             scan_text_for_static(src)
 
         for f in list(py_files):
-            if not f.suffix == ".py":
+            if f.suffix != ".py":
                 continue
             try:
                 src = f.read_text(encoding="utf-8", errors="ignore")
@@ -433,17 +447,21 @@ class ProjectScanner:
     # Report & move
     # -----------------------------
 
-    def compute_unused(self) -> Tuple[Set[Path], Set[Path], Set[Path]]:
+    def compute_unused(self) -> tuple[set[Path], set[Path], set[Path]]:
         unused_py = {norm(p) for p in self.all_py_modules if norm(p) not in self.referenced_modules}
         # Filter out __init__.py files that are often empty yet structurally needed
         unused_py = {p for p in unused_py if p.name != "__init__.py"}
 
-        unused_tpl = {norm(p) for p in self.all_templates if norm(p) not in self.referenced_templates}
-        unused_static = {norm(p) for p in self.all_static_files if norm(p) not in self.referenced_static_files}
+        unused_tpl = {
+            norm(p) for p in self.all_templates if norm(p) not in self.referenced_templates
+        }
+        unused_static = {
+            norm(p) for p in self.all_static_files if norm(p) not in self.referenced_static_files
+        }
         return unused_py, unused_tpl, unused_static
 
-    def move_to_trash(self, files: Iterable[Path], trash_root: Path) -> List[Tuple[Path, Path]]:
-        moved: List[Tuple[Path, Path]] = []
+    def move_to_trash(self, files: Iterable[Path], trash_root: Path) -> list[tuple[Path, Path]]:
+        moved: list[tuple[Path, Path]] = []
         for f in files:
             # compute relative to project_root when possible
             try:
@@ -468,11 +486,30 @@ class Command(BaseCommand):
     help = "Find (and optionally move) project files that appear unused (best-effort)."
 
     def add_arguments(self, parser: CommandParser) -> None:
-        parser.add_argument("--apps-root", default="", help="Limit code scan to this directory (e.g. app/). Defaults to project root.")
-        parser.add_argument("--include", action="append", default=[], help="Glob(s) to include (relative paths). Can repeat.")
-        parser.add_argument("--exclude", action="append", default=[], help="Glob(s) to exclude. Can repeat.")
-        parser.add_argument("--move", action="store_true", help="If set, move unused files into a recycle bin folder.")
-        parser.add_argument("--trash-dir", default=DEFAULT_TRASH_ROOT, help=f"Recycle bin root (default: {DEFAULT_TRASH_ROOT})")
+        parser.add_argument(
+            "--apps-root",
+            default="",
+            help="Limit code scan to this directory (e.g. app/). Defaults to project root.",
+        )
+        parser.add_argument(
+            "--include",
+            action="append",
+            default=[],
+            help="Glob(s) to include (relative paths). Can repeat.",
+        )
+        parser.add_argument(
+            "--exclude", action="append", default=[], help="Glob(s) to exclude. Can repeat."
+        )
+        parser.add_argument(
+            "--move",
+            action="store_true",
+            help="If set, move unused files into a recycle bin folder.",
+        )
+        parser.add_argument(
+            "--trash-dir",
+            default=DEFAULT_TRASH_ROOT,
+            help=f"Recycle bin root (default: {DEFAULT_TRASH_ROOT})",
+        )
 
     def handle(self, *args, **opts):
         project_root = Path.cwd()
@@ -485,7 +522,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.HTTP_INFO("Collecting files..."))
         py_files = scanner.collect_python_files()
         tpl_files = scanner.collect_template_files()
-        st_files = scanner.collect_static_files()
+        scanner.collect_static_files()
 
         self.stdout.write(self.style.HTTP_INFO("Discovering references (Python graph)..."))
         scanner.discover_python_import_graph(py_files)
@@ -497,15 +534,21 @@ class Command(BaseCommand):
         unused_py, unused_tpl, unused_static = scanner.compute_unused()
 
         self.stdout.write("")
-        self.stdout.write(self.style.MIGRATE_HEADING("Possibly unused Python modules: ") + str(len(unused_py)))
+        self.stdout.write(
+            self.style.MIGRATE_HEADING("Possibly unused Python modules: ") + str(len(unused_py))
+        )
         for p in sorted(unused_py):
             self.stdout.write(f"  - {p.relative_to(project_root)}")
         self.stdout.write("")
-        self.stdout.write(self.style.MIGRATE_HEADING("Possibly unused templates: ") + str(len(unused_tpl)))
+        self.stdout.write(
+            self.style.MIGRATE_HEADING("Possibly unused templates: ") + str(len(unused_tpl))
+        )
         for p in sorted(unused_tpl):
             self.stdout.write(f"  - {p.relative_to(project_root)}")
         self.stdout.write("")
-        self.stdout.write(self.style.MIGRATE_HEADING("Possibly unused static files: ") + str(len(unused_static)))
+        self.stdout.write(
+            self.style.MIGRATE_HEADING("Possibly unused static files: ") + str(len(unused_static))
+        )
         for p in sorted(unused_static):
             self.stdout.write(f"  - {p.relative_to(project_root)}")
 
@@ -514,13 +557,25 @@ class Command(BaseCommand):
             trash_root = (project_root / opts["trash_dir"] / ts).resolve()
             self.stdout.write("")
             self.stdout.write(self.style.WARNING(f"Moving files to: {trash_root}"))
-            moved_all: List[Tuple[Path, Path]] = []
+            moved_all: list[tuple[Path, Path]] = []
             moved_all += scanner.move_to_trash(unused_py, trash_root)
             moved_all += scanner.move_to_trash(unused_tpl, trash_root)
             moved_all += scanner.move_to_trash(unused_static, trash_root)
             self.stdout.write(self.style.SUCCESS(f"Moved {len(moved_all)} files into recycle bin"))
-            self.stdout.write(self.style.HTTP_INFO("You can restore files by moving them back from the trash directory."))
+            self.stdout.write(
+                self.style.HTTP_INFO(
+                    "You can restore files by moving them back from the trash directory."
+                )
+            )
         else:
             self.stdout.write("")
-            self.stdout.write(self.style.WARNING("Dry run only. Use --move to actually relocate files into a recycle bin."))
-            self.stdout.write(self.style.HTTP_INFO("Tip: run your test suite and key pages after a move to catch anything missed."))
+            self.stdout.write(
+                self.style.WARNING(
+                    "Dry run only. Use --move to actually relocate files into a recycle bin."
+                )
+            )
+            self.stdout.write(
+                self.style.HTTP_INFO(
+                    "Tip: run your test suite and key pages after a move to catch anything missed."
+                )
+            )

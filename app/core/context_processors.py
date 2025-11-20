@@ -1,10 +1,9 @@
 from .site_config import get_config
+
+
 def sitecfg(request):
     return {"sitecfg": get_config()}
 
-from django.db.models import Exists, OuterRef, Q
-from app.comms.models import MessageThread, Message, UserThreadState
-from app.comms.services.audience import visible_threads_qs
 
 def inbox_status(request):
     """
@@ -19,10 +18,13 @@ def inbox_status(request):
     if getattr(u, "is_authenticated", False):
         try:
             from django.db.models import Exists, OuterRef, Q
-            from app.comms.models import MessageThread, Message, UserThreadState
+
+            from app.comms.models import Message, MessageThread, UserThreadState
+
             # visibility
             try:
                 from app.comms.services.audience import visible_threads_qs
+
                 threads = visible_threads_qs(u, MessageThread.objects.all()).distinct()
             except Exception:
                 # fallback if helper not available
@@ -46,16 +48,33 @@ def inbox_status(request):
             # unread if any message from others lacks my receipt
             unread_from_others = Exists(
                 Message.objects.filter(thread=OuterRef("pk"))
-                               .exclude(sender_user=u)
-                               .exclude(read_receipts__user=u)
+                .exclude(sender_user=u)
+                .exclude(read_receipts__user=u)
             )
 
-            has_unread = threads.annotate(_unread=unread_from_others)\
-                                .filter(_unread=True).exists()
+            has_unread = threads.annotate(_unread=unread_from_others).filter(_unread=True).exists()
         except Exception:
             has_unread = False
 
     return {"has_unread_messages": has_unread}
 
 
+def site_languages(request):
+    """
+    Add enabled languages to template context.
+    Uses SiteSettings to determine which languages are enabled.
+    """
+    from django.conf import settings as django_settings
 
+    from app.setup.models import SiteSettings
+
+    try:
+        site_settings = SiteSettings.get_solo()
+        enabled_languages = site_settings.get_enabled_languages()
+    except Exception:
+        # Fallback to all languages if SiteSettings not available
+        enabled_languages = list(django_settings.LANGUAGES)
+
+    return {
+        "enabled_languages": enabled_languages,
+    }

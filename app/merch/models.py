@@ -1,12 +1,12 @@
 # app/merch/models.py
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
-from django.utils.text import slugify
-from django.core.validators import MinValueValidator
 from django.utils import timezone
-
+from django.utils.text import slugify
 
 # ---- helpers ---------------------------------------------------------------
+
 
 def unique_slug(model, base, field_name="slug", instance_id=None):
     """
@@ -27,9 +27,10 @@ def unique_slug(model, base, field_name="slug", instance_id=None):
 
 # ---- core models -----------------------------------------------------------
 
+
 class Category(models.Model):
     name = models.CharField(max_length=160)
-    slug = models.SlugField(max_length=180, unique=True, blank=True, db_index=True)
+    slug = models.SlugField(max_length=180, blank=True, db_index=True)
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -54,7 +55,7 @@ class Category(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=220, unique=True, blank=True, db_index=True)
+    slug = models.SlugField(max_length=220, blank=True, db_index=True)
     category = models.ForeignKey(Category, related_name="products", on_delete=models.PROTECT)
     description = models.TextField(blank=True)
 

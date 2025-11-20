@@ -8,8 +8,11 @@ from .models import (
     ASSET_KIND_CHOICES,
     ASSET_VISIBILITY_CHOICES,
     VISIBILITY_MODE_CHOICES,
-    Collection, Tag, Asset
+    Asset,
+    Collection,
+    Tag,
 )
+
 
 # -------------------------------------------------------------------
 # Custom widget FIRST so other classes can reference it
@@ -19,6 +22,7 @@ class TagCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
     Renders tag checkboxes as 'pill' chips using templates under app/templates.
     We bypass the default forms renderer to ensure project-level templates are used.
     """
+
     template_name = "assets/widgets/checkbox_pills.html"
     option_template_name = "assets/widgets/checkbox_pill_option.html"
 
@@ -38,6 +42,7 @@ VISIBILITY_FILTER_CHOICES = [
     ("groups", "Groups"),
 ]
 
+
 class AssetFilterForm(forms.Form):
     q = forms.CharField(required=False, label="Search")
     kind = forms.ChoiceField(required=False, choices=[("", "All types")] + ASSET_KIND_CHOICES)
@@ -48,11 +53,15 @@ class AssetFilterForm(forms.Form):
     tags = forms.ModelMultipleChoiceField(
         required=False,
         queryset=Tag.objects.none(),
-        widget=TagCheckboxSelectMultiple(attrs={"class": "tag-checks small"})
+        widget=TagCheckboxSelectMultiple(attrs={"class": "tag-checks small"}),
     )
 
-    source = forms.ChoiceField(required=False, choices=[("", "Any"), ("local", "Local"), ("external", "External")])
-    referenced = forms.ChoiceField(required=False, choices=[("", "Any"), ("yes", "Used"), ("no", "Unused")])
+    source = forms.ChoiceField(
+        required=False, choices=[("", "Any"), ("local", "Local"), ("external", "External")]
+    )
+    referenced = forms.ChoiceField(
+        required=False, choices=[("", "Any"), ("yes", "Used"), ("no", "Unused")]
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -123,7 +132,15 @@ class CollectionForm(forms.ModelForm):
 
     class Meta:
         model = Collection
-        fields = ["title", "slug", "parent", "visibility_mode", "allowed_groups", "description", "tags"]
+        fields = [
+            "title",
+            "slug",
+            "parent",
+            "visibility_mode",
+            "allowed_groups",
+            "description",
+            "tags",
+        ]
         widgets = {
             "tags": TagCheckboxSelectMultiple(attrs={"class": "tag-checks"}),
         }
@@ -139,7 +156,9 @@ class CollectionForm(forms.ModelForm):
         mode = cleaned.get("visibility_mode")
         groups = cleaned.get("allowed_groups")
         if mode == "groups" and (not groups or groups.count() == 0):
-            self.add_error("allowed_groups", "Select at least one group when visibility is set to Groups.")
+            self.add_error(
+                "allowed_groups", "Select at least one group when visibility is set to Groups."
+            )
         return cleaned
 
     def clean_slug(self):
@@ -157,6 +176,4 @@ class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ["name"]
-        widgets = {
-            "name": forms.TextInput(attrs={"placeholder": "e.g. promo, press, flyer"})
-        }
+        widgets = {"name": forms.TextInput(attrs={"placeholder": "e.g. promo, press, flyer"})}

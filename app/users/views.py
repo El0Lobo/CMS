@@ -1,32 +1,29 @@
 # app/users/views.py
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect, render
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
 from django.views import View
-from django.conf import settings
+
+from .forms import (
+    BadgeDefinitionForm,
+    GroupRankForm,  # for the hierarchy page
+    ProfileForm,
+    UserCreateForm,
+)
+from .models import (
+    BadgeDefinition,
+    FieldPolicy,
+    GroupMeta,  # holds Group.rank (lower = higher)
+)
 
 User = get_user_model()
 IMPERSONATE_SESSION_KEY = getattr(settings, "IMPERSONATE_SESSION_KEY", "impersonate_user_id")
 IMPERSONATOR_SESSION_KEY = getattr(settings, "IMPERSONATOR_SESSION_KEY", "impersonator_user_id")
-
-from .forms import (
-    UserCreateForm,
-    ProfileForm,
-    BadgeDefinitionForm,
-    GroupRankForm,   # for the hierarchy page
-)
-from .models import (
-    UserProfile,
-    FieldPolicy,
-    BadgeDefinition,
-    GroupMeta,       # holds Group.rank (lower = higher)
-)
-
-User = get_user_model()
 
 
 def staff_or_super(u):
@@ -89,10 +86,14 @@ def index(request):
 
     grouped = [(g, group_to_users.get(g, [])) for g in groups_ordered]
 
-    return render(request, "users/index.html", {
-        "grouped": grouped,
-        "no_group_users": no_group_users,
-    })
+    return render(
+        request,
+        "users/index.html",
+        {
+            "grouped": grouped,
+            "no_group_users": no_group_users,
+        },
+    )
 
 
 # ---------------------------
@@ -132,12 +133,16 @@ def profile_detail(request, user_id):
         return False
 
     policies = {p.field_name: p.visibility for p in FieldPolicy.objects.all()}
-    return render(request, "users/profile.html", {
-        "obj": obj,
-        "profile": profile,
-        "can_show": can_show,
-        "policies": policies,
-    })
+    return render(
+        request,
+        "users/profile.html",
+        {
+            "obj": obj,
+            "profile": profile,
+            "can_show": can_show,
+            "policies": policies,
+        },
+    )
 
 
 # ---------------------------
@@ -162,10 +167,14 @@ def profile_edit(request, user_id):
     else:
         form = ProfileForm(instance=profile)
 
-    return render(request, "users/form.html", {
-        "form": form,
-        "title": f"Edit Profile: {target_user.username}",
-    })
+    return render(
+        request,
+        "users/form.html",
+        {
+            "form": form,
+            "title": f"Edit Profile: {target_user.username}",
+        },
+    )
 
 
 # ---------- Badge CRUD ----------
@@ -202,7 +211,9 @@ def badges_edit(request, pk):
             return redirect("users:badges_list")
     else:
         form = BadgeDefinitionForm(instance=badge)
-    return render(request, "users/badges_form.html", {"form": form, "title": f"Edit Badge: {badge.name}"})
+    return render(
+        request, "users/badges_form.html", {"form": form, "title": f"Edit Badge: {badge.name}"}
+    )
 
 
 @login_required
@@ -257,17 +268,16 @@ def group_hierarchy(request):
     forms_list = []
     for g in groups:
         meta, _ = GroupMeta.objects.get_or_create(group=g)
-        forms_list.append((
-            g,
-            GroupRankForm(
-                prefix=f"g{g.id}",
-                initial={"group_id": g.id, "name": g.name, "rank": meta.rank}
+        forms_list.append(
+            (
+                g,
+                GroupRankForm(
+                    prefix=f"g{g.id}", initial={"group_id": g.id, "name": g.name, "rank": meta.rank}
+                ),
             )
-        ))
+        )
 
     return render(request, "users/group_hierarchy.html", {"forms_list": forms_list})
-
-
 
 
 def _can_impersonate(user):
@@ -276,13 +286,11 @@ def _can_impersonate(user):
     if user.is_superuser:
         return True
     # 2) Django perm:
-    if user.has_perm("users.can_impersonate"):
-        return True
     # 3) Or your cog system (pseudo):
     # from app.users.helpers import user_has_cog
     # if user_has_cog(user, "cms.users.impersonate"):
     #     return True
-    return False
+    return user.has_perm("users.can_impersonate")
 
 
 class ImpersonateStartView(LoginRequiredMixin, UserPassesTestMixin, View):

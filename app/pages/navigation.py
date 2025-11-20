@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List
-
+from typing import TYPE_CHECKING
 
 from .models import Page
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 @dataclass
@@ -16,7 +18,7 @@ class NavEntry:
     pretty_url: str
 
 
-def get_navigation_entries(*, include_hidden: bool = False) -> List[NavEntry]:
+def get_navigation_entries(*, include_hidden: bool = False) -> list[NavEntry]:
     """Return navigation entries sourced from published Page objects."""
 
     pages_qs = Page.objects.filter(status=Page.Status.PUBLISHED)
@@ -24,7 +26,7 @@ def get_navigation_entries(*, include_hidden: bool = False) -> List[NavEntry]:
         pages_qs = pages_qs.filter(is_visible=True)
     pages_qs = pages_qs.order_by("navigation_order", "title")
 
-    entries: List[NavEntry] = []
+    entries: list[NavEntry] = []
     for page in pages_qs:
         slug = page.slug
         url = page.get_absolute_url()
@@ -43,8 +45,8 @@ def get_navigation_entries(*, include_hidden: bool = False) -> List[NavEntry]:
     return entries
 
 
-def serialize_nav_entries(entries: Iterable[NavEntry]) -> List[dict]:
-    serialized: List[dict] = []
+def serialize_nav_entries(entries: Iterable[NavEntry]) -> list[dict]:
+    serialized: list[dict] = []
     for entry in entries:
         serialized.append(
             {
@@ -58,9 +60,9 @@ def serialize_nav_entries(entries: Iterable[NavEntry]) -> List[dict]:
     return serialized
 
 
-def build_nav_payload(slugs: Iterable[str]) -> List[dict]:
+def build_nav_payload(slugs: Iterable[str]) -> list[dict]:
     entries = {entry.slug: entry for entry in get_navigation_entries()}
-    payload: List[dict] = []
+    payload: list[dict] = []
     seen: set[str] = set()
 
     for slug in slugs:

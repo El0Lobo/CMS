@@ -14,8 +14,9 @@ DEFAULTS = {
         "merch": True,
         "pos": False,
         "inventory": True,
-    }
+    },
 }
+
 
 def get_config():
     try:
@@ -33,6 +34,7 @@ def get_config():
         return merged
     except Exception:
         return DEFAULTS
+
 
 def set_config(data: dict):
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)

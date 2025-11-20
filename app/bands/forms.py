@@ -1,20 +1,39 @@
 # app/bands/forms.py
 from django import forms
 from django.utils.text import slugify
+
 from .models import Band
+
 
 class BandForm(forms.ModelForm):
     class Meta:
         model = Band
         fields = [
-            "performer_type", "name", "slug", "description", "photo",
+            "performer_type",
+            "name",
+            "slug",
+            "description",
+            "photo",
             "last_performed_on",
-            "contact_type", "contact_value", "contact_notes",
-            "compensation_type", "fee_amount", "entry_price", "payout_amount",
+            "contact_type",
+            "contact_value",
+            "contact_notes",
+            "compensation_type",
+            "fee_amount",
+            "entry_price",
+            "payout_amount",
             "comment_internal",
-            "is_published", "published_at",
-            "seo_title", "seo_description", "og_image_override",
-            "website", "instagram", "facebook", "youtube", "bandcamp", "soundcloud",
+            "is_published",
+            "published_at",
+            "seo_title",
+            "seo_description",
+            "og_image_override",
+            "website",
+            "instagram",
+            "facebook",
+            "youtube",
+            "bandcamp",
+            "soundcloud",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
@@ -59,15 +78,21 @@ class BandForm(forms.ModelForm):
         if ctype == "fixed":
             if not cleaned.get("fee_amount"):
                 self.add_error("fee_amount", "Required for fixed fee.")
-            cleaned["entry_price"] = None if "entry_price" not in self.errors else cleaned.get("entry_price")
-            cleaned["payout_amount"] = None if "payout_amount" not in self.errors else cleaned.get("payout_amount")
+            cleaned["entry_price"] = (
+                None if "entry_price" not in self.errors else cleaned.get("entry_price")
+            )
+            cleaned["payout_amount"] = (
+                None if "payout_amount" not in self.errors else cleaned.get("payout_amount")
+            )
 
         elif ctype == "door":
             if not cleaned.get("entry_price"):
                 self.add_error("entry_price", "Entry price required for door deal.")
             if not cleaned.get("payout_amount"):
                 self.add_error("payout_amount", "Payout amount required for door deal.")
-            cleaned["fee_amount"] = None if "fee_amount" not in self.errors else cleaned.get("fee_amount")
+            cleaned["fee_amount"] = (
+                None if "fee_amount" not in self.errors else cleaned.get("fee_amount")
+            )
 
         else:  # unpaid
             for k in ("fee_amount", "entry_price", "payout_amount"):

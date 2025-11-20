@@ -1,7 +1,8 @@
 {% extends "cms/base_cms.html" %}
-{% block title %}Dashboard{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Dashboard" %}{% endblock %}
 {% block content %}
-  <h1>Dashboard</h1>
+  <h1>{% trans "Dashboard" %}</h1>
   <div class="cards">
     {% for c in cards %}
     <article class="card"><h3>{{ c.title }}</h3><p>{{ c.body }}</p></article>

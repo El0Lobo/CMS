@@ -1,9 +1,10 @@
 # app/users/forms.py
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.contrib.auth.forms import SetPasswordForm
-from .models import UserProfile, BadgeDefinition, GroupMeta  # GroupMeta for hierarchy
+from django.contrib.auth.models import Group
+
+from .models import BadgeDefinition, UserProfile  # GroupMeta for hierarchy
 
 User = get_user_model()
 
@@ -50,20 +51,15 @@ class UserCreateForm(forms.Form):
     username = forms.CharField(max_length=150)
     email = forms.EmailField(required=False)
     temp_password = forms.CharField(
-        widget=forms.PasswordInput,
-        help_text="You can set a temporary password."
+        widget=forms.PasswordInput, help_text="You can set a temporary password."
     )
 
     # Groups (multi) + optional new group
     groups = forms.ModelMultipleChoiceField(
-        queryset=groups_qs(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-        label="Groups"
+        queryset=groups_qs(), required=False, widget=forms.CheckboxSelectMultiple, label="Groups"
     )
     new_group_name = forms.CharField(
-        required=False,
-        help_text="Create and add a new group (optional)."
+        required=False, help_text="Create and add a new group (optional)."
     )
 
     # Role/identity/contact
@@ -78,9 +74,7 @@ class UserCreateForm(forms.Form):
 
     # Badges
     badges = forms.ModelMultipleChoiceField(
-        queryset=BadgeDefinition.objects.all(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple
+        queryset=BadgeDefinition.objects.all(), required=False, widget=forms.CheckboxSelectMultiple
     )
 
     def save(self):
@@ -108,13 +102,24 @@ class UserCreateForm(forms.Form):
 
         # profile + fields
         profile, _ = UserProfile.objects.get_or_create(user=user)
-        for f in ["legal_name", "chosen_name", "pronouns", "birth_date",
-                  "phone", "address", "duties", "role_title", "email"]:
+        for f in [
+            "legal_name",
+            "chosen_name",
+            "pronouns",
+            "birth_date",
+            "phone",
+            "address",
+            "duties",
+            "role_title",
+            "email",
+        ]:
             setattr(profile, f, data.get(f))
 
         # compute primary_group = highest-ranked of chosen
         if chosen_groups:
-            groups_full = Group.objects.filter(id__in=[g.id for g in chosen_groups]).prefetch_related("meta")
+            groups_full = Group.objects.filter(
+                id__in=[g.id for g in chosen_groups]
+            ).prefetch_related("meta")
             profile.primary_group = top_group_for(groups_full)
         else:
             profile.primary_group = None
@@ -139,22 +144,25 @@ class ProfileForm(forms.ModelForm):
 
     # Groups (multi) + optional new group
     groups = forms.ModelMultipleChoiceField(
-        queryset=groups_qs(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-        label="Groups"
+        queryset=groups_qs(), required=False, widget=forms.CheckboxSelectMultiple, label="Groups"
     )
     new_group_name = forms.CharField(
-        required=False,
-        label="New Group",
-        help_text="Create and add a new group (optional)."
+        required=False, label="New Group", help_text="Create and add a new group (optional)."
     )
 
     class Meta:
         model = UserProfile
         fields = [
-            "legal_name", "chosen_name", "pronouns", "birth_date", "email", "phone", "address",
-            "role_title", "duties", "badges",
+            "legal_name",
+            "chosen_name",
+            "pronouns",
+            "birth_date",
+            "email",
+            "phone",
+            "address",
+            "role_title",
+            "duties",
+            "badges",
         ]
         widgets = {
             "duties": forms.Textarea(attrs={"rows": 4}),
@@ -169,7 +177,7 @@ class ProfileForm(forms.ModelForm):
             self.fields["badges"].queryset = BadgeDefinition.objects.order_by("name")
 
         # preselect groups from the user's memberships
-        if (not self.is_bound and self.instance and getattr(self.instance, "user_id", None)):
+        if not self.is_bound and self.instance and getattr(self.instance, "user_id", None):
             self.fields["groups"].initial = self.instance.user.groups.all()
 
     def save(self, commit=True):
@@ -188,7 +196,9 @@ class ProfileForm(forms.ModelForm):
 
             if chosen_groups:
                 user.groups.set(chosen_groups)
-                groups_full = Group.objects.filter(id__in=[g.id for g in chosen_groups]).prefetch_related("meta")
+                groups_full = Group.objects.filter(
+                    id__in=[g.id for g in chosen_groups]
+                ).prefetch_related("meta")
                 profile.primary_group = top_group_for(groups_full)
             else:
                 user.groups.clear()
@@ -210,9 +220,7 @@ class BadgeDefinitionForm(forms.ModelForm):
     class Meta:
         model = BadgeDefinition
         fields = ["name", "emoji", "description"]
-        widgets = {
-            "description": forms.Textarea(attrs={"rows": 3})
-        }
+        widgets = {"description": forms.Textarea(attrs={"rows": 3})}
 
 
 # =====================================

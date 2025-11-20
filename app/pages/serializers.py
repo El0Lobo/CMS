@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
-from django.http import HttpRequest
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
-from .models import Page
+    from .models import Page
 
 
-def media_url(request: Optional[HttpRequest], field) -> Optional[str]:
+def media_url(request: HttpRequest | None, field) -> str | None:
     if not field:
         return None
     url = getattr(field, "url", None)
@@ -18,7 +19,7 @@ def media_url(request: Optional[HttpRequest], field) -> Optional[str]:
     return url
 
 
-def serialize_page(page: Page, request: Optional[HttpRequest] = None) -> Dict[str, Any]:
+def serialize_page(page: Page, request: HttpRequest | None = None) -> dict[str, Any]:
     return {
         "id": page.pk,
         "title": page.title,

@@ -1,5 +1,6 @@
+{% load i18n %}
 <nav>
-  <div class="section">Main</div>
+  <div class="section">{% trans "Main" %}</div>
   <a href="/cms/dashboard/">
     <span class="icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -11,10 +12,10 @@
             c0,0.2-0.1,0.3-0.3,0.4c-0.2,0.1-0.4,0-0.5-0.1l-3.1-3.1L2,14.2l2.4,0c0.2,0,0.4,0.2,0.4,0.4C4.8,14.7,4.8,22.8,4.8,22.8z" />
       </svg>
     </span>
-    <span class="label">Dashboard</span>
+    <span class="label">{% trans "Dashboard" %}</span>
   </a>
 
-  <div class="section">Content</div>
+  <div class="section">{% trans "Content" %}</div>
   <a href="/cms/pages/">
     <span class="icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -22,7 +23,7 @@
         <path d="M16 4v4h4" />
       </svg>
     </span>
-    <span class="label">Pages</span>
+    <span class="label">{% trans "Pages" %}</span>
   </a>
   <a href="/cms/blog/">
     <span class="icon">
@@ -30,7 +31,7 @@
         <path d="M4 6h16M4 12h10M4 18h16" />
       </svg>
     </span>
-    <span class="label">Blog</span>
+    <span class="label">{% trans "Blog" %}</span>
   </a>
   <a href="/cms/events/">
     <span class="icon">
@@ -38,7 +39,7 @@
         <path d="M8 2v4M16 2v4M3 10h18M4 6h16v14H4z" />
       </svg>
     </span>
-    <span class="label">Events</span>
+    <span class="label">{% trans "Events" %}</span>
   </a>
 {% load setup_tags %}
 
@@ -53,13 +54,13 @@
           <circle cx="18" cy="16" r="3" />
         </svg>
       </span>
-      <span class="label">Bands</span>
+      <span class="label">{% trans "Bands" %}</span>
     </a>
     {% visibility_cog_inline "cms.nav.bands" "Bands nav link" %}
   {% endif %}
 </li>
 
-  <div class="section">Ops</div>
+  <div class="section">{% trans "Ops" %}</div>
   <a href="/cms/users/">    
     <span class="icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -71,7 +72,7 @@
         <path class="st0" d="M6.2,14.5c-2.8,0-5.1,2.3-5.1,5.1h4.4"/>
       </svg>            
     </span>                                
-    <span class="label">Users</span>
+    <span class="label">{% trans "Users" %}</span>
   </a>
   <a href="/cms/shifts/">
     <span class="icon">
@@ -80,7 +81,7 @@
           C17.7,2,22.3,6.6,22.3,12.4z"/>
       </svg>
     </span>
-    <span class="label">Shifts</span>
+    <span class="label">{% trans "Shifts" %}</span>
   </a>
   <li class="nav-item nav-inline">
     {% if request.user|allow_for:"cms.nav.door" %}
@@ -93,7 +94,7 @@
               v0c0-0.1-0.1-0.3-0.2-0.4l0,0c-0.1-0.1-0.2-0.1-0.4-0.1C15.3,12.2,15.2,12.3,15.1,12.4L15.1,12.4L15.1,12.4z"/>
           </svg>
         </span>
-        <span class="label">Door</span>
+        <span class="label">{% trans "Door" %}</span>
       </a>
       {% visibility_cog_inline "cms.nav.door" "Door nav link" %}
     {% endif %}
@@ -117,7 +118,7 @@
         </g>
       </svg>
     </span>
-    <span class="label">Register (POS)</span>
+    <span class="label">{% trans "Register (POS)" %}</span>
   </a>
 
   {% load setup_tags %}
@@ -135,7 +136,7 @@
               c0-0.6,0.4-1,1-1h6c0.6,0,1,0.4,1,1s-0.4,1-1,1h-6C7.6,13.8,7.2,13.3,7.2,12.8z"/>
           </svg>
         </span>
-        <span class="label">Digital Assets</span>
+        <span class="label">{% trans "Digital Assets" %}</span>
       </a>
       {% visibility_cog_inline "cms.nav.assets" "Digital Assets nav link" %}
     {% endif %}
@@ -173,7 +174,7 @@
           </svg>
         {% endif %}
       </span>
-      <span class="label">Inbox</span>
+      <span class="label">{% trans "Inbox" %}</span>
     </a>
     {% visibility_cog_inline "cms.nav.comms" "Inbox nav link" %}
   {% endif %}
@@ -182,7 +183,7 @@
 
 
   {% load setup_tags %}
-  <div class="section">Commerce</div>
+  <div class="section">{% trans "Commerce" %}</div>
   
   <li class="nav-item nav-inline">
     {% if request.user|allow_for:"cms.nav.menu" %}
@@ -192,7 +193,7 @@
             <path id="book" class="cls-1" d="M10.30413,21.86136a8.96286,8.96286,0,0,0-.96329-.51661,7.59953,7.59953,0,0,0-3.12747-.74335,7.88472,7.88472,0,0,0-3.59163.97346,1.79851,1.79851,0,0,1-1.71085-.02225A1.73311,1.73311,0,0,1,0,20.03655V5.91526A2.138,2.138,0,0,1,1.01392,4.07494,10.384,10.384,0,0,1,6.21337,2.52615,10.13146,10.13146,0,0,1,11.297,4.00563a10.13138,10.13138,0,0,1,5.08366-1.47948,10.384,10.384,0,0,1,5.19946,1.54879,2.13815,2.13815,0,0,1,1.01391,1.84032V20.03655a1.73318,1.73318,0,0,1-.91088,1.51606,1.79845,1.79845,0,0,1-1.71082.02225,7.8852,7.8852,0,0,0-3.59167-.97346,7.5998,7.5998,0,0,0-3.12747.74335,8.96286,8.96286,0,0,0-.96329.51661,1.86456,1.86456,0,0,1-.99234.43459A1.86416,1.86416,0,0,1,10.30413,21.86136ZM2.25941,19.23853V5.96248a8.09647,8.09647,0,0,1,3.954-1.17692,7.87333,7.87333,0,0,1,3.954,1.17692V19.23853a9.79309,9.79309,0,0,0-3.954-.89654A9.7914,9.7914,0,0,0,2.25941,19.23853Zm10.16732,0a9.79309,9.79309,0,0,1,3.954-.89654,9.7914,9.7914,0,0,1,3.954.89654V5.96248a8.09647,8.09647,0,0,0-3.954-1.17692,7.87342,7.87342,0,0,0-3.954,1.17692Z"/>
           </svg>
         </span>
-        <span class="label">Menu</span>
+        <span class="label">{% trans "Menu" %}</span>
       </a>
       {% visibility_cog_inline "cms.nav.menu" "Menu nav link" %}
     {% endif %}
@@ -210,7 +211,7 @@
               c0.1-1.1,0.5-1.8,1.8-1.8c1,0,1.5,0.6,1.5,1.6c0,0.9-0.7,1.2-0.8,2L11.3,9.8z"/>
           </svg>
         </span>
-        <span class="label">Merch</span>
+        <span class="label">{% trans "Merch" %}</span>
       </a>
       {% visibility_cog_inline "cms.nav.merch" "Merch nav link" %}
     {% endif %}
@@ -225,7 +226,7 @@
 				H12v3.6H17.4z M12,19.9H6.6v-5.4H12V19.9z M13.8,19.9v-3.6h3.6v3.6H13.8z"/>
       </svg>
     </span>
-    <span class="label">Inventory</span>
+    <span class="label">{% trans "Inventory" %}</span>
   </a>
   <a href="/cms/accounting/">
     <span class="icon">
@@ -234,17 +235,17 @@
         <path d="M8 8h8M8 12h8M8 16h8" />
       </svg>
     </span>
-    <span class="label">Accounting</span>
+    <span class="label">{% trans "Accounting" %}</span>
   </a>
 
-  <div class="section">Automation</div>
+  <div class="section">{% trans "Automation" %}</div>
   <a href="/cms/social/">
     <span class="icon">
       <svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" stroke="currentColor" stroke-width="0">        <path id="path4292"
           d="M3.19729,0a3.19736,3.19736,0,0,0,0,6.39471,3.16661,3.16661,0,0,0,.86386-.1206l.77736,1.30516A6.988,6.988,0,1,0,14.06058,18.004l1.183.89276a3.16391,3.16391,0,0,0-.17357,1.033,3.20854,3.20854,0,1,0,.94438-2.26218l-1.07413-.81067a6.97222,6.97222,0,0,0,.28931-6.77887l2.658-1.94746a3.19217,3.19217,0,1,0-.90891-1.12585L14.44847,8.85845A6.97949,6.97949,0,0,0,6.08372,6.84527L5.32736,5.57534A3.19288,3.19288,0,0,0,3.1973,0Zm0,1.44541a1.75195,1.75195,0,1,1-1.75188,1.752A1.74111,1.74111,0,0,1,3.19729,1.44541ZM19.85747,3.8667a1.75194,1.75194,0,1,1-1.752,1.752A1.74111,1.74111,0,0,1,19.85747,3.8667ZM8.97962,7.66136A5.54654,5.54654,0,1,1,3.43308,13.2079,5.53552,5.53552,0,0,1,8.97962,7.66136Zm-.048,1.45975a2.23944,2.23944,0,0,0-1.18456,4.11378,3.7505,3.7505,0,0,0-2.10093,3.47328c-.00341.27784-.02957.56393.237.55569,1.98453-.04037,4.404.0087,6.38872-.0044a3.78378,3.78378,0,0,0-2.03-4.01971A2.2533,2.2533,0,0,0,8.93163,9.12112Zm.03782,1.36761a.78654.78654,0,0,1,.093.00429.86111.86111,0,1,1-.093-.00429Zm.058,3.8615a2.03784,2.03784,0,0,1,1.80676,1.53395c-1.23029-.00129-2.4606.00339-3.69088-.0035A2.02189,2.02189,0,0,1,8.9436,14.35113q.04217-.00159.0839-.0009Zm9.23979,3.82764a1.75194,1.75194,0,1,1-1.75189,1.75188A1.7411,1.7411,0,0,1,18.26729,18.17786Z" />
       </svg>
     </span>
-    <span class="label">Social</span>
+    <span class="label">{% trans "Social" %}</span>
   </a>
   <a href="/cms/automation/">
     <span class="icon">
@@ -261,7 +262,7 @@
         <circle class="st0" cx="17.2" cy="9.6" r="2.3" />
       </svg>
     </span>
-    <span class="label">Automation</span>
+    <span class="label">{% trans "Automation" %}</span>
   </a>
   <a href="/cms/maps/">
     <span class="icon">
@@ -270,10 +271,10 @@
         <path d="M9 3v15M15 6v15" />
       </svg>
     </span>
-    <span class="label">Maps</span>
+    <span class="label">{% trans "Maps" %}</span>
   </a>
 
-  <div class="section">Settings</div>
+  <div class="section">{% trans "Settings" %}</div>
   <a href="/cms/settings/">
     <span class="icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -285,7 +286,7 @@
         <path class="st0" d="M16.1,21.6c2.2,0,4-1.8,4-4s-1.8-4-4-4s-4,1.8-4,4S13.9,21.6,16.1,21.6z" />
       </svg>
     </span>
-    <span class="label">Settings</span>
+    <span class="label">{% trans "Settings" %}</span>
   </a>
   <a href="/cms/settings/site/">
     <span class="icon">
@@ -294,7 +295,7 @@
         <path d="M3 16h18M3 20h18" />
       </svg>
     </span>
-    <span class="label">Site Settings</span>
+    <span class="label">{% trans "Site Settings" %}</span>
   </a>
 
 {% load setup_tags %}
@@ -315,7 +316,7 @@
           c-0.3,0.5,0,1.1,0.6,1.3l2.5,0.7l2.5,0.7c0.6,0.2,1.1-0.2,1.2-0.8C13.7,21.1,13.5,20.6,13.4,20.3z"/>
       </svg>
     </span>
-      <span class="label">Setup</span>
+      <span class="label">{% trans "Setup" %}</span>
     </a>
     {% visibility_cog_inline "cms.nav.setup" "Setup nav link" %}
   {% endif %}
@@ -331,7 +332,7 @@
           <path d="M12 13c1.66 0 3 1.34 3 3v1H9v-1c0-1.66 1.34-3 3-3z" />
         </svg>
       </span>
-      <span class="label">Permissions</span>
+      <span class="label">{% trans "Permissions" %}</span>
     </a>
     {% visibility_cog_inline "cms.nav.permissions" "Permissions nav link" %}
   {% endif %}
@@ -346,7 +347,7 @@
           <path d="M7 7l10 10" />
         </svg>
       </span>
-      <span class="label">Disabled items</span>
+      <span class="label">{% trans "Disabled items" %}</span>
     </a>
     {% visibility_cog_inline "cms.nav.disabled" "Disabled items nav link" %}
   {% endif %}

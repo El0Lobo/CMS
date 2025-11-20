@@ -1,14 +1,15 @@
 # app/menu/models.py
-from django.db import models
 from django.core.validators import MinValueValidator, RegexValidator
+from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 
 # Standard slug (letters, numbers, hyphens, underscores). No dots -> avoids URL reversing issues.
 slug_validator = RegexValidator(
     regex=r"^[a-zA-Z0-9_-]+$",
-    message='Enter a valid “slug” (letters, numbers, underscores, or hyphens).'
+    message="Enter a valid “slug” (letters, numbers, underscores, or hyphens).",
 )
+
 
 def unique_slug_for(instance, base: str, field_name: str = "slug"):
     """
@@ -35,8 +36,8 @@ class Unit(models.Model):
         (KIND_COUNT, "Count"),
     ]
 
-    code = models.CharField(max_length=16, unique=True)   # e.g. L, mL, g, pcs
-    display = models.CharField(max_length=32)             # e.g. "Liters", "grams", "pieces"
+    code = models.CharField(max_length=16, unique=True)  # e.g. L, mL, g, pcs
+    display = models.CharField(max_length=32)  # e.g. "Liters", "grams", "pieces"
     kind = models.CharField(max_length=16, choices=KIND_CHOICES)
 
     class Meta:
@@ -51,6 +52,7 @@ class UnitGroup(models.Model):
     Controls which units are allowed for a branch of the menu.
     Drinks will use a group with L/mL; Food a group with g/pcs.
     """
+
     name = models.CharField(max_length=64, unique=True)
     allowed_units = models.ManyToManyField(Unit, blank=True)
 
@@ -70,8 +72,10 @@ class Category(models.Model):
     ]
 
     name = models.CharField(max_length=120)
-    slug = models.SlugField(max_length=140, unique=True, validators=[slug_validator], blank=True)
-    parent = models.ForeignKey("self", null=True, blank=True, related_name="children", on_delete=models.CASCADE)
+    slug = models.SlugField(max_length=140, validators=[slug_validator], blank=True)
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
+    )
     kind = models.CharField(max_length=16, choices=KIND_CHOICES)
     unit_group = models.ForeignKey(UnitGroup, null=True, blank=True, on_delete=models.SET_NULL)
 
@@ -81,6 +85,11 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slug_for(self, self.name)
+        super().save(*args, **kwargs)
+
     @property
     def depth(self) -> int:
         d, p = 0, self.parent
@@ -89,15 +98,10 @@ class Category(models.Model):
             p = p.parent
         return d
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = unique_slug_for(self, self.name)
-        super().save(*args, **kwargs)
-
 
 class Item(models.Model):
     name = models.CharField(max_length=160)
-    slug = models.SlugField(max_length=180, unique=True, validators=[slug_validator], blank=True)
+    slug = models.SlugField(max_length=180, validators=[slug_validator], blank=True)
     category = models.ForeignKey(Category, related_name="items", on_delete=models.PROTECT)
     description = models.TextField(blank=True)
     allergens_note = models.CharField(max_length=240, blank=True)
@@ -119,13 +123,20 @@ class Item(models.Model):
     new_until = models.DateTimeField(null=True, blank=True)
 
     # Optionally override category's unit group
-    unit_group_override = models.ForeignKey(UnitGroup, null=True, blank=True, on_delete=models.SET_NULL)
+    unit_group_override = models.ForeignKey(
+        UnitGroup, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slug_for(self, self.name)
+        super().save(*args, **kwargs)
 
     def active_unit_group(self):
         return self.unit_group_override or self.category.unit_group
@@ -138,19 +149,18 @@ class Item(models.Model):
     def is_new(self) -> bool:
         return bool(self.new_until and self.new_until >= timezone.now())
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = unique_slug_for(self, self.name)
-        super().save(*args, **kwargs)
-
 
 class ItemVariant(models.Model):
     item = models.ForeignKey(Item, related_name="variants", on_delete=models.CASCADE)
     label = models.CharField(max_length=64, blank=True)
-    quantity = models.DecimalField(max_digits=8, decimal_places=3, validators=[MinValueValidator(0)])
+    quantity = models.DecimalField(
+        max_digits=8, decimal_places=3, validators=[MinValueValidator(0)]
+    )
     unit = models.ForeignKey(Unit, on_delete=models.PROTECT)
     price = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
-    abv = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Alcohol by volume (%)")
+    abv = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, help_text="Alcohol by volume (%)"
+    )
 
     class Meta:
         ordering = ["item__name", "unit__kind", "quantity", "label"]

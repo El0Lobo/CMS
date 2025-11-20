@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest, JsonResponse
@@ -46,7 +46,7 @@ def menu_snapshot(request):
 
 @login_required
 def site_context(request):
-    data: Dict[str, Any] = data_sources.get_site_context()
+    data: dict[str, Any] = data_sources.get_site_context()
     data["logo"] = _absolute_media(request, data.get("logo"))
     return JsonResponse(data)
 
@@ -60,7 +60,7 @@ def assets_library(request):
     return JsonResponse({"assets": assets})
 
 
-def _parse_json(request) -> Dict[str, Any]:
+def _parse_json(request) -> dict[str, Any]:
     try:
         payload = json.loads(request.body.decode("utf-8"))
     except json.JSONDecodeError as exc:
@@ -78,7 +78,7 @@ def _normalise_blocks(raw):
     raise ValueError("blocks must be an array")
 
 
-def _apply_page_payload(page: Page, data: Dict[str, Any], *, user) -> None:
+def _apply_page_payload(page: Page, data: dict[str, Any], *, user) -> None:
     simple_fields = [
         "title",
         "summary",
@@ -98,7 +98,9 @@ def _apply_page_payload(page: Page, data: Dict[str, Any], *, user) -> None:
 
     if "slug" in data:
         slug_value = data["slug"]
-        page.slug = slugify(slug_value) or (slugify(page.title) if page.title else page.slug or "page")
+        page.slug = slugify(slug_value) or (
+            slugify(page.title) if page.title else page.slug or "page"
+        )
 
     if "blocks" in data:
         page.blocks = _normalise_blocks(data["blocks"])

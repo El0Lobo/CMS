@@ -1,12 +1,9 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.utils.text import slugify
-from model_utils.fields import AutoCreatedField, AutoLastModifiedField
-
-from django_ckeditor_5.fields import CKEditor5Field
-
 from django.utils.safestring import mark_safe
+from django.utils.text import slugify
+from django_ckeditor_5.fields import CKEditor5Field
 
 from .blocks import render_blocks
 
@@ -26,7 +23,7 @@ class Page(models.Model):
         PUBLISHED = "published", "Published"
 
     title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200)
     summary = models.TextField(blank=True)
     body = CKEditor5Field("Body", blank=True, config_name="default")
     blocks = models.JSONField(
@@ -37,12 +34,12 @@ class Page(models.Model):
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.DRAFT)
     is_visible = models.BooleanField(
         default=True,
-        help_text="If disabled the page stays in drafts and is hidden from navigation.",
+        help_text="If disabled page stays in drafts and is hidden from navigation.",
     )
     navigation_order = models.PositiveIntegerField(default=0)
     show_navigation_bar = models.BooleanField(
         default=True,
-        help_text="Display the navigation bar on this page.",
+        help_text="Display navigation bar on this page.",
     )
     custom_nav_items = models.JSONField(
         default=list,
@@ -51,8 +48,8 @@ class Page(models.Model):
     )
     hero_image = models.ImageField(upload_to="pages/heroes/", blank=True, null=True)
     published_at = models.DateTimeField(blank=True, null=True)
-    created_at = AutoCreatedField("created at")
-    updated_at = AutoLastModifiedField("updated at")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name="pages_created",
@@ -67,6 +64,10 @@ class Page(models.Model):
         blank=True,
         null=True,
     )
+    render_body_only = models.BooleanField(
+        default=False,
+        help_text="If enabled, ignore block builder and render raw HTML body only.",
+    )
 
     objects = PageQuerySet.as_manager()
 
@@ -75,11 +76,6 @@ class Page(models.Model):
 
     def __str__(self) -> str:
         return self.title
-
-    def publish(self):
-        self.status = Page.Status.PUBLISHED
-        if not self.published_at:
-            self.published_at = timezone.now()
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -100,14 +96,14 @@ class Page(models.Model):
 
         return reverse("public:page-detail", kwargs={"slug": self.slug})
 
-    render_body_only = models.BooleanField(
-        default=False,
-        help_text="If enabled, ignore the block builder and render the raw HTML body only.",
-    )
+    def publish(self):
+        self.status = Page.Status.PUBLISHED
+        if not self.published_at:
+            self.published_at = timezone.now()
 
     def render_content_segments(self, *, request=None, extra_context=None):
         """
-        Render the page into main/ footer fragments so templates can place them separately.
+        Render the page into main/footer fragments so templates can place them separately.
         """
 
         if self.render_body_only or not self.blocks:
@@ -126,5 +122,7 @@ class Page(models.Model):
         Render the page blocks to HTML. Falls back to legacy body if flagged or empty.
         """
 
-        main_html, footer_html = self.render_content_segments(request=request, extra_context=extra_context)
+        main_html, footer_html = self.render_content_segments(
+            request=request, extra_context=extra_context
+        )
         return mark_safe(f"{main_html}{footer_html}")

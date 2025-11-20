@@ -1,17 +1,19 @@
 # app/pos/views.py
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
+
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.db import models as djmodels
+from django.db import transaction
+from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.http import require_POST
-from django.db import transaction, models as djmodels
-from django.utils import timezone
 
-from app.menu.models import Item, ItemVariant  # your real models
-from .models import POSQuickButton, DiscountReason, Sale, SaleItem, Payment
+from app.menu.models import ItemVariant  # your real models
 
+from .models import Payment, POSQuickButton, Sale, SaleItem
 
 # === Config ===
 TAX_RATE_DEFAULT = Decimal("19.00")  # 19% VAT default
@@ -129,7 +131,11 @@ def _variant_display_title(variant: ItemVariant) -> str:
         tail = variant.label
     else:
         # e.g. "0.3 L"
-        q = f"{variant.quantity.normalize():g}" if hasattr(variant.quantity, "normalize") else str(variant.quantity)
+        q = (
+            f"{variant.quantity.normalize():g}"
+            if hasattr(variant.quantity, "normalize")
+            else str(variant.quantity)
+        )
         tail = f"{q} {variant.unit.code}"
     return f"{base} — {tail}"
 
@@ -174,14 +180,12 @@ def api_search_items(request):
     """
     q = request.GET.get("q", "").strip()
 
-    qs = ItemVariant.objects.select_related("item", "unit", "item__category") \
-                            .filter(item__visible_public=True)
+    qs = ItemVariant.objects.select_related("item", "unit", "item__category").filter(
+        item__visible_public=True
+    )
 
     if q:
-        qs = qs.filter(
-            djmodels.Q(item__name__icontains=q) |
-            djmodels.Q(label__icontains=q)
-        )
+        qs = qs.filter(djmodels.Q(item__name__icontains=q) | djmodels.Q(label__icontains=q))
 
     items = {}
     for v in qs.order_by("item__name", "label")[:60]:
@@ -189,11 +193,13 @@ def api_search_items(request):
         if v.item.is_sold_out():
             continue
         it = items.setdefault(v.item.id, {"id": v.item.id, "name": v.item.name, "variants": []})
-        it["variants"].append({
-            "id": v.id,
-            "size": _variant_size_quantity(v),
-            "price": str(_money(v.price)),
-        })
+        it["variants"].append(
+            {
+                "id": v.id,
+                "size": _variant_size_quantity(v),
+                "price": str(_money(v.price)),
+            }
+        )
 
     out = list(items.values())
     # sort variants and items for stable ordering
@@ -226,9 +232,11 @@ def api_browse_items(request):
       ]
     }
     """
-    qs = ItemVariant.objects.select_related("item", "unit", "item__category") \
-                            .filter(item__visible_public=True) \
-                            .order_by("item__category__name", "item__name", "label")
+    qs = (
+        ItemVariant.objects.select_related("item", "unit", "item__category")
+        .filter(item__visible_public=True)
+        .order_by("item__category__name", "item__name", "label")
+    )
 
     # cat_id -> {id, name, items: {item_id: {id, name, variants: []}}}
     cats = {}
@@ -240,12 +248,16 @@ def api_browse_items(request):
             continue
 
         c = cats.setdefault(cat.id, {"id": cat.id, "name": cat.name, "items": {}})
-        it = c["items"].setdefault(v.item.id, {"id": v.item.id, "name": v.item.name, "variants": []})
-        it["variants"].append({
-            "id": v.id,
-            "size": _variant_size_quantity(v),
-            "price": str(_money(v.price)),
-        })
+        it = c["items"].setdefault(
+            v.item.id, {"id": v.item.id, "name": v.item.name, "variants": []}
+        )
+        it["variants"].append(
+            {
+                "id": v.id,
+                "size": _variant_size_quantity(v),
+                "price": str(_money(v.price)),
+            }
+        )
 
     # finalize: list-ify and sort
     categories = []
@@ -283,14 +295,16 @@ def api_cart_add(request):
             line["qty"] = int(line["qty"]) + qty
             break
     else:
-        cart["lines"].append({
-            "id": v.id,
-            "title": title,
-            "qty": qty,
-            "unit_price": str(unit_price),
-            "discount": None,
-            "tax_rate": str(TAX_RATE_DEFAULT),
-        })
+        cart["lines"].append(
+            {
+                "id": v.id,
+                "title": title,
+                "qty": qty,
+                "unit_price": str(unit_price),
+                "discount": None,
+                "tax_rate": str(TAX_RATE_DEFAULT),
+            }
+        )
 
     _reprice_cart(cart)
     _save_cart(request, cart)
@@ -304,7 +318,9 @@ def api_cart_remove(request):
     if not item_id:
         return HttpResponseBadRequest("Missing id")
     cart = _get_cart(request)
-    cart["lines"] = [l for l in cart["lines"] if str(l["id"]) != str(item_id)]
+    cart["lines"] = [
+        line_item for line_item in cart["lines"] if str(line_item["id"]) != str(item_id)
+    ]
     _reprice_cart(cart)
     _save_cart(request, cart)
     return JsonResponse(cart)
@@ -318,12 +334,12 @@ def api_cart_update(request):
     if not item_id or qty < 0:
         return HttpResponseBadRequest("Invalid parameters")
     cart = _get_cart(request)
-    for l in list(cart["lines"]):
-        if str(l["id"]) == str(item_id):
+    for line_item in list(cart["lines"]):
+        if str(line_item["id"]) == str(item_id):
             if qty == 0:
-                cart["lines"].remove(l)
+                cart["lines"].remove(line_item)
             else:
-                l["qty"] = qty
+                line_item["qty"] = qty
             break
     _reprice_cart(cart)
     _save_cart(request, cart)
@@ -342,14 +358,17 @@ def api_cart_clear(request):
 @login_required
 def api_quick_buttons(request):
     btns = POSQuickButton.objects.filter(is_active=True).order_by("sort_order")
-    data = [{
-        "id": b.id,
-        "label": b.label,
-        "type": b.discount_type,
-        "value": str(_money(b.value)),
-        "scope": b.scope,
-        "reason_id": b.reason_id,
-    } for b in btns]
+    data = [
+        {
+            "id": b.id,
+            "label": b.label,
+            "type": b.discount_type,
+            "value": str(_money(b.value)),
+            "scope": b.scope,
+            "reason_id": b.reason_id,
+        }
+        for b in btns
+    ]
     return JsonResponse({"buttons": data})
 
 
@@ -357,7 +376,7 @@ def api_quick_buttons(request):
 @require_POST
 def api_cart_apply_discount(request):
     scope = request.POST.get("scope")  # ORDER or ITEM
-    dtype = request.POST.get("type")   # PERCENT/AMOUNT/FREE
+    dtype = request.POST.get("type")  # PERCENT/AMOUNT/FREE
     value = request.POST.get("value", "0")
     reason_id = request.POST.get("reason_id")
     item_id = request.POST.get("item_id")
@@ -375,9 +394,9 @@ def api_cart_apply_discount(request):
     else:
         if not item_id:
             return HttpResponseBadRequest("Missing item_id for item discount")
-        for l in cart["lines"]:
-            if str(l["id"]) == str(item_id):
-                l["discount"] = {"type": dtype, "value": value}
+        for line_item in cart["lines"]:
+            if str(line_item["id"]) == str(item_id):
+                line_item["discount"] = {"type": dtype, "value": value}
                 break
 
     _reprice_cart(cart)
@@ -414,9 +433,17 @@ def api_checkout(request):
     sale = Sale.objects.create(
         opened_by=request.user,
         status=Sale.STATUS_PAID,
-        order_discount_type=(cart["order_discount"]["type"] if cart.get("order_discount") else None),
-        order_discount_value=_money(cart["order_discount"]["value"]) if cart.get("order_discount") else Decimal("0.00"),
-        order_discount_reason_id=(cart["order_discount"]["reason_id"] if cart.get("order_discount") else None),
+        order_discount_type=(
+            cart["order_discount"]["type"] if cart.get("order_discount") else None
+        ),
+        order_discount_value=(
+            _money(cart["order_discount"]["value"])
+            if cart.get("order_discount")
+            else Decimal("0.00")
+        ),
+        order_discount_reason_id=(
+            cart["order_discount"]["reason_id"] if cart.get("order_discount") else None
+        ),
         subtotal=_money(cart["totals"]["subtotal"]),
         discount_total=_money(cart["totals"]["discount_total"]),
         tax_total=_money(cart["totals"]["tax_total"]),
@@ -426,20 +453,24 @@ def api_checkout(request):
         closed_at=timezone.now(),
     )
 
-    for l in cart["lines"]:
+    for line_item in cart["lines"]:
         SaleItem.objects.create(
             sale=sale,
-            menu_variant_id=int(l["id"]),  # FK to ItemVariant
-            title_snapshot=l["title"],
-            quantity=int(l["qty"]),
-            unit_price=_money(l["unit_price"]),
-            discount_type=(l["discount"]["type"] if l.get("discount") else None),
-            discount_value=_money(l["discount"]["value"]) if l.get("discount") else Decimal("0.00"),
-            tax_rate=_money(l.get("tax_rate", TAX_RATE_DEFAULT)),
-            tax_amount=_money(l["calc_tax"]),
-            line_subtotal=_money(l["calc_subtotal"]),
-            line_discount=_money(l["calc_discount"]),
-            line_total=_money(l["calc_total"]),
+            menu_variant_id=int(line_item["id"]),  # FK to ItemVariant
+            title_snapshot=line_item["title"],
+            quantity=int(line_item["qty"]),
+            unit_price=_money(line_item["unit_price"]),
+            discount_type=(line_item["discount"]["type"] if line_item.get("discount") else None),
+            discount_value=(
+                _money(line_item["discount"]["value"])
+                if line_item.get("discount")
+                else Decimal("0.00")
+            ),
+            tax_rate=_money(line_item.get("tax_rate", TAX_RATE_DEFAULT)),
+            tax_amount=_money(line_item["calc_tax"]),
+            line_subtotal=_money(line_item["calc_subtotal"]),
+            line_discount=_money(line_item["calc_discount"]),
+            line_total=_money(line_item["calc_total"]),
         )
 
     Payment.objects.create(
@@ -449,10 +480,11 @@ def api_checkout(request):
     # clear cart
     _save_cart(request, {"lines": [], "order_discount": None})
     return JsonResponse({"ok": True, "sale_id": sale.id})
+
+
 def _variant_size_quantity(v):
     # Return numeric quantity as a clean string, e.g. "0.3"
     try:
         return f"{v.quantity.normalize():g}"
     except Exception:
         return str(v.quantity)
-

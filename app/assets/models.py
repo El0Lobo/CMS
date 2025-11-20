@@ -1,15 +1,16 @@
 # app/assets/models.py
-import os
 import mimetypes
+import os
+
+from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.text import slugify
-from django.contrib.auth.models import Group
 
 # Ensure common font types are recognized
 mimetypes.add_type("font/woff2", ".woff2")
-mimetypes.add_type("font/woff",  ".woff")
-mimetypes.add_type("font/ttf",   ".ttf")
-mimetypes.add_type("font/otf",   ".otf")
+mimetypes.add_type("font/woff", ".woff")
+mimetypes.add_type("font/ttf", ".ttf")
+mimetypes.add_type("font/otf", ".otf")
 mimetypes.add_type("application/font-woff", ".woff")  # legacy label some tools use
 
 
@@ -37,7 +38,7 @@ ASSET_KIND_CHOICES = [
     ("archive", "Archive"),
     ("link", "Link"),
     ("note", "Text/Note"),
-    ("font", "Font"),   # <-- added for font previews
+    ("font", "Font"),  # <-- added for font previews
     ("other", "Other"),
 ]
 
@@ -129,9 +130,7 @@ class Collection(models.Model):
     visibility_mode = models.CharField(
         max_length=20, choices=VISIBILITY_MODE_CHOICES, default="public"
     )
-    allowed_groups = models.ManyToManyField(
-        Group, blank=True, related_name="asset_collections"
-    )
+    allowed_groups = models.ManyToManyField(Group, blank=True, related_name="asset_collections")
     description = models.TextField(blank=True)
     sort_order = models.IntegerField(default=0)
     tags = models.ManyToManyField(Tag, blank=True, related_name="collections")
@@ -155,9 +154,7 @@ class Collection(models.Model):
 
 
 class Asset(models.Model):
-    collection = models.ForeignKey(
-        Collection, on_delete=models.CASCADE, related_name="assets"
-    )
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="assets")
     title = models.CharField(max_length=255)
     slug = models.SlugField(
         max_length=255,
@@ -171,10 +168,8 @@ class Asset(models.Model):
 
     # one of these three is expected (form enforces exactly one)
     file = models.FileField(upload_to=asset_upload_to, blank=True, null=True)
-    url = models.URLField(blank=True, null=True, help_text="External link or embed URL")
-    text_content = models.TextField(
-        blank=True, help_text="Plain text / note / credentials"
-    )
+    url = models.URLField(blank=True, help_text="External link or embed URL")
+    text_content = models.TextField(blank=True, help_text="Plain text / note / credentials")
 
     appears_on = models.CharField(
         max_length=500, blank=True, help_text="Auto-filled by editor; informative only."
@@ -200,29 +195,6 @@ class Asset(models.Model):
     def __str__(self) -> str:
         return self.title
 
-    # convenience flags
-    @property
-    def is_external(self) -> bool:
-        return bool(self.url) and not bool(self.file)
-
-    @property
-    def external_domain(self):
-        if not self.url:
-            return None
-        from urllib.parse import urlparse
-        return urlparse(self.url).netloc
-
-    @property
-    def effective_visibility(self) -> str:
-        """
-        Resolve to the visibility that actually applies:
-        - 'inherit' -> collection.visibility_mode (including 'groups')
-        - otherwise -> self.visibility
-        """
-        if self.visibility == "inherit":
-            return self.collection.visibility_mode
-        return self.visibility
-
     def save(self, *args, **kwargs):
         # Auto slug
         if not self.slug:
@@ -234,6 +206,7 @@ class Asset(models.Model):
             src_name = os.path.basename(self.file.name)
         elif self.url:
             from urllib.parse import urlparse
+
             parsed = urlparse(self.url)
             src_name = os.path.basename(parsed.path)
 
@@ -246,10 +219,36 @@ class Asset(models.Model):
                 self.mime_type = guessed_mime or ""
 
         # Classify kind (note wins if text present)
-        self.kind = infer_kind(src_name or "", self.mime_type or None, has_text=bool(self.text_content))
+        self.kind = infer_kind(
+            src_name or "", self.mime_type or None, has_text=bool(self.text_content)
+        )
 
         # Size (only for uploaded files we hold)
         if self.file and hasattr(self.file, "size"):
             self.size_bytes = self.file.size
 
         super().save(*args, **kwargs)
+
+    # convenience flags
+    @property
+    def is_external(self) -> bool:
+        return bool(self.url) and not bool(self.file)
+
+    @property
+    def external_domain(self):
+        if not self.url:
+            return None
+        from urllib.parse import urlparse
+
+        return urlparse(self.url).netloc
+
+    @property
+    def effective_visibility(self) -> str:
+        """
+        Resolve to the visibility that actually applies:
+        - 'inherit' -> collection.visibility_mode (including 'groups')
+        - otherwise -> self.visibility
+        """
+        if self.visibility == "inherit":
+            return self.collection.visibility_mode
+        return self.visibility

@@ -1,20 +1,23 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
 from app.setup.models import SiteSettings
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 from . import data_sources
 
-Block = Dict[str, Any]
-Context = Dict[str, Any]
+Block = dict[str, Any]
+Context = dict[str, Any]
 
 
-def _resolve_media(request, url: Optional[str]) -> Optional[str]:
+def _resolve_media(request, url: str | None) -> str | None:
     if not url:
         return None
     if request and url.startswith("/"):
@@ -26,9 +29,9 @@ def render_blocks(
     blocks: Iterable[Block],
     *,
     request=None,
-    extra_context: Optional[Context] = None,
+    extra_context: Context | None = None,
 ) -> str:
-    rendered: List[str] = []
+    rendered: list[str] = []
     for block in blocks or []:
         html = render_block(block, request=request, extra_context=extra_context)
         if html:
@@ -40,7 +43,7 @@ def render_block(
     block: Block,
     *,
     request=None,
-    extra_context: Optional[Context] = None,
+    extra_context: Context | None = None,
 ) -> str:
     block_type = block.get("type")
     renderer = BLOCK_RENDERERS.get(block_type)
@@ -122,11 +125,13 @@ SOCIAL_FIELD_LABELS = [
 
 
 def _format_address(settings: SiteSettings) -> str:
-    lines: List[str] = []
+    lines: list[str] = []
     street = " ".join(filter(None, [settings.address_street, settings.address_number])).strip()
     if street:
         lines.append(street)
-    city_line = " ".join(filter(None, [settings.address_postal_code, settings.address_city])).strip()
+    city_line = " ".join(
+        filter(None, [settings.address_postal_code, settings.address_city])
+    ).strip()
     if city_line:
         lines.append(city_line)
     if settings.address_country:
@@ -172,7 +177,7 @@ def _footer_renderer(*, context: Context, request=None) -> str:
         return [item for item in normalised if item.get("label") or item.get("href")]
 
     if not props.get("social_links"):
-        socials: List[dict] = []
+        socials: list[dict] = []
         for field, label in SOCIAL_FIELD_LABELS:
             url = getattr(settings, field, "")
             if url:

@@ -1,33 +1,28 @@
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
+from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
+from django.contrib import admin
+from django.urls import include, path
 
-from app.pages.views_public import CMSLoginView
-from .views import health
+from app.pages.views_public import CMSLoginView, dev_force_login
 
+from .views import health, set_language
+
+# Non-translated URLs (admin, API, health checks, CMS admin interface)
 urlpatterns = [
     # Admin & health
     path("admin/", admin.site.urls),
     path("health/", health, name="health"),
     path("api/v1/", include("app.api.urls")),
-    path(
-        "robots.txt",
-        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
-    ),
-
     # Auth
     path("accounts/login/", CMSLoginView.as_view(), name="login"),
+    path("accounts/dev-login/", dev_force_login, name="dev_force_login"),
     path("accounts/", include("django.contrib.auth.urls")),
-
-    # -------- Public --------
-    # Main public site (pages)
-    path("", include(("app.pages.urls_public", "public"), namespace="public")),
-    # Public merch (e.g. /shop/…)
-    path("", include(("app.merch.urls_public", "merch_public"), namespace="merch_public")),
-
-    # -------- CMS --------
+    # Language switching (works for both CMS and public site) - custom view
+    path("i18n/setlang/", set_language, name="set_language"),
+    # Rosetta for managing translations (admin only)
+    path("rosetta/", include("rosetta.urls")),
+    # -------- CMS (admin interface - not language-prefixed) --------
     path("cms/", include("app.cms.urls")),
     path("cms/pages/", include("app.pages.urls")),
     path("cms/ckeditor5/", include("django_ckeditor_5.urls")),
@@ -43,13 +38,24 @@ urlpatterns = [
     path("cms/maps/", include("app.maps.urls")),
     path("cms/settings/", include("app.setup.urls")),
     path("cms/users/", include("app.users.urls")),
-    path("", include("app.bands.urls", namespace="bands")),          
-    path("", include("app.bands.public_urls", namespace="bands_pub")),
     path("cms/menu/", include(("app.menu.urls", "menu"), namespace="menu")),
-    path("cms/assets/", include("app.assets.urls")),   
+    path("cms/assets/", include("app.assets.urls")),
     path("cms/inbox/", include(("app.comms.urls", "comms"), namespace="comms")),
     path("cms/pos/", include("app.pos.urls", namespace="pos")),
 ]
+
+# Language-prefixed URLs (public-facing content)
+# These will be available at /en/, /es/, /de/, /fr/, etc.
+urlpatterns += i18n_patterns(
+    # Main public site (pages)
+    path("", include(("app.pages.urls_public", "public"), namespace="public")),
+    # Public merch (e.g. /en/shop/…, /es/tienda/…)
+    path("", include(("app.merch.urls_public", "merch_public"), namespace="merch_public")),
+    # Public bands pages
+    path("", include("app.bands.urls", namespace="bands")),
+    path("", include("app.bands.public_urls", namespace="bands_pub")),
+    prefix_default_language=True,  # Include /en/ prefix for English too
+)
 
 # Media during development
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

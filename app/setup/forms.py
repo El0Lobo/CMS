@@ -12,8 +12,7 @@ from django.contrib.auth.models import Group
 from django.forms import ModelForm
 from django.forms.models import inlineformset_factory, modelformset_factory
 
-from .models import SiteSettings, MembershipTier, OpeningHour, VisibilityRule
-
+from .models import MembershipTier, OpeningHour, SiteSettings, VisibilityRule
 
 SMOKING_CHOICES = (
     ("", "— not specified —"),
@@ -53,7 +52,7 @@ class SettingsForm(ModelForm):
         required=False,
         choices=SMOKING_CHOICES,
         widget=forms.Select,
-        coerce=lambda v: {"true": True, "false": False}.get(v, None),
+        coerce=lambda v: {"true": True, "false": False}.get(v),
         label="Smoking allowed?",
         help_text="If left unspecified, no smoking policy is published.",
     )
@@ -72,55 +71,101 @@ class SettingsForm(ModelForm):
     maximum_attendee_capacity = forms.IntegerField(required=False, min_value=0)
     awareness_team_available = forms.BooleanField(required=False)
     awareness_contact = forms.CharField(required=False, label="Awareness contact (free text)")
-    icon_pack = forms.FileField(
-        required=False,
-        label="Site icon pack (ZIP)",
-        help_text=(
-            "Upload a ZIP containing favicon.ico... Existing icon assets will be replaced."
-        ),
-    )
 
     class Meta:
         model = SiteSettings
         fields = [
             # General
-            "mode", "org_name", "logo", "logo_secondary", "publish_opening_times", "public_pages_enabled",
+            "mode",
+            "org_name",
+            "logo",
+            "publish_opening_times",
+            "public_pages_enabled",
             # Address & geodata
-            "address_street", "address_number", "address_postal_code", "address_city",
-            "address_country", "address_autocomplete",
-            "geo_lat", "geo_lng", "price_range", "default_currency",
+            "address_street",
+            "address_number",
+            "address_postal_code",
+            "address_city",
+            "address_country",
+            "address_autocomplete",
+            "geo_lat",
+            "geo_lng",
+            "price_range",
+            "default_currency",
             # Contact & web
-            "contact_email", "contact_phone", "website_url",
+            "contact_email",
+            "contact_phone",
+            "website_url",
             # Socials
-            "social_facebook", "social_instagram", "social_twitter", "social_tiktok",
-            "social_youtube", "social_spotify", "social_soundcloud", "social_bandcamp",
-            "social_linkedin", "social_mastodon",
+            "social_facebook",
+            "social_instagram",
+            "social_twitter",
+            "social_tiktok",
+            "social_youtube",
+            "social_spotify",
+            "social_soundcloud",
+            "social_bandcamp",
+            "social_linkedin",
+            "social_mastodon",
             # SameAs
             "same_as",
             # Membership
-            "membership_enabled", "membership_hint",
+            "membership_enabled",
+            "membership_hint",
             # Policies & accessibility
-            "smoking_allowed", "pets_allowed_text", "typical_age_range", "minors_policy_note",
-            "acc_step_free", "acc_wheelchair", "acc_accessible_wc",
-            "acc_visual_aid", "acc_service_animals", "lgbtq_friendly",
-            "accessibility_summary", "maximum_attendee_capacity",
-            "awareness_team_available", "awareness_contact",
+            "smoking_allowed",
+            "pets_allowed_text",
+            "typical_age_range",
+            "minors_policy_note",
+            "acc_step_free",
+            "acc_wheelchair",
+            "acc_accessible_wc",
+            "acc_visual_aid",
+            "acc_service_animals",
+            "lgbtq_friendly",
+            "accessibility_summary",
+            "maximum_attendee_capacity",
+            "awareness_team_available",
+            "awareness_contact",
         ]
         widgets = {
-            "same_as": forms.Textarea(attrs={"rows": 3, "placeholder": "https://example.com\nhttps://twitter.com/your-handle"}),
+            "same_as": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "https://example.com\nhttps://twitter.com/your-handle",
+                }
+            ),
             "price_range": forms.TextInput(attrs={"placeholder": "$$, $$$"}),
             "contact_email": forms.EmailInput(attrs={"placeholder": "you@example.com"}),
             "website_url": forms.URLInput(attrs={"placeholder": "https://example.com"}),
-            "social_facebook":   forms.URLInput(attrs={"placeholder": "https://facebook.com/yourpage"}),
-            "social_instagram":  forms.URLInput(attrs={"placeholder": "https://instagram.com/yourhandle"}),
-            "social_twitter":    forms.URLInput(attrs={"placeholder": "https://x.com/yourhandle"}),
-            "social_tiktok":     forms.URLInput(attrs={"placeholder": "https://tiktok.com/@yourhandle"}),
-            "social_youtube":    forms.URLInput(attrs={"placeholder": "https://youtube.com/@yourchannel"}),
-            "social_spotify":    forms.URLInput(attrs={"placeholder": "https://open.spotify.com/artist/..."}),
-            "social_soundcloud": forms.URLInput(attrs={"placeholder": "https://soundcloud.com/yourhandle"}),
-            "social_bandcamp":   forms.URLInput(attrs={"placeholder": "https://yourname.bandcamp.com"}),
-            "social_linkedin":   forms.URLInput(attrs={"placeholder": "https://linkedin.com/company/your-company"}),
-            "social_mastodon":   forms.URLInput(attrs={"placeholder": "https://mastodon.social/@yourhandle"}),
+            "social_facebook": forms.URLInput(
+                attrs={"placeholder": "https://facebook.com/yourpage"}
+            ),
+            "social_instagram": forms.URLInput(
+                attrs={"placeholder": "https://instagram.com/yourhandle"}
+            ),
+            "social_twitter": forms.URLInput(attrs={"placeholder": "https://x.com/yourhandle"}),
+            "social_tiktok": forms.URLInput(
+                attrs={"placeholder": "https://tiktok.com/@yourhandle"}
+            ),
+            "social_youtube": forms.URLInput(
+                attrs={"placeholder": "https://youtube.com/@yourchannel"}
+            ),
+            "social_spotify": forms.URLInput(
+                attrs={"placeholder": "https://open.spotify.com/artist/..."}
+            ),
+            "social_soundcloud": forms.URLInput(
+                attrs={"placeholder": "https://soundcloud.com/yourhandle"}
+            ),
+            "social_bandcamp": forms.URLInput(
+                attrs={"placeholder": "https://yourname.bandcamp.com"}
+            ),
+            "social_linkedin": forms.URLInput(
+                attrs={"placeholder": "https://linkedin.com/company/your-company"}
+            ),
+            "social_mastodon": forms.URLInput(
+                attrs={"placeholder": "https://mastodon.social/@yourhandle"}
+            ),
         }
         labels = {
             "address_street": "Street address",
@@ -151,12 +196,28 @@ class SettingsForm(ModelForm):
             f.required = False
             f.error_messages["required"] = ""
 
-        upd = lambda name, **attrs: _update_widget(self.fields[name], **attrs) if name in self.fields else None
-        upd("address_street", id="street-address", autocomplete="address-line1", enterkeyhint="next")
-        upd("address_number", id="street-number", autocomplete="address-line2", enterkeyhint="next")
-        upd("address_postal_code", id="postal-code", autocomplete="postal-code", enterkeyhint="next", **{"class": "postal-code"})
-        upd("address_city", id="city", autocomplete="address-level2", enterkeyhint="next")
-        upd("address_country", id="country", autocomplete="country", enterkeyhint="done")
+        def _update_widget_fields(name, **attrs):
+            return _update_widget(self.fields[name], **attrs) if name in self.fields else None
+
+        _update_widget_fields(
+            "address_street", id="street-address", autocomplete="address-line1", enterkeyhint="next"
+        )
+        _update_widget_fields(
+            "address_number", id="street-number", autocomplete="address-line2", enterkeyhint="next"
+        )
+        _update_widget_fields(
+            "address_postal_code",
+            id="postal-code",
+            autocomplete="postal-code",
+            enterkeyhint="next",
+            **{"class": "postal-code"},
+        )
+        _update_widget_fields(
+            "address_city", id="city", autocomplete="address-level2", enterkeyhint="next"
+        )
+        _update_widget_fields(
+            "address_country", id="country", autocomplete="country", enterkeyhint="done"
+        )
 
     def clean(self):
         data = super().clean()
@@ -165,7 +226,13 @@ class SettingsForm(ModelForm):
         cur_from_post = self.data.get("currency_text")
         cur_from_clean = self.cleaned_data.get("currency_text")
         cur_from_model_field = self.cleaned_data.get("default_currency")
-        cur = (cur_from_post or cur_from_clean or cur_from_model_field or guess_default_currency() or "EUR").upper()
+        cur = (
+            cur_from_post
+            or cur_from_clean
+            or cur_from_model_field
+            or guess_default_currency()
+            or "EUR"
+        ).upper()
         data["default_currency"] = cur
         self.cleaned_data["default_currency"] = cur
 

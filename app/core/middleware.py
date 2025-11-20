@@ -1,11 +1,13 @@
 # app/core/middleware.py
 from django.utils.deprecation import MiddlewareMixin
 
+
 class NoStoreForCMSMiddleware(MiddlewareMixin):
     """
     Prevent browser caching of authenticated/admin pages so back button
     can't show stale content after logout.
     """
+
     def process_response(self, request, response):
         path = request.path
         if path.startswith("/cms") or path.startswith("/accounts"):

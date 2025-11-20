@@ -1,10 +1,7 @@
-
-from typing import Iterable, Set
-from django.contrib.auth.models import Group
 from django.db.models import Q
-from django.conf import settings
 
-from app.comms.models import AudienceLink, MessageThread
+from app.comms.models import MessageThread
+
 
 def user_membership_ids(user):
     """Return (badge_ids, group_ids) for the user; tolerate missing badges relation."""
@@ -16,6 +13,7 @@ def user_membership_ids(user):
         pass
     group_ids = set(user.groups.values_list("id", flat=True))
     return badge_ids, group_ids
+
 
 def visible_threads_qs(user, base_qs=None):
     """Server-side audience filtering: thread audiences ∩ user memberships."""

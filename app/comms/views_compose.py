@@ -1,22 +1,24 @@
+import contextlib
+import os
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.core.files.storage import default_storage
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from app.comms.forms import InternalComposeForm
-from app.comms.services.send_internal import post_internal
-from app.comms.models import Draft, MessageThread, Message, Attachment
-from django.core.files.storage import default_storage
-import os
+from app.comms.models import Attachment, Message, MessageThread
 from app.comms.services.audience import visible_threads_qs
-from django.contrib.auth.models import Group
-from django.contrib.auth import get_user_model
+from app.comms.services.send_internal import post_internal
 
-def _has_cog(request, key:str)->bool:
+
+def _has_cog(request, key: str) -> bool:
     """Template layer uses allow_for; here we trust server-side always allow superusers."""
     u = request.user
     return getattr(u, "is_superuser", False)  # TODO: integrate with your cog system server-side
+
 
 @login_required
 def compose_internal(request):
@@ -27,12 +29,18 @@ def compose_internal(request):
         if form.is_valid():
             thread = post_internal(
                 author=request.user,
-                subject=form.cleaned_data.get("subject",""),
+                subject=form.cleaned_data.get("subject", ""),
                 body_text=form.cleaned_data["body"],
                 targets={
-                    "users": list(form.cleaned_data.get("users",[]).values_list("id", flat=True)),
-                    "groups": list(form.cleaned_data.get("groups",[]).values_list("id", flat=True)),
-                    "badges": list(form.cleaned_data.get("badges",[]).values_list("id", flat=True)) if form.cleaned_data.get("badges") is not None else [],
+                    "users": list(form.cleaned_data.get("users", []).values_list("id", flat=True)),
+                    "groups": list(
+                        form.cleaned_data.get("groups", []).values_list("id", flat=True)
+                    ),
+                    "badges": (
+                        list(form.cleaned_data.get("badges", []).values_list("id", flat=True))
+                        if form.cleaned_data.get("badges") is not None
+                        else []
+                    ),
                 },
             )
             messages.success(request, "Internal message sent.")
@@ -41,6 +49,7 @@ def compose_internal(request):
         form = InternalComposeForm()
 
     return render(request, "comms/compose_internal.html", {"form": form})
+
 
 @login_required
 def drafts_list(request):
@@ -56,7 +65,7 @@ def compose_internal_modal(request):
     if request.method != "POST":
         return redirect("comms:inbox")
 
-    action = request.POST.get("action", "send")
+    # action = request.POST.get("action", "send")  # Currently unused, kept for future reference
     subject = (request.POST.get("subject") or "").strip()
     body = (request.POST.get("body") or "").strip()
     to_usernames = (request.POST.get("to_usernames") or "").strip()
@@ -77,15 +86,15 @@ def compose_internal_modal(request):
 
     # Merge with selected user ids
     if sel_user_ids:
-        try:
-            user_ids = list(set(user_ids) | set(int(x) for x in sel_user_ids))
-        except ValueError:
-            pass
+        with contextlib.suppress(ValueError):
+            user_ids = list(set(user_ids) | {int(x) for x in sel_user_ids})
     # Expand selected groups into user ids
     if sel_group_ids:
         try:
             gids = [int(x) for x in sel_group_ids]
-            group_user_ids = list(User.objects.filter(groups__id__in=gids).values_list("id", flat=True).distinct())
+            group_user_ids = list(
+                User.objects.filter(groups__id__in=gids).values_list("id", flat=True).distinct()
+            )
             user_ids = list(set(user_ids) | set(group_user_ids))
         except ValueError:
             pass
