@@ -53,3 +53,25 @@ coverage.xml
 # local notes and scratch files
 scratch/
 scripts/
+.timetracker
+bin/_shared.py
+bin/check
+bin/ci
+bin/cli
+bin/console
+bin/dev
+bin/format
+bin/lint
+bin/manage
+bin/README.md
+bin/reset
+bin/setup
+bin/test
+bin/update
+teststuff/1.html
+teststuff/folder_tree.txt
+teststuff/setup.ps
+teststuff/tree.bat
+teststuff/Untitled-1.svg
+teststuff/Untitled-2.svg
+teststuff/Untitled-3.svg
