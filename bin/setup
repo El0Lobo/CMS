@@ -3,11 +3,12 @@
 Django Project Setup Script
 Platform-agnostic setup for Windows, Linux, and macOS
 """
+
 import base64
 import os
-import sys
-import subprocess
 import platform
+import subprocess
+import sys
 from pathlib import Path
 
 # Add bin directory to path for shared module
@@ -15,17 +16,16 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from _shared import (
     console,
-    print_success,
-    print_error,
-    print_info,
-    print_warning,
     get_project_root,
-    get_venv_python,
     get_venv_path,
     get_venv_pip,
+    get_venv_python,
+    print_error,
+    print_info,
+    print_success,
+    print_warning,
     run_command,
     show_banner,
-    print_section,
 )
 
 
@@ -67,9 +67,7 @@ def get_python_executable():
 def check_uv_available():
     """Check if uv is available on the system"""
     try:
-        result = subprocess.run(
-            ["uv", "--version"], capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["uv", "--version"], capture_output=True, text=True, timeout=5)
         return result.returncode == 0
     except (subprocess.SubprocessError, FileNotFoundError):
         return False
@@ -101,6 +99,21 @@ def check_venv_sync():
 
     # Check if we can import key packages
     python_cmd = str(get_venv_python())
+
+    # If the executable itself is missing (platform mismatch), reset the venv.
+    if not Path(python_cmd).exists():
+        print_info("Virtual environment executable not found (OS/venv mismatch?)")
+        print_info("Removing old virtual environment...")
+        import shutil
+
+        try:
+            shutil.rmtree(venv_path)
+            print_success("Removed missing/invalid virtual environment")
+        except Exception as e:
+            print_error(f"Failed to remove venv: {e}")
+            print_info("You may need to manually run: rm -rf .venv")
+            sys.exit(1)
+        return
 
     # Try to import Django as a sanity check
     result = run_command(
@@ -186,9 +199,7 @@ def install_requirements():
             result = run_command(cmd, check=False)
 
             if result.returncode != 0:
-                print_warning(
-                    f"uv failed to install {description.lower()}; falling back to pip"
-                )
+                print_warning(f"uv failed to install {description.lower()}; falling back to pip")
                 pkg_manager = str(get_venv_pip())
                 is_uv = False
             else:
@@ -299,9 +310,7 @@ def run_migrations():
         print_error(f"manage.py not found at {manage_py}")
         sys.exit(1)
 
-    run_command(
-        [python_cmd, str(manage_py), "migrate"], error_message="Failed to run migrations"
-    )
+    run_command([python_cmd, str(manage_py), "migrate"], error_message="Failed to run migrations")
 
     print_success("Database migrations completed")
 
@@ -363,34 +372,34 @@ def print_final_instructions():
     console.print("\n[cyan]Start your server:[/cyan]")
 
     if platform.system() == "Windows":
-        console.print(f"  [bold]python bin\\dev[/bold]")
-        console.print(f"  or")
-        console.print(f"  [bold].\\bin\\dev[/bold]")
+        console.print("  [bold]python bin\\dev[/bold]")
+        console.print("  or")
+        console.print("  [bold].\\bin\\dev[/bold]")
     else:
-        console.print(f"  [bold]./bin/dev[/bold]")
-        console.print(f"  or")
-        console.print(f"  [bold]python bin/dev[/bold]")
+        console.print("  [bold]./bin/dev[/bold]")
+        console.print("  or")
+        console.print("  [bold]python bin/dev[/bold]")
 
-    console.print(f"\n[cyan]Other commands:[/cyan]")
+    console.print("\n[cyan]Other commands:[/cyan]")
 
     if platform.system() == "Windows":
-        console.print(f"  [bold]python bin\\test[/bold]    - Run tests")
-        console.print(f"  [bold]python bin\\check[/bold]   - Quality checks")
-        console.print(f"  [bold]python bin\\ci[/bold]      - Full CI pipeline")
-        console.print(f"  [bold]python bin\\reset[/bold]   - Reset everything")
+        console.print("  [bold]python bin\\test[/bold]    - Run tests")
+        console.print("  [bold]python bin\\check[/bold]   - Quality checks")
+        console.print("  [bold]python bin\\ci[/bold]      - Full CI pipeline")
+        console.print("  [bold]python bin\\reset[/bold]   - Reset everything")
     else:
-        console.print(f"  [bold]./bin/test[/bold]    - Run tests")
-        console.print(f"  [bold]./bin/check[/bold]   - Quality checks")
-        console.print(f"  [bold]./bin/ci[/bold]      - Full CI pipeline")
-        console.print(f"  [bold]./bin/reset[/bold]   - Reset everything")
+        console.print("  [bold]./bin/test[/bold]    - Run tests")
+        console.print("  [bold]./bin/check[/bold]   - Quality checks")
+        console.print("  [bold]./bin/ci[/bold]      - Full CI pipeline")
+        console.print("  [bold]./bin/reset[/bold]   - Reset everything")
 
-    console.print(f"\n[yellow]Admin login → http://127.0.0.1:8000/accounts/login/[/yellow]")
-    console.print(f"  Username: [bold]admin[/bold]")
-    console.print(f"  Password: [bold]admin123[/bold]")
+    console.print("\n[yellow]Admin login → http://127.0.0.1:8000/accounts/login/[/yellow]")
+    console.print("  Username: [bold]admin[/bold]")
+    console.print("  Password: [bold]admin123[/bold]")
     console.print(
-        f"\n[cyan]Note:[/cyan] In development (DJANGO_ENV=development), you'll see a 'Force Login (Dev)' button!"
+        "\n[cyan]Note:[/cyan] In development (DJANGO_ENV=development), you'll see a 'Force Login (Dev)' button!"
     )
-    console.print(f"[cyan]The database has been seeded with sample data for testing.[/cyan]")
+    console.print("[cyan]The database has been seeded with sample data for testing.[/cyan]")
     console.print()
 
 
