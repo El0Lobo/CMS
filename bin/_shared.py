@@ -12,81 +12,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-try:
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.progress import Progress, SpinnerColumn, TextColumn
-    from rich.table import Table
-    from rich.text import Text
-    from rich import box as rich_box
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+from rich.text import Text
+from rich import box as rich_box
 
-    console = Console()
-    RICH_AVAILABLE = True
-except ModuleNotFoundError:
-    # Minimal fallbacks so setup scripts can run before dependencies are installed.
-    class _PlainConsole:
-        def print(self, *args, **kwargs):
-            print(*args)
-
-        def rule(self, text: str = "", **kwargs):
-            char = kwargs.get("character", "-") or "-"
-            line = char * 40
-            print(text if text else line)
-
-    class _PlainTable:
-        def __init__(self, *_, **__):
-            self._rows: list[str] = []
-
-        def add_column(self, *_, **__):
-            return None
-
-        def add_row(self, *items, **__):
-            self._rows.append(" | ".join(str(item) for item in items))
-
-        def __str__(self):
-            return "\n".join(self._rows)
-
-    class _PlainProgress:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc_value, traceback):
-            return False
-
-        def add_task(self, description: str = "", total: int | None = None):
-            print(description)
-            return 0
-
-        def update(self, task_id: int, advance: int = 1, description: str | None = None):
-            if description:
-                print(description)
-
-    def Panel(content, *_, **__):
-        return content
-
-    class SpinnerColumn:
-        ...
-
-    class TextColumn:
-        def __init__(self, template: str, *_, **__):
-            self.template = template
-
-    class Text(str):
-        ...
-
-    class _Box:
-        DOUBLE = ROUNDED = None
-
-    console = _PlainConsole()
-    Table = _PlainTable
-    Progress = _PlainProgress
-    rich_box = _Box()
-    RICH_AVAILABLE = False
-
-    console.print(
-        "[info] rich not installed yet; falling back to plain output. "
-        "Install dependencies with `pip install -r requirements.txt -r requirements-dev.txt` for full styling."
-    )
+# Initialize the rich console
+console = Console()
 
 
 class Art:
