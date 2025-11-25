@@ -16,6 +16,32 @@ body.cms {
   font-family: system-ui, Segoe UI, Roboto, Inter, sans-serif;
   display: flex;
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+body.cms.cms-logo-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(14,23,26,0.92), rgba(14,23,26,0.86));
+  pointer-events: none;
+  z-index: 0;
+}
+body.cms.cms-logo-bg::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: var(--cms-logo-bg);
+  background-size: 40%;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: var(--cms-logo-bg-opacity, 0.35);
+  pointer-events: none;
+  z-index: 1;
+}
+body.cms.cms-logo-bg > * {
+  position: relative;
+  z-index: 2;
 }
 
 /* links & buttons */
@@ -150,6 +176,54 @@ a {
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+.btn.btn-xs {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.1;
+  border-width: 1px;
+}
+.clearable-file-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+.clearable-file-widget .current-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+.clearable-file-widget .current-file {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.clearable-file-widget .upload-new-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+.clearable-file-widget .upload-new-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.clearable-file-widget .upload-new-input {
+  flex: 1 1 auto;
+  min-width: 200px;
+}
+.clearable-file-widget .file-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.clearable-file-widget .file-preview img {
+  max-height: 52px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #0f1419;
+  padding: 2px;
 }
 table.tbl {
   width: 100%;

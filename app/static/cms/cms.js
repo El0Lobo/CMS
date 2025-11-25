@@ -103,6 +103,34 @@ document.body.addEventListener('htmx:configRequest', (e) => {
   if (match) e.detail.headers['X-CSRFToken'] = match.pop();
 });
 
+function initClearableFileButtons() {
+  document.addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-file-clear]');
+    if (!btn) return;
+
+    const checkboxId = btn.getAttribute('data-file-clear');
+    if (!checkboxId) return;
+
+    const checkbox = document.getElementById(checkboxId);
+    if (!checkbox) return;
+
+    const shouldClear = !checkbox.checked;
+    checkbox.checked = shouldClear;
+
+    const inputId = btn.getAttribute('data-file-input');
+    const fileInput = inputId ? document.getElementById(inputId) : null;
+    if (shouldClear && fileInput) {
+      fileInput.value = '';
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    const removeLabel = btn.dataset.labelRemove || 'Remove file';
+    const undoLabel = btn.dataset.labelUndo || 'Undo remove';
+    btn.textContent = shouldClear ? undoLabel : removeLabel;
+    btn.setAttribute('aria-pressed', shouldClear ? 'true' : 'false');
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   // Detect unread on the inbox page you’re already rendering
   const hasUnread = !!document.querySelector('.thread-list .thread-item.unread');
@@ -116,4 +144,5 @@ document.addEventListener('DOMContentLoaded', function () {
     const link = document.querySelector('a.nav-link-inbox');
     if (link) link.classList.toggle('has-unread', anyUnread);
   });
+  initClearableFileButtons();
 });

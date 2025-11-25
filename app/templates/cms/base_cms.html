@@ -42,7 +42,14 @@
 
   {% block extra_head %}{% endblock %}
 </head>
-<body class="cms {% if request.user.is_superuser %}role-superuser{% else %}role-user{% endif %}">
+{% if site_settings.logo %}
+  {% with logo_bg=site_settings.logo.url %}
+    <body class="cms {% if request.user.is_superuser %}role-superuser{% else %}role-user{% endif %} cms-logo-bg"
+    style="--cms-logo-bg: url('{{ logo_bg }}');">
+  {% endwith %}
+{% else %}
+  <body class="cms {% if request.user.is_superuser %}role-superuser{% else %}role-user{% endif %}">
+{% endif %}
   <a href="#main" class="skip-link">{% trans "Skip to content" %}</a>
 
   {# --- Impersonation banner --- #}
