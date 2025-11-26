@@ -253,6 +253,15 @@
           <div id="builder-settings"></div>
         </aside>
       </div>
+      {% if not form.fields.layout_override.widget.is_hidden %}
+        <div class="alert alert-info" style="margin-top:.75rem;">
+          <label class="form-label checkbox" style="margin:0;">
+            {{ form.layout_override }}
+            Make layout unique for {{ request.LANGUAGE_CODE|upper }}.
+          </label>
+          <p class="muted" style="margin:.25rem 0 0;">Unchecked = layout shared across all languages.</p>
+        </div>
+      {% endif %}
     </section>
 
     <div id="asset-browser" class="asset-browser is-hidden" aria-hidden="true">

@@ -321,6 +321,8 @@ def _navigation_renderer(*, context: Context, request=None) -> str:
     props = context["props"]
     from .navigation import build_nav_payload, get_navigation_entries, serialize_nav_entries
 
+    if props.get("enabled") is False:
+        return ""
     site = data_sources.get_site_context()
     logo = _resolve_media(request, site.get("logo"))
     override_links = props.get("links") or context.get("nav_override") or []

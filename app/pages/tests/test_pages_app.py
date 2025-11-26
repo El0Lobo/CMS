@@ -159,3 +159,20 @@ class FooterBlockDefaultsTests(TestCase):
         self.assertNotIn("page-block--footer", main_html)
         self.assertIn("page-block--footer", footer_html)
         self.assertIn("page-block--navigation", nav_html)
+
+    def test_set_blocks_for_language_override(self):
+        page = Page.objects.create(
+            title="Home",
+            slug="home",
+            blocks=[{"id": "hero", "type": "rich_text", "props": {"html": "<p>Base</p>"}}],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        page.set_blocks_for_language("de", [{"id": "hero", "type": "rich_text", "props": {"html": "<p>DE</p>"}}], override=True)
+        self.assertIn("de", page.layout_overrides)
+        self.assertEqual(page.get_blocks_for_language("de")[0]["props"]["html"], "<p>DE</p>")
+
+        page.set_blocks_for_language("de", [{"id": "hero", "type": "rich_text", "props": {"html": "<p>Shared</p>"}}], override=False)
+        self.assertNotIn("de", page.layout_overrides)
+        self.assertEqual(page.get_blocks_for_language("de")[0]["props"]["html"], "<p>Shared</p>")

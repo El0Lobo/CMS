@@ -72,6 +72,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     label: "Navigation bar",
     description: "Configure the main site navigation (brand link + menu).",
     defaults: {
+      enabled: true,
       show_logo: true,
       logo_text: "",
       show_language_switcher: true,
@@ -79,6 +80,7 @@ const DEFAULT_BLOCK_LIBRARY = [
       links: [],
     },
     fields: [
+      { key: "enabled", type: "toggle", label: "Show navigation bar" },
       { key: "show_logo", type: "toggle", label: "Show logo image if available" },
       { key: "logo_text", type: "text", label: "Brand text override", help: "Defaults to site name." },
       {
@@ -697,16 +699,18 @@ async function fetchPreview() {
     try {
       navItems = JSON.parse(navField.value || "[]");
     } catch (error) {
-      console.warn("Could not parse navigation items for preview", error);
       navItems = [];
     }
   }
-  let showNav = showNavField ? !!showNavField.checked : false;
+  let showNav = false;
   const navBlock = state.blocks.find((block) => block.type === "navigation");
   if (navBlock) {
-    showNav = true;
-    const blockLinks = Array.isArray(navBlock.props.links) ? navBlock.props.links : [];
-    navItems = blockLinks.length ? blockLinks : navItems;
+    showNav = navBlock.props.enabled !== false;
+    navItems = Array.isArray(navBlock.props.links) && navBlock.props.links.length
+      ? navBlock.props.links
+      : navItems;
+  } else if (showNavField) {
+    showNav = false;
   }
   const bodyField = document.getElementById("id_body");
   const renderRawField = document.getElementById("id_render_body_only");
@@ -1355,6 +1359,12 @@ function addBlock(type) {
     type,
     props: clone(blueprint.defaults),
   };
+  if (type === "navigation" && Array.isArray(config.nav_items)) {
+    const defaultLinks = config.nav_items.filter((item) => item.checked).map((item) => item.slug);
+    if (defaultLinks.length) {
+      block.props.links = defaultLinks;
+    }
+  }
   state.blocks.push(block);
   state.selectedId = block.id;
   state.dirty = true;

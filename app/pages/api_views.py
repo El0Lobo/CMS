@@ -5,7 +5,6 @@ from typing import Any
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest, JsonResponse
-from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -15,6 +14,7 @@ from . import data_sources
 from .models import Page
 from .navigation import build_nav_payload
 from .serializers import serialize_page
+from .utils import get_page_or_404_any_language
 
 
 def _absolute_media(request, url: str | None) -> str | None:
@@ -137,7 +137,7 @@ def _apply_page_payload(page: Page, data: dict[str, Any], *, user) -> None:
 @login_required
 @require_http_methods(["GET", "PATCH"])
 def page_detail(request, slug):
-    page = get_object_or_404(Page, slug=slug)
+    page = get_page_or_404_any_language(slug)
     if request.method == "GET":
         return JsonResponse(serialize_page(page, request))
 
