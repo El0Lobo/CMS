@@ -108,21 +108,48 @@ class Page(models.Model):
 
         if self.render_body_only or not self.blocks:
             html = self.body or ""
-            return mark_safe(html), mark_safe("")
+            return mark_safe(html), mark_safe(""), mark_safe("")
 
-        main_blocks = [block for block in self.blocks if block.get("type") != "footer"]
+        extra = dict(extra_context or {})
+        extra.setdefault("nav_override", list(self.custom_nav_items or []))
+        extra.setdefault("nav_show_bar", bool(self.show_navigation_bar))
+
+        nav_blocks = [block for block in self.blocks if block.get("type") == "navigation"]
         footer_blocks = [block for block in self.blocks if block.get("type") == "footer"]
+        main_blocks = [
+            block
+            for block in self.blocks
+            if block.get("type") not in {"footer", "navigation"}
+        ]
 
-        main_html = render_blocks(main_blocks, request=request, extra_context=extra_context)
-        footer_html = render_blocks(footer_blocks, request=request, extra_context=extra_context)
-        return main_html, footer_html
+        main_html = render_blocks(main_blocks, request=request, extra_context=extra)
+        footer_html = render_blocks(footer_blocks, request=request, extra_context=extra)
+        if nav_blocks:
+            nav_html = render_blocks(nav_blocks[:1], request=request, extra_context=extra)
+        elif extra.get("nav_show_bar", True):
+            default_props = {**DEFAULT_NAV_PROPS, "links": extra.get("nav_override") or []}
+            nav_html = render_blocks(
+                [{"type": "navigation", "props": default_props}],
+                request=request,
+                extra_context=extra,
+            )
+        else:
+            nav_html = mark_safe("")
+        return main_html, footer_html, nav_html
 
     def render_content(self, *, request=None, extra_context=None) -> str:
         """
         Render the page blocks to HTML. Falls back to legacy body if flagged or empty.
         """
 
-        main_html, footer_html = self.render_content_segments(
+        main_html, footer_html, nav_html = self.render_content_segments(
             request=request, extra_context=extra_context
         )
-        return mark_safe(f"{main_html}{footer_html}")
+        return mark_safe(f"{nav_html}{main_html}{footer_html}")
+DEFAULT_NAV_PROPS = {
+    "show_logo": True,
+    "logo_text": "",
+    "show_language_switcher": True,
+    "layout": "center",
+    "links": [],
+}

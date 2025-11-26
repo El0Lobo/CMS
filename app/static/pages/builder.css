@@ -281,12 +281,69 @@
   font-size: 0.95rem;
 }
 
+.builder-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.builder-checkboxes__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.builder-checkboxes__item input {
+  margin: 0;
+}
+
+.builder-checkboxes__actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+
 .builder-field input:focus,
 .builder-field textarea:focus,
 .builder-field select:focus {
   outline: none;
   border-color: var(--accent, #63b3ff);
   box-shadow: 0 0 0 2px rgba(99, 179, 255, 0.2);
+}
+
+.builder-navlinks__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.builder-navlinks__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.builder-navlinks__item input[type="checkbox"] {
+  margin: 0;
+}
+
+.builder-navlinks__actions {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.builder-navlinks__bulk {
+  margin-top: 0.4rem;
+  display: flex;
+  gap: 0.35rem;
 }
 
 .builder-actions-list {

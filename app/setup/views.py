@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import Group
@@ -16,6 +18,7 @@ from .models import OpeningHour, SiteSettings, VisibilityRule
 from .icon_pack import IconPackError, import_icon_pack
 from .branding_assets import sync_branding_assets
 
+logger = logging.getLogger(__name__)
 
 def setup_access_required(u):
     if not getattr(u, "is_authenticated", False):
@@ -44,6 +47,8 @@ def setup_view(request):
     ensure_hours_for(settings_obj)
 
     if request.method == "POST":
+        scope = request.POST.get("save_scope") or "all"
+        logger.info("Setup POST received (scope=%s) by %s", scope, request.user)
         form = SettingsForm(request.POST, request.FILES, instance=settings_obj)
         tiers = TierFormSet(request.POST, instance=settings_obj, prefix="tiers")
         hours = HourFormSet(request.POST, instance=settings_obj, prefix="hours")
@@ -58,6 +63,17 @@ def setup_view(request):
         roles_ok = roles.is_valid()
 
         if main_ok:
+            address_before = {
+                key: getattr(settings_obj, key)
+                for key in ["address_street", "address_number", "address_postal_code", "address_city", "address_country"]
+            }
+            address_after = {
+                key: form.cleaned_data.get(key)
+                for key in ["address_street", "address_number", "address_postal_code", "address_city", "address_country"]
+            }
+            if address_before != address_after:
+                logger.info("Address change detected: %s -> %s", address_before, address_after)
+            logger.info("Setup settings form valid. Changed fields: %s", form.changed_data)
             settings_saved = form.save()
             sync_branding_assets(
                 settings_saved,
@@ -75,24 +91,29 @@ def setup_view(request):
                 try:
                     import_icon_pack(icon_pack, settings_saved)
                     icon_msg = "Icon pack uploaded."
+                    logger.info("Icon pack processed successfully")
                 except IconPackError as exc:
                     icon_msg = None
                     messages.error(request, f"Icon pack not processed: {exc}")
+                    logger.exception("Icon pack upload failed")
 
             if tiers_ok:
                 tiers.save()
             else:
                 skipped.append("Membership tiers")
+                logger.warning("Membership tiers form invalid: %s", tiers.errors if hasattr(tiers, "errors") else "unknown")
 
             if hours_ok:
                 hours.save()
             else:
                 skipped.append("Opening times")
+                logger.warning("Opening hours form invalid: %s", hours.errors if hasattr(hours, "errors") else "unknown")
 
             if roles_ok:
                 roles.save()
             else:
                 skipped.append("Roles")
+                logger.warning("Roles form invalid: %s", roles.errors if hasattr(roles, "errors") else "unknown")
 
             msg = "Settings saved."
             messages.success(request, msg)
@@ -106,6 +127,7 @@ def setup_view(request):
 
             return redirect("setup:setup")
         else:
+            logger.warning("Setup settings form invalid: %s", form.errors)
             # With our permissive form, this should be rare; still show what failed
             messages.error(
                 request, "Could not save the core settings. Please review the highlighted fields."

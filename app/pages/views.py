@@ -8,10 +8,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
+from django.template.loader import render_to_string
 
 from .forms import PageForm, PagePreviewForm
 from .models import Page
 from .serializers import serialize_page
+from . import data_sources
 
 
 @login_required
@@ -81,23 +83,33 @@ def _nav_builder_items(form: PageForm):
     return ordered
 
 
+def _render_preview_html(page: Page, request) -> str:
+    main_html, footer_html, nav_html = page.render_content_segments(request=request)
+    context = {
+        "page": page,
+        "nav_label": page.title,
+        "is_preview": True,
+        "page_rendered": main_html,
+        "page_footer": footer_html,
+        "navigation_html": nav_html,
+        "public_pages": [],
+        "page_show_nav": False,
+    }
+    return render_to_string("public/page_detail.html", context, request=request)
+
+
 @login_required
 def create(request):
     form_or_response = _handle_form(request)
     if isinstance(form_or_response, HttpResponseBase):
         return form_or_response
     form = form_or_response
-    initial_preview = ""
-    try:
-        initial_preview = form.instance.render_content(request=request)
-    except AttributeError:
-        initial_preview = ""
+    initial_preview = _render_preview_html(form.instance, request)
     context = {
         "mode": "create",
         "form": form,
         "page": None,
         "preview_url": reverse("pages_preview"),
-        "nav_builder_items": _nav_builder_items(form),
         "builder_boot": json.dumps(
             {
                 "mode": "create",
@@ -112,6 +124,8 @@ def create(request):
                     "assets": reverse("pages_api_assets"),
                     "detail": None,
                 },
+                "site_context": data_sources.get_site_context(),
+                "nav_items": _nav_builder_items(form),
             }
         ),
     }
@@ -126,14 +140,13 @@ def edit(request, slug):
         # Successful POST will redirect here
         return form_or_response
     form = form_or_response
-    initial_preview = page.render_content(request=request)
+    initial_preview = _render_preview_html(page, request)
     context = {
         "mode": "edit",
         "form": form,
         "page": page,
         "preview_url": reverse("pages_preview"),
         "page_rendered": initial_preview,
-        "nav_builder_items": _nav_builder_items(form),
         "builder_boot": json.dumps(
             {
                 "mode": "edit",
@@ -148,6 +161,8 @@ def edit(request, slug):
                     "assets": reverse("pages_api_assets"),
                     "detail": reverse("pages_api_detail", args=[page.slug]),
                 },
+                "site_context": data_sources.get_site_context(),
+                "nav_items": _nav_builder_items(form),
             }
         ),
     }
@@ -228,7 +243,7 @@ def preview(request):
             _ = page.hero_image.url
     except Exception:
         page.hero_image = None
-    rendered_main, rendered_footer = page.render_content_segments(request=request)
+    rendered_main, rendered_footer, nav_html = page.render_content_segments(request=request)
 
     return render(
         request,
@@ -239,5 +254,6 @@ def preview(request):
             "is_preview": True,
             "page_rendered": rendered_main,
             "page_footer": rendered_footer,
+            "navigation_html": nav_html,
         },
     )

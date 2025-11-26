@@ -119,7 +119,11 @@
     <p class="lead-muted">Configure global settings (mode, address, socials, membership, opening times, roles).</p>
   </div>
 
-  <form method="post" enctype="multipart/form-data" novalidate class="stack-lg">
+  <div id="setup-unsaved" class="alert alert-warning" role="status" hidden>
+    You have unsaved changes. Remember to save before leaving this page.
+  </div>
+
+  <form id="setup-form" method="post" enctype="multipart/form-data" novalidate class="stack-lg">
     {% csrf_token %}
 
     <!-- ===== Section: General ===== -->
@@ -181,7 +185,7 @@
           <div class="field">
             <label for="address-search">Search & autofill</label>
             <input id="address-search" type="text" placeholder="Start typing an address" data-geo-search autocomplete="off">
-            <p class="text-muted" style="margin:4px 0 0;">Powered by OpenStreetMap Nominatim (free tier). Select a result to fill the address and coordinates.</p>
+            <p class="text-muted" style="margin:4px 0 0;">Powered by OpenStreetMap Nominatim. Select a result to fill the address and coordinates.</p>
             <div class="geo-suggestions" data-geo-results style="display:none; position:relative;"></div>
           </div>
           <div class="field">{{ form.address_street.label_tag }} {{ form.address_street }}</div>
@@ -202,6 +206,12 @@
             <div class="field">{{ form.geo_lng.label_tag }} {{ form.geo_lng }}</div>
           </div>
         </div>
+      </div>
+      <div class="stack" style="margin-top:0.5rem; align-items:flex-start;">
+        <button type="submit" name="save_scope" value="address" class="btn btn-primary btn-sm">
+          Save Address
+        </button>
+        <p class="text-muted mb-0" style="font-size:0.9rem;">Save just the address section without scrolling to the bottom.</p>
       </div>
     </section>
 
@@ -468,11 +478,65 @@
     </section>
 
     <div class="stack" style="grid-auto-flow: column; justify-content: start; gap: 8px;">
-      <button class="btn btn-primary">Save Settings</button>
+      <button class="btn btn-primary" type="submit" name="save_scope" value="all">Save Settings</button>
     </div>
   </form>
 
   <script>
+    (function() {
+      const form = document.getElementById("setup-form");
+      const alertBox = document.getElementById("setup-unsaved");
+      if (!form || !alertBox) return;
+
+      const trackFields = Array.from(form.elements || []).filter((el) => el.name);
+
+      const serialize = () => {
+        return trackFields
+          .map((el) => {
+            if (el.disabled) return "";
+            if (el.type === "file") return "";
+            if (el.type === "checkbox" || el.type === "radio") {
+              return `${el.name}=${el.checked ? "1" : "0"}`;
+            }
+            return `${el.name}=${el.value ?? ""}`;
+          })
+          .filter(Boolean)
+          .join("&");
+      };
+
+      let initialState = serialize();
+      let isDirty = false;
+
+      const updateState = () => {
+        const next = serialize();
+        isDirty = next !== initialState;
+        alertBox.hidden = !isDirty;
+      };
+
+      trackFields.forEach((el) => {
+        el.addEventListener("input", updateState);
+        el.addEventListener("change", updateState);
+      });
+
+      form.addEventListener("submit", () => {
+        isDirty = false;
+        alertBox.hidden = true;
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      });
+
+      const handleBeforeUnload = (event) => {
+        if (!isDirty) return;
+        event.preventDefault();
+        event.returnValue = "";
+      };
+      window.addEventListener("beforeunload", handleBeforeUnload);
+
+      window.addEventListener("pageshow", () => {
+        // handles bfcache restores
+        initialState = serialize();
+        updateState();
+      });
+    })();
     (function() {
       const searchInput = document.querySelector('[data-geo-search]');
       const resultsBox = document.querySelector('[data-geo-results]');
@@ -492,6 +556,14 @@
           clearTimeout(t);
           t = setTimeout(() => fn(...args), delay);
         };
+      };
+
+      const formatCoord = (value) => {
+        const num = Number(value);
+        if (Number.isFinite(num)) {
+          return num.toFixed(6);
+        }
+        return value;
       };
 
       const renderResults = (items) => {
@@ -523,8 +595,8 @@
             if (postal) postal.value = addr.postcode || postal.value;
             if (city) city.value = addr.city || addr.town || addr.village || city.value;
             if (country) country.value = addr.country || country.value;
-            if (lat) lat.value = item.lat || lat.value;
-            if (lng) lng.value = item.lon || lng.value;
+            if (lat) lat.value = formatCoord(item.lat || lat.value);
+            if (lng) lng.value = formatCoord(item.lon || lng.value);
           });
           list.appendChild(li);
         });

@@ -153,8 +153,9 @@ class FooterBlockDefaultsTests(TestCase):
             is_visible=True,
         )
 
-        main_html, footer_html = page.render_content_segments()
+        main_html, footer_html, nav_html = page.render_content_segments()
 
         self.assertIn("Body", main_html)
         self.assertNotIn("page-block--footer", main_html)
         self.assertIn("page-block--footer", footer_html)
+        self.assertIn("page-block--navigation", nav_html)

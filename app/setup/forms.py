@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal, ROUND_HALF_UP
+
 from django import forms
 from django.conf import settings as dj_settings
 from django.contrib.auth.models import Group
@@ -247,9 +249,33 @@ class SettingsForm(ModelForm):
         _update_widget_fields("geo_lat", id="geo-lat", step="0.000001", inputmode="decimal")
         _update_widget_fields("geo_lng", id="geo-lng", step="0.000001", inputmode="decimal")
 
+    def _quantize_coord(self, value):
+        if value in (None, ""):
+            return value
+        if not isinstance(value, Decimal):
+            value = Decimal(str(value))
+        return value.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+
+    def clean_geo_lat(self):
+        value = self.cleaned_data.get("geo_lat")
+        if value in (None, ""):
+            return value
+        try:
+            return self._quantize_coord(value)
+        except Exception:
+            raise forms.ValidationError("Enter a valid latitude with up to 6 decimals.")
+
+    def clean_geo_lng(self):
+        value = self.cleaned_data.get("geo_lng")
+        if value in (None, ""):
+            return value
+        try:
+            return self._quantize_coord(value)
+        except Exception:
+            raise forms.ValidationError("Enter a valid longitude with up to 6 decimals.")
+
     def clean(self):
         data = super().clean()
-
         # ---- Currency
         cur_from_post = self.data.get("currency_text")
         cur_from_clean = self.cleaned_data.get("currency_text")

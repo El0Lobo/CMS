@@ -207,8 +207,9 @@ def preview_html(request):
         custom_nav_items=nav_override,
     )
 
-    main_html, footer_html = preview_page.render_content_segments(
-        request=request, extra_context={"preview": True}
+    main_html, footer_html, nav_html = preview_page.render_content_segments(
+        request=request,
+        extra_context={"preview": True, "nav_override": nav_override},
     )
 
     nav_payload = []
@@ -218,6 +219,7 @@ def preview_html(request):
         "page": preview_page,
         "page_rendered": main_html,
         "page_footer": footer_html,
+        "navigation_html": nav_html,
         "nav_label": preview_page.title,
         "is_preview": True,
         "public_pages": nav_payload,

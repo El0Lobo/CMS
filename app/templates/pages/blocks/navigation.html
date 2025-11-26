@@ -1,0 +1,35 @@
+{% load static %}
+{% load i18n %}
+<section class="page-block page-block--navigation" data-builder-nav>
+  <div class="page-block__container">
+    <header class="page-nav page-nav--{{ props.layout|default:'center' }}">
+      <div class="page-nav__brand">
+        {% if props.show_logo and logo %}
+          <img src="{{ logo }}" alt="{{ site.name }}">
+        {% endif %}
+        <span>{{ props.logo_text|default:site.name }}</span>
+      </div>
+      {% if nav_items %}
+        <nav class="page-nav__links">
+          {% for item in nav_items %}
+            <a href="{{ item.pretty_url|default:item.url }}">{{ item.title }}</a>
+          {% endfor %}
+        </nav>
+      {% endif %}
+      {% if props.show_language_switcher and enabled_languages|length > 1 %}
+        <div class="page-nav__langs">
+          {% get_current_language as LANGUAGE_CODE %}
+          <form action="{% url 'set_language' %}" method="post">
+            {% if request %}{% csrf_token %}{% endif %}
+            <input type="hidden" name="next" value="{{ request.get_full_path|default:'/' }}">
+            <select name="language" onchange="this.form.submit()" aria-label="{% trans 'Choose language' %}">
+              {% for code, label in enabled_languages %}
+                <option value="{{ code }}" {% if code == LANGUAGE_CODE %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      {% endif %}
+    </header>
+  </div>
+</section>
