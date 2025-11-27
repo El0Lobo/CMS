@@ -22,6 +22,7 @@ class SiteSettingsForm(forms.ModelForm):
             "org_name",
             "logo",
             "public_pages_enabled",
+            "dev_login_enabled",
             "enabled_languages",
             "address_street",
             "address_number",
@@ -105,6 +106,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
                     "org_name",
                     "logo",
                     "public_pages_enabled",
+                    "dev_login_enabled",
                 )
             },
         ),

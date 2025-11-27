@@ -68,6 +68,10 @@ class SiteSettings(models.Model):
         default=True,
         help_text=_("Expose the public-facing site powered by the Pages app."),
     )
+    dev_login_enabled = models.BooleanField(
+        default=True,
+        help_text=_("Show the developer login shortcut when running in development/test."),
+    )
 
     # Multilingual settings
     enabled_languages = models.JSONField(

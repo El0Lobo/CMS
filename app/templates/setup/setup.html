@@ -42,6 +42,32 @@
     </div>
   </section>
 
+  <section class="card" data-collapsible-key="setup:tunnel">
+    <h2>
+      <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+      Cloudflare tunnel <small>Share this site temporarily</small>
+    </h2>
+    <div class="card__body stack">
+      <p class="text-muted mb-0">
+        Spins up <code>cloudflared</code> with a random trycloudflare.com URL and disables the dev login shortcut automatically.
+      </p>
+      {% if tunnel_url %}
+        <p class="text-success mb-0">Active tunnel: <a href="{{ tunnel_url }}" target="_blank" rel="noopener">{{ tunnel_url }}</a></p>
+      {% else %}
+        <p class="text-muted mb-0">No tunnel is running.</p>
+      {% endif %}
+      <form method="post" action="{% url 'setup:tunnel_start' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-sm" {% if tunnel_running %}disabled{% endif %}>Start tunnel</button>
+      </form>
+      <form method="post" action="{% url 'setup:tunnel_stop' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary btn-sm" {% if not tunnel_running %}disabled{% endif %}>Stop tunnel</button>
+      </form>
+      <p class="text-muted mb-0" style="font-size:0.85rem;">Requires the <code>cloudflared</code> CLI in PATH.</p>
+    </div>
+  </section>
+
   <form id="setup-form" method="post" enctype="multipart/form-data" novalidate class="stack-lg">
     {% csrf_token %}
 
@@ -308,6 +334,11 @@
           {{ form.public_pages_enabled }} Enable public pages
 
         </label>
+
+        <label class="form-label checkbox" style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;">
+          {{ form.dev_login_enabled }} Show dev login shortcut (dev/test only)
+        </label>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Disable before sharing preview links.</p>
 
         <p class="mt-1 mb-0">
 

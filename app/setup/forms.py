@@ -95,6 +95,7 @@ class SettingsForm(ModelForm):
             "logo_secondary",
             "publish_opening_times",
             "public_pages_enabled",
+            "dev_login_enabled",
             # Address & geodata
             "address_street",
             "address_number",

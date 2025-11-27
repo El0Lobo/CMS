@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+from app.setup.models import SiteSettings
+
 SAMPLE = [
     {
         "title": "Tonight",
@@ -15,7 +17,8 @@ SAMPLE = [
 
 @login_required
 def index(request):
-    return render(request, "door/index.html", {"rows": SAMPLE})
+    max_capacity = SiteSettings.get_solo().maximum_attendee_capacity
+    return render(request, "door/index.html", {"rows": SAMPLE, "max_capacity": max_capacity})
 
 
 @login_required

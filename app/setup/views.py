@@ -14,6 +14,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
+from django.utils.safestring import mark_safe
 from django.conf import settings
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
@@ -23,6 +24,7 @@ from .helpers import is_allowed
 from .models import OpeningHour, SiteSettings, VisibilityRule
 from .icon_pack import IconPackError, import_icon_pack
 from .branding_assets import sync_branding_assets
+from . import tunnel_manager
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +156,8 @@ def setup_view(request):
             "hours": hours,
             "roles": roles,
             "current_mode": current_mode,
+            "tunnel_url": tunnel_manager.current_url(),
+            "tunnel_running": tunnel_manager.is_running(),
         },
     )
 
@@ -244,6 +248,39 @@ def seed_clear(request):
         messages.error(request, f"Database clear failed: {exc}")
     else:
         messages.success(request, "Database cleared. Fresh schema applied (dev admin ensured).")
+    return redirect("setup:setup")
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def tunnel_start(request):
+    target = getattr(settings, "CLOUDFLARE_TUNNEL_URL", "http://127.0.0.1:8000")
+    try:
+        url = tunnel_manager.start_tunnel(target)
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Could not start Cloudflare tunnel: {exc}")
+    else:
+        settings_obj = SiteSettings.get_solo()
+        if settings_obj.dev_login_enabled:
+            settings_obj.dev_login_enabled = False
+            settings_obj.save(update_fields=["dev_login_enabled"])
+            messages.info(request, "Dev login shortcut disabled while tunnel is active.")
+        messages.success(
+            request,
+            mark_safe(f'Tunnel ready: <a href="{url}" target="_blank" rel="noopener">{url}</a>'),
+        )
+    return redirect("setup:setup")
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def tunnel_stop(request):
+    if tunnel_manager.stop_tunnel():
+        messages.success(request, "Cloudflare tunnel stopped.")
+    else:
+        messages.info(request, "No tunnel was running.")
     return redirect("setup:setup")
 
 

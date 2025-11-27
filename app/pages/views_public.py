@@ -142,8 +142,10 @@ class CMSLoginView(LoginView):
         except NoReverseMatch:
             context["password_reset_url"] = None
 
-        # Show dev login button in development/test environments
-        context["show_dev_login"] = settings.ENV in ("development", "test")
+        site_settings = SiteSettings.get_solo()
+        context["show_dev_login"] = (
+            settings.ENV in ("development", "test") and site_settings.dev_login_enabled
+        )
 
         return context
 
@@ -155,7 +157,8 @@ def dev_force_login(request):
     Only available when DJANGO_ENV=development or test.
     """
     # Security check: only allow in development/test environments
-    if settings.ENV not in ("development", "test"):
+    settings_obj = SiteSettings.get_solo()
+    if settings.ENV not in ("development", "test") or not settings_obj.dev_login_enabled:
         messages.error(request, "Dev login is only available in development mode.")
         return redirect("login")
 
