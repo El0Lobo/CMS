@@ -111,27 +111,51 @@ class Page(models.Model):
         if not self.published_at:
             self.published_at = timezone.now()
 
+    def _shared_block_source(self) -> list:
+        """
+        Return the canonical block layout regardless of the currently active language.
+        Falls back to any populated translation field if the shared slot is empty
+        (useful for legacy data that predates the explicit overrides flag).
+        """
+
+        base_field = self._meta.get_field("blocks").attname
+        shared = self.__dict__.get(base_field)
+        if shared:
+            return shared
+
+        default_lang = settings.MODELTRANSLATION_DEFAULT_LANGUAGE
+        default_field = build_localized_fieldname("blocks", default_lang)
+        shared = getattr(self, default_field, None)
+        if shared:
+            return shared
+
+        return []
+
     def get_blocks_for_language(self, lang: str | None = None) -> list:
         lang = lang or translation.get_language() or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
-        overrides = set(self.layout_overrides or [])
-        if lang in overrides:
-            field = build_localized_fieldname("blocks", lang)
-            value = getattr(self, field, None)
-            if value:
-                return deepcopy(value)
-        return deepcopy(self.blocks or [])
+        field = build_localized_fieldname("blocks", lang)
+        value = getattr(self, field, None)
+        if value:
+            return deepcopy(value)
+        return deepcopy(self._shared_block_source())
 
     def set_blocks_for_language(self, lang: str, blocks: list, override: bool) -> None:
         lang = lang or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
+        default_lang = settings.MODELTRANSLATION_DEFAULT_LANGUAGE
         overrides = set(self.layout_overrides or [])
         if override:
             field = build_localized_fieldname("blocks", lang)
             setattr(self, field, deepcopy(blocks))
             overrides.add(lang)
         else:
-            self.blocks = deepcopy(blocks)
-            field = build_localized_fieldname("blocks", lang)
-            setattr(self, field, None)
+            shared_value = deepcopy(blocks)
+            base_field = self._meta.get_field("blocks").attname
+            self.__dict__[base_field] = shared_value
+            with translation.override(default_lang):
+                setattr(self, "blocks", shared_value)
+            if lang != default_lang:
+                field = build_localized_fieldname("blocks", lang)
+                setattr(self, field, None)
             overrides.discard(lang)
         self.layout_overrides = list(overrides)
 

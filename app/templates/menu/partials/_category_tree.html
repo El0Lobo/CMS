@@ -7,11 +7,11 @@
         <li>
           <div style="display:flex; gap:.5rem; align-items:center;">
             <span>↳ <strong>{{ c.name }}</strong></span>
-            <a class="btn btn-sm btn-primary" href="{% url 'menu:category_create' %}?parent={{ c.slug }}&kind={{ c.kind }}">+ Subcategory</a>
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'menu:item_create' %}?category={{ c.slug }}">+ Item here</a>
+            <a class="btn btn-sm btn-primary" href="{% url 'menu:category_create_child' c.slug %}">+ Subcategory</a>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'menu:item_create_here' c.slug %}">+ Item here</a>
             <a class="btn btn-sm btn-secondary" href="{% url 'menu:category_edit' c.slug %}">Rename</a>
             <form method="post" action="{% url 'menu:category_delete' c.slug %}" style="display:inline;">{% csrf_token %}
-              <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete category {{ c.name }}?')">Delete</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete category {{ c.name }} and all nested items?')">Delete</button>
             </form>
           </div>
           {% include 'menu/partials/_category_tree.html' with node=c child_map=child_map %}

@@ -31,7 +31,7 @@ urlpatterns = [
     path("cms/shifts/", include("app.shifts.urls")),
     path("cms/door/", include("app.door.urls")),
     path("cms/merch/", include(("app.merch.urls", "merch"), namespace="merch")),
-    path("cms/inventory/", include("app.inventory.urls")),
+    path("cms/inventory/", include(("app.inventory.urls", "inventory"), namespace="inventory")),
     path("cms/accounting/", include("app.accounting.urls")),
     path("cms/social/", include("app.social.urls")),
     path("cms/automation/", include("app.automation.urls")),

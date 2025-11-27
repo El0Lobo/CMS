@@ -38,22 +38,12 @@ def index(request):
 
 def _handle_form(request, *, instance: Page | None = None):
     language = translation.get_language() or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
-    if request.method == "POST":
-        form = PageForm(request.POST, request.FILES, instance=instance, language=language)
-        if form.is_valid():
-            page = form.save(commit=False)
-            is_new = page.pk is None
-            if is_new and not page.created_by:
-                page.created_by = request.user
-            page.updated_by = request.user
-            if page.status == Page.Status.PUBLISHED and not page.published_at:
-                page.published_at = timezone.now()
-            page.save()
-            form.save_m2m()
-            messages.success(request, "Page saved.")
-            return redirect("pages_edit", slug=page.slug)
-    else:
-        form = PageForm(instance=instance, language=language)
+    form = PageForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=instance,
+        language=language,
+    )
     return form, language
 
 
@@ -103,12 +93,28 @@ def _render_preview_html(page: Page, request) -> str:
     return render_to_string("public/page_detail.html", context, request=request)
 
 
+def _save_page(form: PageForm, request, *, language: str):
+    page = form.save(commit=False)
+    is_new = page.pk is None
+    if is_new and not page.created_by:
+        page.created_by = request.user
+    page.updated_by = request.user
+    if page.status == Page.Status.PUBLISHED and not page.published_at:
+        page.published_at = timezone.now()
+    page.save()
+    form.save_m2m()
+    form.instance = page
+    messages.success(request, "Page saved.")
+    return page
+
+
 @login_required
 def create(request):
     form_or_response, language = _handle_form(request)
-    if isinstance(form_or_response, HttpResponseBase):
-        return form_or_response
     form = form_or_response
+    if request.method == "POST" and form.is_valid():
+        page = _save_page(form, request, language=language)
+        return redirect("pages_edit", slug=page.slug)
     initial_preview = _render_preview_html(form.instance, request)
     context = {
         "mode": "create",
@@ -147,10 +153,10 @@ def create(request):
 def edit(request, slug):
     page = get_page_or_404_any_language(slug)
     form_or_response, language = _handle_form(request, instance=page)
-    if isinstance(form_or_response, HttpResponseBase):
-        # Successful POST will redirect here
-        return form_or_response
     form = form_or_response
+    if request.method == "POST" and form.is_valid():
+        saved = _save_page(form, request, language=language)
+        return redirect("pages_edit", slug=saved.slug)
     initial_preview = _render_preview_html(page, request)
     context = {
         "mode": "edit",

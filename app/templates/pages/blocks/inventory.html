@@ -1,0 +1,24 @@
+<section class="page-block page-block--inventory">
+  <div class="page-block__container">
+    {% if props.title %}
+      <header class="page-block__header">
+        <h2>{{ props.title }}</h2>
+        {% if props.subtitle %}<p>{{ props.subtitle }}</p>{% endif %}
+      </header>
+    {% endif %}
+    <div class="inventory-public-list">
+      {% for item in items %}
+        <article class="inventory-public-card">
+          <h3>{{ item.name }}</h3>
+          {% if item.category %}<p class="text-muted small">{{ item.category }}</p>{% endif %}
+          {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+          {% if item.url %}
+            <a class="btn btn-outline-secondary btn-sm" href="{{ item.url }}" target="_blank" rel="noopener">Learn more</a>
+          {% endif %}
+        </article>
+      {% empty %}
+        <p class="muted">No items published yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>

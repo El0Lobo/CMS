@@ -227,6 +227,27 @@ const DEFAULT_BLOCK_LIBRARY = [
     ],
   },
   {
+    type: "inventory",
+    icon: "📦",
+    label: "Inventory list",
+    description: "List publicly visible inventory items such as board games or gear.",
+    defaults: {
+      title: "Available gear",
+      subtitle: "",
+      category_slugs: "",
+    },
+    fields: [
+      { key: "title", type: "text", label: "Title" },
+      { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
+      {
+        key: "category_slugs",
+        type: "sluglist",
+        label: "Limit to categories",
+        help: "Optional comma-separated inventory category slugs. Leave empty to show all public items.",
+      },
+    ],
+  },
+  {
     type: "gallery",
     icon: "🖼️",
     label: "Gallery",

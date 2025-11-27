@@ -1,0 +1,69 @@
+{% extends "cms/base_cms.html" %}
+{% load static %}
+
+{% block extra_head %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'inventory/manage.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="inventory-toolbar">
+  <div class="inventory-toolbar__actions">
+    <h1>Inventory</h1>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-primary" href="{% url 'inventory:inventory_item_new' %}">+ New item</a>
+      <a class="btn btn-outline-primary" href="{% url 'inventory:inventory_category_new' %}">+ New category</a>
+    </div>
+  </div>
+  <form method="get" class="inventory-filters" id="inventoryFilters">
+    <input class="form-control" id="inventorySearch" type="search" name="q" placeholder="Search items" value="{{ search }}">
+    <select class="form-select" id="inventoryKind" name="kind">
+      <option value="">All types</option>
+      {% for key,label in kinds %}
+        <option value="{{ key }}" {% if kind_filter == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select class="form-select" id="inventoryStatus" name="status">
+      <option value="">All statuses</option>
+      <option value="needs_reorder" {% if status_filter == "needs_reorder" %}selected{% endif %}>Needs reorder</option>
+      <option value="inactive" {% if status_filter == "inactive" %}selected{% endif %}>Inactive</option>
+    </select>
+    <select class="form-select" id="inventoryCategory" name="category">
+      <option value="">All categories</option>
+      {% for cat in category_choices %}
+        <option value="{{ cat.slug }}" {% if category_filter == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+    <a class="btn btn-outline-secondary" href="{% url 'inventory:inventory_manage' %}">Reset</a>
+  </form>
+</div>
+
+{% if top_categories %}
+  {% for cat in top_categories %}
+    {% include "inventory/_category_tree.html" with node=cat currency=currency category_items=category_items %}
+  {% endfor %}
+{% endif %}
+
+{% if uncategorized %}
+  <div class="inventory-card">
+    <div class="card-header">
+      <strong>Uncategorized</strong>
+    </div>
+    <div class="card-body inventory-list">
+      {% for item in uncategorized %}
+        {% include "inventory/_item_row.html" with item=item currency=currency %}
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+{% if not top_categories and not uncategorized %}
+  <div class="alert alert-info">No inventory records yet. Start by adding a category or item.</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_body %}
+  {{ block.super }}
+  {% load static %}
+  <script src="{% static 'inventory/manage.js' %}" defer></script>
+{% endblock %}

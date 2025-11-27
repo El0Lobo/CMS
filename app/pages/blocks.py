@@ -317,6 +317,16 @@ def _gallery_renderer(*, context: Context, request=None) -> str:
     return _render_template("pages/blocks/gallery.html", context, request=request)
 
 
+def _inventory_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    categories = props.get("category_slugs")
+    if isinstance(categories, str):
+        categories = [slug.strip() for slug in categories.split(",") if slug.strip()]
+    items = data_sources.get_public_inventory(categories)
+    context = {**context, "items": items, "props": props}
+    return _render_template("pages/blocks/inventory.html", context, request=request)
+
+
 def _navigation_renderer(*, context: Context, request=None) -> str:
     props = context["props"]
     from .navigation import build_nav_payload, get_navigation_entries, serialize_nav_entries
@@ -351,5 +361,6 @@ BLOCK_RENDERERS = {
     "contact": _contact_renderer,
     "footer": _footer_renderer,
     "gallery": _gallery_renderer,
+    "inventory": _inventory_renderer,
     "navigation": _navigation_renderer,
 }

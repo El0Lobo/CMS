@@ -141,6 +141,8 @@ class SettingsForm(ModelForm):
             "maximum_attendee_capacity",
             "awareness_team_available",
             "awareness_contact",
+            "inventory_notification_groups",
+            "inventory_dashboard_groups",
         ]
         widgets = {
             "same_as": forms.Textarea(
@@ -248,6 +250,9 @@ class SettingsForm(ModelForm):
         )
         _update_widget_fields("geo_lat", id="geo-lat", step="0.000001", inputmode="decimal")
         _update_widget_fields("geo_lng", id="geo-lng", step="0.000001", inputmode="decimal")
+        for multi in ("inventory_notification_groups", "inventory_dashboard_groups"):
+            if multi in self.fields:
+                self.fields[multi].widget.attrs.update({"class": "form-select", "size": "6"})
 
     def _quantize_coord(self, value):
         if value in (None, ""):
@@ -338,3 +343,17 @@ class VisibilityRuleForm(ModelForm):
         model = VisibilityRule
         fields = ["key", "label", "is_enabled", "allowed_groups", "notes"]
         widgets = {"allowed_groups": forms.CheckboxSelectMultiple}
+    inventory_notification_groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.order_by("name"),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"size": 6}),
+        label="Inventory notifications",
+        help_text="Members of these groups receive reorder messages.",
+    )
+    inventory_dashboard_groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.order_by("name"),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"size": 6}),
+        label="Dashboard visibility",
+        help_text="Members of these groups see inventory alerts on the dashboard.",
+    )

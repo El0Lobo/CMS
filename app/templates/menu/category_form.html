@@ -4,8 +4,9 @@
 <form method="post" class="vstack gap-3">
   {% csrf_token %}
   <div class="row g-3">
-    <div class="col-md-6">{{ form.name.label_tag }} {{ form.name }}</div>
-    <div class="col-md-6">{{ form.parent.label_tag }} {{ form.parent }}</div>
+    <div class="col-md-4">{{ form.name.label_tag }} {{ form.name }}</div>
+    <div class="col-md-4">{{ form.parent.label_tag }} {{ form.parent }}</div>
+    <div class="col-md-4">{{ form.unit_group.label_tag }} {{ form.unit_group }}</div>
   </div>
   <div>
     <button class="btn btn-primary">Save</button>

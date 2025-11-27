@@ -1,4 +1,7 @@
 import logging
+import subprocess
+import sys
+from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -11,6 +14,9 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
+from django.core.management import call_command
+from django.contrib.auth import get_user_model
 
 from .forms import GroupFormSet, HourFormSet, SettingsForm, TierFormSet, VisibilityRuleForm
 from .helpers import is_allowed
@@ -150,6 +156,95 @@ def setup_view(request):
             "current_mode": current_mode,
         },
     )
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def seed_export(request):
+    seed_path = Path(settings.BASE_DIR) / "seed_full.json"
+    try:
+        with seed_path.open("w", encoding="utf-8") as seed_file:
+            call_command(
+                "dumpdata",
+                use_natural_foreign_keys=True,
+                use_natural_primary_keys=True,
+                indent=2,
+                stdout=seed_file,
+            )
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Could not generate seed file: {exc}")
+    else:
+        rel = seed_path.relative_to(settings.BASE_DIR)
+        messages.success(request, f"Seed written to {rel}.")
+    return redirect("setup:setup")
+
+
+def _run_manage_command(*args):
+    """Run a management command in a fresh process so destructive actions work reliably."""
+
+    cmd = [sys.executable, str(Path(settings.BASE_DIR) / "manage.py"), *args]
+    result = subprocess.run(cmd, capture_output=True, text=True)  # nosec - dev tool only
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "Command failed")
+    return result.stdout.strip()
+
+
+def _ensure_dev_admin():
+    User = get_user_model()
+    if not User.objects.filter(is_superuser=True).exists():
+        _run_manage_command("create_dev_admin")
+
+
+def _normalise_menu_categories():
+    """
+    Ensure imported seed data leaves menu categories in a usable state.
+    """
+
+    try:
+        from app.menu.models import Category
+    except ImportError:
+        return
+
+    Category.objects.filter(kind__isnull=True).update(kind=Category.KIND_GENERIC)
+    Category.objects.filter(kind="").update(kind=Category.KIND_GENERIC)
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def seed_reset(request):
+    seed_path = Path(settings.BASE_DIR) / "seed_full.json"
+    if not seed_path.exists():
+        messages.error(request, "seed_full.json not found in project root.")
+        return redirect("setup:setup")
+    try:
+        _run_manage_command("flush", "--no-input")
+        _run_manage_command("migrate", "--no-input")
+        _run_manage_command("loaddata", str(seed_path))
+        _ensure_dev_admin()
+        _normalise_menu_categories()
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Reset from seed failed: {exc}")
+    else:
+        messages.success(request, "Database reset from seed_full.json (dev admin ensured).")
+    return redirect("setup:setup")
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def seed_clear(request):
+    try:
+        _run_manage_command("flush", "--no-input")
+        _run_manage_command("migrate", "--no-input")
+        _ensure_dev_admin()
+        _normalise_menu_categories()
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Database clear failed: {exc}")
+    else:
+        messages.success(request, "Database cleared. Fresh schema applied (dev admin ensured).")
+    return redirect("setup:setup")
 
 
 @login_required

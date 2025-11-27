@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from app.assets.models import Asset
 from app.events.models import Event
+from app.inventory.models import InventoryItem
 from app.menu.models import Category, Item
 from app.setup.models import SiteSettings
 
@@ -235,6 +236,23 @@ def get_site_context() -> dict[str, Any]:
         "price_range": settings.price_range,
         "default_currency": settings.default_currency,
     }
+
+
+def get_public_inventory(category_slugs: list[str] | None = None) -> list[dict[str, Any]]:
+    qs = InventoryItem.objects.filter(public_visible=True, is_active=True)
+    if category_slugs:
+        qs = qs.filter(category__slug__in=category_slugs)
+    items = []
+    for item in qs.order_by("name"):
+        items.append(
+            {
+                "name": item.name,
+                "description": item.public_description or item.description,
+                "url": item.public_url,
+                "category": item.category.name if item.category else "",
+            }
+        )
+    return items
 
 
 def get_public_assets(kinds: Sequence[str] | None = None) -> list[dict[str, Any]]:

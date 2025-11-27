@@ -128,6 +128,18 @@ class SiteSettings(models.Model):
         verbose_name="Show opening times on public pages",
         help_text="If checked, opening times will be rendered on public pages.",
     )
+    inventory_notification_groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="inventory_notification_sites",
+        help_text=_("Users in these groups receive inventory reorder messages. Leave empty to notify superusers only."),
+    )
+    inventory_dashboard_groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="inventory_dashboard_sites",
+        help_text=_("Users in these groups see inventory alerts on the dashboard. Leave empty to restrict to superusers."),
+    )
 
     def __str__(self):
         return f"Site Settings ({self.get_mode_display()})"

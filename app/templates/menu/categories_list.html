@@ -3,9 +3,7 @@
 {% block content %}
 <h1>Menu</h1>
 <p>
-  <a class="btn btn-primary" href="{% url 'menu:category_create' %}?kind=drink">+ New top-level (Drinks)</a>
-  <a class="btn btn-secondary" href="{% url 'menu:category_create' %}?kind=food">+ New top-level (Food)</a>
-  <a class="btn btn-outline-secondary" href="{% url 'menu:settings' %}">Seed defaults</a>
+  <a class="btn btn-primary" href="{% url 'menu:category_create' %}">+ New top-level category</a>
 </p>
 <table class="table">
   <thead>
@@ -20,8 +18,8 @@
       <td>{{ c.items.count }}</td>
       <td style="display:flex; gap:.5rem;">
         <a class="btn btn-sm btn-secondary" href="{% url 'menu:category_edit' c.slug %}">Rename / Edit</a>
-        <a class="btn btn-sm btn-primary" href="{% url 'menu:category_create' %}?parent={{ c.slug }}&kind={{ c.kind }}">+ Subcategory</a>
-        <a class="btn btn-sm btn-outline-primary" href="{% url 'menu:item_create' %}?category={{ c.slug }}">+ Item here</a>
+        <a class="btn btn-sm btn-primary" href="{% url 'menu:category_create_child' c.slug %}">+ Subcategory</a>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'menu:item_create_here' c.slug %}">+ Item here</a>
       </td>
     </tr>
     {% empty %}
