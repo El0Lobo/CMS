@@ -139,7 +139,7 @@ class FooterBlockDefaultsTests(TestCase):
         self.assertIn("Contrast", html)
         self.assertIn("Josef-Belli-Weg 4", html)
         self.assertIn("78467 Konstanz", html)
-        self.assertIn("Instagram", html)
+        self.assertIn('aria-label="Instagram"', html)
 
     def test_render_content_segments_places_footer_separately(self):
         page = Page.objects.create(
