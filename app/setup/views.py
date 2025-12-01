@@ -24,7 +24,6 @@ from .helpers import is_allowed
 from .models import OpeningHour, SiteSettings, VisibilityRule
 from .icon_pack import IconPackError, import_icon_pack
 from .branding_assets import sync_branding_assets
-from . import tunnel_manager
 
 logger = logging.getLogger(__name__)
 
@@ -71,17 +70,6 @@ def setup_view(request):
         roles_ok = roles.is_valid()
 
         if main_ok:
-            address_before = {
-                key: getattr(settings_obj, key)
-                for key in ["address_street", "address_number", "address_postal_code", "address_city", "address_country"]
-            }
-            address_after = {
-                key: form.cleaned_data.get(key)
-                for key in ["address_street", "address_number", "address_postal_code", "address_city", "address_country"]
-            }
-            if address_before != address_after:
-                logger.info("Address change detected: %s -> %s", address_before, address_after)
-            logger.info("Setup settings form valid. Changed fields: %s", form.changed_data)
             settings_saved = form.save()
             sync_branding_assets(
                 settings_saved,
@@ -99,11 +87,9 @@ def setup_view(request):
                 try:
                     import_icon_pack(icon_pack, settings_saved)
                     icon_msg = "Icon pack uploaded."
-                    logger.info("Icon pack processed successfully")
                 except IconPackError as exc:
                     icon_msg = None
                     messages.error(request, f"Icon pack not processed: {exc}")
-                    logger.exception("Icon pack upload failed")
 
             if tiers_ok:
                 tiers.save()

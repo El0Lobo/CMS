@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 """
 Shared utilities for bin scripts
 Modern TUI with rich library - battle-tested, beautiful, maintainable
@@ -7,46 +8,66 @@ Modern TUI with rich library - battle-tested, beautiful, maintainable
 import os
 import platform
 import random
+import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 try:
+    from rich import box as rich_box
     from rich.console import Console
     from rich.panel import Panel
     from rich.progress import Progress, SpinnerColumn, TextColumn
     from rich.table import Table
     from rich.text import Text
-    from rich import box as rich_box
 
     console = Console()
     RICH_AVAILABLE = True
+
 except ModuleNotFoundError:
-    # Minimal fallbacks so setup scripts can run before dependencies are installed.
-    class _PlainConsole:
-        def print(self, *args, **kwargs):
-            print(*args)
+    # Clean fallback that strips rich markup when rich isn't installed
+    RICH_AVAILABLE = False
 
-        def rule(self, text: str = "", **kwargs):
-            char = kwargs.get("character", "-") or "-"
-            line = char * 40
-            print(text if text else line)
+    def _strip_markup(text: str) -> str:
+        """Remove rich markup like [bold], [cyan], etc."""
+        return re.sub(r"\[/?[^\]]+\]", "", str(text))
 
-    class _PlainTable:
-        def __init__(self, *_, **__):
-            self._rows: list[str] = []
+    class _FallbackPanel:
+        """Simple panel that just prints the content with borders"""
 
-        def add_column(self, *_, **__):
-            return None
-
-        def add_row(self, *items, **__):
-            self._rows.append(" | ".join(str(item) for item in items))
+        def __init__(self, content, box=None, border_style=None, padding=None, **kwargs):
+            self.content = _strip_markup(content)
 
         def __str__(self):
-            return "\n".join(self._rows)
+            return f"\n{'═' * 60}\n{self.content}\n{'═' * 60}\n"
 
-    class _PlainProgress:
+    class _FallbackTable:
+        """Simple table that prints rows"""
+
+        def __init__(self, show_header=True, box=None, border_style=None, **kwargs):
+            self.rows = []
+            self.show_header = show_header
+
+        def add_column(self, *args, **kwargs):
+            """No-op for compatibility"""
+            pass
+
+        def add_row(self, *items, **kwargs):
+            """Add a row of items"""
+            clean_items = [_strip_markup(item) for item in items]
+            self.rows.append(" | ".join(clean_items))
+
+        def __str__(self):
+            return "\n".join(self.rows)
+
+    class _FallbackProgress:
+        """Simple progress that just prints task descriptions"""
+
+        def __init__(self, *args, **kwargs):
+            """Accept any arguments for compatibility"""
+            pass
+
         def __enter__(self):
             return self
 
@@ -54,38 +75,76 @@ except ModuleNotFoundError:
             return False
 
         def add_task(self, description: str = "", total: int | None = None):
-            print(description)
+            """Print task description and return dummy task ID"""
+            print(_strip_markup(description))
             return 0
 
         def update(self, task_id: int, advance: int = 1, description: str | None = None):
+            """Print update if description provided"""
             if description:
-                print(description)
+                print(_strip_markup(description))
 
-    def Panel(content, *_, **__):
-        return content
+    class _FallbackText(str):
+        """Text class that just behaves like a string"""
 
+        def __new__(cls, text="", style=None):
+            """Create a new Text object, ignoring style in fallback mode"""
+            return str.__new__(cls, text)
+
+    class _FallbackConsole:
+        """Minimal console that strips markup and prints plain text"""
+
+        def print(self, *args, style=None, justify=None, **kwargs):
+            """Print with markup stripped"""
+            clean_args = []
+            for arg in args:
+                # Handle Panel and Table objects
+                if isinstance(arg, _FallbackPanel | _FallbackTable):
+                    clean_args.append(str(arg))
+                else:
+                    clean_args.append(_strip_markup(arg))
+            print(*clean_args)
+
+        def rule(self, text: str = "", style=None, **kwargs):
+            """Print a simple horizontal rule"""
+            print(f"\n{'─' * 60}")
+            if text:
+                print(_strip_markup(text))
+            print("─" * 60)
+
+    class _FallbackBox:
+        """Box styles - all None since we're not using them"""
+
+        DOUBLE = ROUNDED = SIMPLE = None
+
+    # Assign fallback implementations
+    console = _FallbackConsole()
+
+    def Panel(content, **kwargs):  # noqa: N802
+        return _FallbackPanel(content, **kwargs)
+
+    Table = _FallbackTable
+    Progress = _FallbackProgress
+    Text = _FallbackText
+    rich_box = _FallbackBox()
+
+    # These are only used in helper functions, provide dummy classes
     class SpinnerColumn:
-        ...
+        """Dummy spinner column for compatibility"""
+
+        pass
 
     class TextColumn:
-        def __init__(self, template: str, *_, **__):
-            self.template = template
+        """Dummy text column for compatibility"""
 
-    class Text(str):
-        ...
+        def __init__(self, *args, **kwargs):
+            pass
 
-    class _Box:
-        DOUBLE = ROUNDED = None
-
-    console = _PlainConsole()
-    Table = _PlainTable
-    Progress = _PlainProgress
-    rich_box = _Box()
-    RICH_AVAILABLE = False
-
-    console.print(
-        "[info] rich not installed yet; falling back to plain output. "
-        "Install dependencies with `pip install -r requirements.txt -r requirements-dev.txt` for full styling."
+    # Inform user about fallback mode
+    print(
+        "ℹ️  rich not installed yet - using plain output\n"
+        "   Install dependencies to enable beautiful formatting:\n"
+        "   pip install -r requirements.txt -r requirements-dev.txt\n"
     )
 
 
@@ -222,12 +281,9 @@ def show_demoscene_intro(show_tagline: bool = True):
 
 def show_banner(message: str, style: str = "green"):
     """Show a banner message"""
-    console.print(Panel(
-        f"[bold]{message}[/bold]",
-        box=rich_box.DOUBLE,
-        border_style=style,
-        padding=(1, 4)
-    ))
+    console.print(
+        Panel(f"[bold]{message}[/bold]", box=rich_box.DOUBLE, border_style=style, padding=(1, 4))
+    )
 
 
 def get_project_root() -> Path:
@@ -279,9 +335,9 @@ def check_virtualenv() -> bool:
         print_info("Please run setup first:")
 
         if platform.system() == "Windows":
-            console.print(f"  [bold]python bin\\setup[/bold]")
+            console.print("  [bold]python bin\\setup[/bold]")
         else:
-            console.print(f"  [bold]./bin/setup[/bold]")
+            console.print("  [bold]./bin/setup[/bold]")
 
         return False
 
@@ -306,11 +362,7 @@ def run_command(
         command_env.update(env)
 
     try:
-        kwargs: dict[str, Any] = {
-            "check": check,
-            "env": command_env,
-            "cwd": get_project_root()
-        }
+        kwargs: dict[str, Any] = {"check": check, "env": command_env, "cwd": get_project_root()}
 
         if capture_output:
             kwargs["capture_output"] = True
@@ -364,3 +416,35 @@ def create_status_table(results: dict[str, bool]) -> Table:
         table.add_row(status, check_name.title(), result)
 
     return table
+
+
+def with_progress(description: str = "Working..."):
+    """
+    Context manager for long-running operations with a spinner.
+
+    Example:
+        with with_progress("Installing dependencies..."):
+            # Your long-running operation here
+            time.sleep(5)
+    """
+    return Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        transient=True,
+    )
+
+
+def print_styled(text: str, style: str = ""):
+    """
+    Print text with rich styling.
+
+    Args:
+        text: Text to print
+        style: Rich style string (e.g., "bold cyan", "red on white")
+
+    Example:
+        print_styled("Important!", "bold red")
+        print_styled("Success", "green")
+    """
+    styled_text = Text(text, style=style) if style else Text(text)
+    console.print(styled_text)

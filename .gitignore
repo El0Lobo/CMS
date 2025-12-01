@@ -50,9 +50,13 @@ coverage.xml
 # IDE stuff
 .vscode/settings.json
 
+# macOS
+.DS_Store
+
 # local notes and scratch files
 scratch/
 scripts/
+teststuff/
 .timetracker
 teststuff/1.html
 teststuff/folder_tree.txt
