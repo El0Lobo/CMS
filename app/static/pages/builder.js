@@ -280,15 +280,19 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "footer",
     icon: "🦶",
     label: "Footer",
-    description: "Footer bar with brand, navigation, legal, and social links.",
+    description: "Layered footer with brand story, navigation, legal, and social links.",
     defaults: {
       brand_name: "",
       brand_tagline: "",
       brand_logo: "",
       address_html: "",
+      links_heading: "Explore",
+      legal_heading: "Legal",
+      social_heading: "Connect",
       links: [],
       legal: [],
       social_links: [],
+      show_language_switcher: true,
     },
     fields: [
       { key: "brand_name", type: "text", label: "Brand name" },
@@ -300,7 +304,19 @@ const DEFAULT_BLOCK_LIBRARY = [
         help: "Paste an image URL from the media library.",
         assetKinds: ["image"],
       },
-      { key: "address_html", type: "textarea", label: "Address / notes", rows: 3 },
+      {
+        key: "address_html",
+        type: "textarea",
+        label: "About / contact text",
+        rows: 3,
+        help: "Supports line breaks to highlight address, office hours, or other notes.",
+      },
+      {
+        key: "links_heading",
+        type: "text",
+        label: "Primary links heading",
+        help: "Optional title shown above the primary link column.",
+      },
       {
         key: "links",
         type: "list",
@@ -312,6 +328,12 @@ const DEFAULT_BLOCK_LIBRARY = [
           { key: "href", type: "url", label: "URL" },
           { key: "new_tab", type: "toggle", label: "Open in new tab" },
         ],
+      },
+      {
+        key: "legal_heading",
+        type: "text",
+        label: "Legal links heading",
+        help: "Optional title shown above the legal / utility links.",
       },
       {
         key: "legal",
@@ -326,6 +348,12 @@ const DEFAULT_BLOCK_LIBRARY = [
         ],
       },
       {
+        key: "social_heading",
+        type: "text",
+        label: "Social heading",
+        help: "Optional title shown above social link chips.",
+      },
+      {
         key: "social_links",
         type: "list",
         label: "Social links",
@@ -336,6 +364,11 @@ const DEFAULT_BLOCK_LIBRARY = [
           { key: "href", type: "url", label: "URL" },
           { key: "new_tab", type: "toggle", label: "Open in new tab" },
         ],
+      },
+      {
+        key: "show_language_switcher",
+        type: "toggle",
+        label: "Show language switcher",
       },
     ],
   },
@@ -1386,7 +1419,15 @@ function addBlock(type) {
       block.props.links = defaultLinks;
     }
   }
-  state.blocks.push(block);
+  let nextBlocks = state.blocks.slice();
+  if (type === "navigation") {
+    nextBlocks.unshift(block);
+  } else if (type === "footer") {
+    nextBlocks.push(block);
+  } else {
+    nextBlocks.push(block);
+  }
+  state.blocks = nextBlocks;
   state.selectedId = block.id;
   state.dirty = true;
   renderBlockList();

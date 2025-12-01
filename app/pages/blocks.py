@@ -235,6 +235,7 @@ SOCIAL_ICON_FILES = {
     "bandcamp": "icons/bandcamp.svg",
     "linkedin": "icons/linkedin.svg",
     "mastodon": "icons/mastodon.svg",
+    "website": "icons/globe.svg",
 }
 
 
@@ -253,9 +254,24 @@ def _format_address(settings: SiteSettings) -> str:
     return "\n".join(lines)
 
 
+def _social_icon_for(*values: str | None) -> str | None:
+    for raw in values:
+        if not raw:
+            continue
+        slug = re.sub(r"[^a-z0-9]+", "", raw.lower())
+        if slug.startswith("social"):
+            slug = slug.removeprefix("social")
+        if slug.endswith("url"):
+            slug = slug[: -len("url")]
+        if slug in SOCIAL_ICON_FILES:
+            return SOCIAL_ICON_FILES[slug]
+    return None
+
+
 def _footer_renderer(*, context: Context, request=None) -> str:
     props = {**context["props"]}
     settings = SiteSettings.get_solo()
+    site_context = data_sources.get_site_context()
 
     if not props.get("brand_name"):
         props["brand_name"] = settings.org_name
@@ -284,8 +300,10 @@ def _footer_renderer(*, context: Context, request=None) -> str:
             normalised.append(
                 {
                     "label": item.get("label"),
+                    "display": item.get("display"),
                     "href": href,
                     "new_tab": bool(item.get("new_tab")),
+                    "icon": item.get("icon"),
                 }
             )
         return [item for item in normalised if item.get("label") or item.get("href")]
@@ -294,9 +312,30 @@ def _footer_renderer(*, context: Context, request=None) -> str:
         socials: list[dict] = []
         for field, label in SOCIAL_FIELD_LABELS:
             url = getattr(settings, field, "")
-            if url:
-                socials.append({"label": label, "href": url, "new_tab": True})
+            if not url:
+                continue
+            socials.append(
+                {
+                    "label": label,
+                    "href": url,
+                    "new_tab": True,
+                    "icon": _social_icon_for(field, label),
+                }
+            )
         props["social_links"] = socials
+    else:
+        provided: list[dict[str, Any]] = []
+        for item in props.get("social_links") or []:
+            if not item:
+                continue
+            icon = item.get("icon") or _social_icon_for(item.get("label"))
+            provided.append({**item, "icon": icon})
+        props["social_links"] = provided
+
+    props.setdefault("show_language_switcher", True)
+    props.setdefault("links_heading", "Explore")
+    props.setdefault("legal_heading", "Legal")
+    props.setdefault("social_heading", "Connect")
 
     context = {
         **context,
@@ -304,6 +343,8 @@ def _footer_renderer(*, context: Context, request=None) -> str:
         "links": _normalise_links(props.get("links")),
         "legal": _normalise_links(props.get("legal")),
         "social_links": _normalise_links(props.get("social_links")),
+        "site": site_context,
+        "enabled_languages": settings.get_enabled_languages(),
     }
     return _render_template("pages/blocks/footer.html", context, request=request)
 
