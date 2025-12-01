@@ -1,9 +1,14 @@
+from copy import deepcopy
+
+from copy import deepcopy
+
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django_ckeditor_5.fields import CKEditor5Field
+from modeltranslation.utils import build_localized_fieldname
 
 from .blocks import render_blocks
 
@@ -45,6 +50,11 @@ class Page(models.Model):
         default=list,
         blank=True,
         help_text="Ordered list of page slugs to display when this page renders (leave empty to hide the navigation bar).",
+    )
+    layout_overrides = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Languages that have a custom block layout override.",
     )
     hero_image = models.ImageField(upload_to="pages/heroes/", blank=True, null=True)
     published_at = models.DateTimeField(blank=True, null=True)
@@ -101,28 +111,98 @@ class Page(models.Model):
         if not self.published_at:
             self.published_at = timezone.now()
 
+    def _shared_block_source(self) -> list:
+        """
+        Return the canonical block layout regardless of the currently active language.
+        Falls back to any populated translation field if the shared slot is empty
+        (useful for legacy data that predates the explicit overrides flag).
+        """
+
+        base_field = self._meta.get_field("blocks").attname
+        shared = self.__dict__.get(base_field)
+        if shared:
+            return shared
+
+        default_lang = settings.MODELTRANSLATION_DEFAULT_LANGUAGE
+        default_field = build_localized_fieldname("blocks", default_lang)
+        shared = getattr(self, default_field, None)
+        if shared:
+            return shared
+
+        return []
+
+    def get_blocks_for_language(self, lang: str | None = None) -> list:
+        lang = lang or translation.get_language() or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
+        field = build_localized_fieldname("blocks", lang)
+        value = getattr(self, field, None)
+        if value:
+            return deepcopy(value)
+        return deepcopy(self._shared_block_source())
+
+    def set_blocks_for_language(self, lang: str, blocks: list, override: bool) -> None:
+        lang = lang or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
+        default_lang = settings.MODELTRANSLATION_DEFAULT_LANGUAGE
+        overrides = set(self.layout_overrides or [])
+        if override:
+            field = build_localized_fieldname("blocks", lang)
+            setattr(self, field, deepcopy(blocks))
+            overrides.add(lang)
+        else:
+            shared_value = deepcopy(blocks)
+            base_field = self._meta.get_field("blocks").attname
+            self.__dict__[base_field] = shared_value
+            with translation.override(default_lang):
+                setattr(self, "blocks", shared_value)
+            if lang != default_lang:
+                field = build_localized_fieldname("blocks", lang)
+                setattr(self, field, None)
+            overrides.discard(lang)
+        self.layout_overrides = list(overrides)
+
     def render_content_segments(self, *, request=None, extra_context=None):
         """
         Render the page into main/footer fragments so templates can place them separately.
         """
 
-        if self.render_body_only or not self.blocks:
+        lang = translation.get_language() or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
+        blocks_source = self.get_blocks_for_language(lang)
+
+        if self.render_body_only or not blocks_source:
             html = self.body or ""
-            return mark_safe(html), mark_safe("")
+            return mark_safe(html), mark_safe(""), mark_safe("")
 
-        main_blocks = [block for block in self.blocks if block.get("type") != "footer"]
-        footer_blocks = [block for block in self.blocks if block.get("type") == "footer"]
+        extra = dict(extra_context or {})
+        extra.setdefault("nav_override", list(self.custom_nav_items or []))
 
-        main_html = render_blocks(main_blocks, request=request, extra_context=extra_context)
-        footer_html = render_blocks(footer_blocks, request=request, extra_context=extra_context)
-        return main_html, footer_html
+        nav_blocks = [block for block in blocks_source if block.get("type") == "navigation"]
+        footer_blocks = [block for block in blocks_source if block.get("type") == "footer"]
+        main_blocks = [
+            block
+            for block in blocks_source
+            if block.get("type") not in {"footer", "navigation"}
+        ]
+
+        main_html = render_blocks(main_blocks, request=request, extra_context=extra)
+        footer_html = render_blocks(footer_blocks, request=request, extra_context=extra)
+        if nav_blocks:
+            nav_html = render_blocks(nav_blocks[:1], request=request, extra_context=extra)
+        else:
+            nav_html = mark_safe("")
+        return main_html, footer_html, nav_html
 
     def render_content(self, *, request=None, extra_context=None) -> str:
         """
         Render the page blocks to HTML. Falls back to legacy body if flagged or empty.
         """
 
-        main_html, footer_html = self.render_content_segments(
+        main_html, footer_html, nav_html = self.render_content_segments(
             request=request, extra_context=extra_context
         )
-        return mark_safe(f"{main_html}{footer_html}")
+        return mark_safe(f"{nav_html}{main_html}{footer_html}")
+DEFAULT_NAV_PROPS = {
+    "show_logo": True,
+    "logo_text": "",
+    "show_language_switcher": True,
+    "layout": "center",
+    "links": [],
+}

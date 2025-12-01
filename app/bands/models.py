@@ -26,6 +26,7 @@ class Band(models.Model):
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(max_length=220, help_text="Auto-filled from name; you can edit.")
     description = models.TextField(blank=True)
+    genre = models.CharField(max_length=120, blank=True, help_text="Music style (e.g., techno, indie rock).")
     photo = models.ImageField(upload_to="bands/", blank=True, null=True)
 
     contact_type = models.CharField(max_length=10, choices=ContactType.choices, blank=True)

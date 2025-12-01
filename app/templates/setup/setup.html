@@ -1,116 +1,10 @@
 {% extends "cms/base_cms.html" %}
-{% load setup_tags %}
+{% load static setup_tags %}
+{% block extra_head %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'setup/setup.css' %}">
+{% endblock %}
 {% block content %}
-
-<style>
-  /* ===== CMS Setup – minimal design system ===== */
-  :root {
-    --setup-gap: 12px;
-    --setup-gap-lg: 16px;
-    --setup-radius: 8px;
-    --setup-border: 2px;
-    --setup-card-bg: rgba(175, 179, 184, 0.12);
-    --setup-card-bg-strong: rgba(175, 179, 184, 0.24);
-    --setup-border-color: rgba(255,255,255,0.18);
-    --setup-border-strong: rgba(255,255,255,0.28);
-    --setup-muted: #b8bcc3;
-    --setup-accent: #faebd7; /* antique white, matches your chev */
-  }
-
-  #setup-root {
-    display: block;
-  }
-
-  #setup-root h1 {
-    margin: 0 0 6px 0;
-  }
-
-  #setup-root .lead-muted,
-  #setup-root .text-muted {
-    color: var(--setup-muted);
-  }
-
-  /* ===== Utilities ===== */
-  .stack { display: grid; gap: var(--setup-gap); }
-  .stack-lg { display: grid; gap: var(--setup-gap-lg); }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--setup-gap); }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--setup-gap); }
-  .grid-auto-3 { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--setup-gap); }
-  .field { display: grid; gap: 6px; }
-  .mt-1 { margin-top: 6px; }
-  .mt-2 { margin-top: 8px; }
-  .mt-3 { margin-top: 12px; }
-  .mb-0 { margin-bottom: 0; }
-
-  /* ===== Cards ===== */
-  .card {
-    border: var(--setup-border) solid var(--setup-border-color);
-    border-radius: var(--setup-radius);
-    background: var(--setup-card-bg);
-    padding: 12px;
-  }
-
-  .card + .card { margin-top: var(--setup-gap-lg); }
-
-  .card h2 {
-    display: flex;
-    align-items: center;
-    gap: .6rem;
-    margin: 0 0 8px 0;
-    font-size: 1.15rem;
-  }
-
-  .card h2 small { color: var(--setup-muted); font-weight: normal; }
-
-  /* Collapse toggle */
-  .card .collapse-toggle {
-    appearance: none;
-    border: 0;
-    background: none;
-    padding: 0;
-    margin-right: .25rem;
-    font: inherit;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .card .collapse-toggle .chev {
-    display: inline-block;
-    transition: transform .18s ease;
-    color: var(--setup-accent);
-    font-size: 1.1em;
-  }
-  .card[aria-expanded="true"]  .collapse-toggle .chev { transform: rotate(90deg); }
-  .card__body { display: block; }
-  .card[aria-expanded="false"] .card__body { display: none; }
-
-  /* ===== Tables ===== */
-  .table { width: 100%; border-collapse: collapse; }
-  .table th, .table td {
-    text-align: left;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--setup-border-color);
-  }
-  .table tr:hover td { background: var(--setup-card-bg-strong); }
-  .table th { background: rgba(255,255,255,0.06); font-weight: 600; }
-
-  /* ===== Mode-based visibility ===== */
-  .only-venue, .only-band, .only-blog { display: none; }
-  #setup-root[data-mode="venue"] .only-venue { display: block; }
-  #setup-root[data-mode="band"]  .only-band  { display: block; }
-  #setup-root[data-mode="blog"]  .only-blog  { display: block; }
-
-  /* Tiny buttons harmony */
-  .btn.btn-xs { padding: 2px 6px; font-size: .8rem; line-height: 1.1; border-width: 1px; }
-
-  /* Stronger horizontal separator where used */
-  .rule { border: 0; border-top: var(--setup-border) solid var(--setup-border-color); margin: 16px 0; }
-
-  .visibility-anchor {
-    position: relative;
-    display: inline-flex;
-    margin-left: .4rem;
-  }
-</style>
 
 <div id="setup-root" data-mode="{{ current_mode|default:'venue' }}" class="stack-lg">
 
@@ -119,7 +13,62 @@
     <p class="lead-muted">Configure global settings (mode, address, socials, membership, opening times, roles).</p>
   </div>
 
-  <form method="post" enctype="multipart/form-data" novalidate class="stack-lg">
+  <div id="setup-unsaved" class="alert alert-warning" role="status" hidden>
+    You have unsaved changes. Remember to save before leaving this page.
+  </div>
+
+  <section class="card card--seeding" data-collapsible-key="setup:seed">
+    <h2>
+      <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+      Seeding tools <small>Backup or reset demo content</small>
+    </h2>
+    <div class="card__body stack">
+      <form method="post" action="{% url 'setup:seed_export' %}" class="stack">
+        {% csrf_token %}
+        <p class="text-muted mb-0">Dump the current database into <code>seed_full.json</code>. Ideal after curating demo content.</p>
+        <button type="submit" class="btn btn-secondary btn-sm" style="width:max-content;">Generate seed_full.json</button>
+      </form>
+      <hr class="rule">
+      <form method="post" action="{% url 'setup:seed_reset' %}" class="stack" onsubmit="return confirm('This will flush the database, re-run migrations, and load seed_full.json. Continue?');">
+        {% csrf_token %}
+        <p class="text-muted mb-0"><strong>Danger:</strong> This clears the database (including users) and reloads <code>seed_full.json</code>. Use only in development.</p>
+        <button type="submit" class="btn btn-danger btn-sm" style="width:max-content;">Reset database from seed</button>
+      </form>
+      <form method="post" action="{% url 'setup:seed_clear' %}" class="stack" onsubmit="return confirm('This will flush the database and run fresh migrations WITHOUT loading seed data. Continue?');">
+        {% csrf_token %}
+        <p class="text-muted mb-0"><strong>Danger:</strong> Flush everything and leave the schema empty (except the auto-created dev admin).</p>
+        <button type="submit" class="btn btn-danger btn-sm" style="width:max-content;">Clear database only</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="card" data-collapsible-key="setup:tunnel">
+    <h2>
+      <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+      Cloudflare tunnel <small>Share this site temporarily</small>
+    </h2>
+    <div class="card__body stack">
+      <p class="text-muted mb-0">
+        Spins up <code>cloudflared</code> with a random trycloudflare.com URL and disables the dev login shortcut automatically.
+      </p>
+      {% if tunnel_url %}
+        <p class="text-success mb-0">Active tunnel: <a href="{{ tunnel_url }}" target="_blank" rel="noopener">{{ tunnel_url }}</a></p>
+      {% else %}
+        <p class="text-muted mb-0">No tunnel is running.</p>
+      {% endif %}
+      <form method="post" action="{% url 'setup:tunnel_start' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-sm" {% if tunnel_running %}disabled{% endif %}>Start tunnel</button>
+      </form>
+      <form method="post" action="{% url 'setup:tunnel_stop' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary btn-sm" {% if not tunnel_running %}disabled{% endif %}>Stop tunnel</button>
+      </form>
+      <p class="text-muted mb-0" style="font-size:0.85rem;">Requires the <code>cloudflared</code> CLI in PATH.</p>
+    </div>
+  </section>
+
+  <form id="setup-form" method="post" enctype="multipart/form-data" novalidate class="stack-lg">
     {% csrf_token %}
 
     <!-- ===== Section: General ===== -->
@@ -141,6 +90,38 @@
             {% if form.instance.logo and form.instance.logo.url %}
               <p class="text-muted mb-0" aria-live="polite">Using: {{ form.instance.logo.name }}</p>
             {% endif %}
+            <p class="text-muted" style="margin:4px 0 0;">
+              Generate these files via
+              <a href="https://realfavicongenerator.net/" target="_blank" rel="noopener">
+                RealFaviconGenerator
+              </a>
+              (download the favicon package ZIP) and upload it here.
+            </p>
+            {% with current=form.icon_pack.field.widget.attrs.data_current %}
+              {% if current %}
+                <p class="text-muted mb-0" aria-live="polite">Current: {{ current }}</p>
+              {% endif %}
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" data-collapsible-key="setup:inventory">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+        Inventory alerts
+      </h2>
+      <div class="card__body stack">
+        <p class="text-muted mb-0">Choose which groups get reorder emails and who sees inventory warnings on the dashboard.</p>
+        <div class="grid-2">
+          <div class="field">
+            {{ form.inventory_notification_groups.label_tag }} {{ form.inventory_notification_groups }}
+            <p class="text-muted small mb-0">{{ form.inventory_notification_groups.help_text }}</p>
+          </div>
+          <div class="field">
+            {{ form.inventory_dashboard_groups.label_tag }} {{ form.inventory_dashboard_groups }}
+            <p class="text-muted small mb-0">{{ form.inventory_dashboard_groups.help_text }}</p>
           </div>
           <div class="field">
             {{ form.logo_secondary.label_tag }} {{ form.logo_secondary }}
@@ -201,6 +182,12 @@
             <div class="field">{{ form.geo_lat.label_tag }} {{ form.geo_lat }}</div>
             <div class="field">{{ form.geo_lng.label_tag }} {{ form.geo_lng }}</div>
           </div>
+        </div>
+        <div class="address-save">
+          <button type="submit" name="save_scope" value="address" class="btn btn-primary btn-sm">
+            Save Address
+          </button>
+          <p class="text-muted mb-0" style="font-size:0.9rem;">Save just the address section without scrolling to the bottom.</p>
         </div>
       </div>
     </section>
@@ -360,6 +347,11 @@
 
         </label>
 
+        <label class="form-label checkbox" style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;">
+          {{ form.dev_login_enabled }} Show dev login shortcut (dev/test only)
+        </label>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Disable before sharing preview links.</p>
+
         <p class="mt-1 mb-0">
 
           <a class="btn btn-xs btn-outline-secondary" href="/cms/pages/" target="_blank" rel="noopener">
@@ -468,7 +460,7 @@
     </section>
 
     <div class="stack" style="grid-auto-flow: column; justify-content: start; gap: 8px;">
-      <button class="btn btn-primary">Save Settings</button>
+      <button class="btn btn-primary" type="submit" name="save_scope" value="all">Save Settings</button>
     </div>
   </form>
 
@@ -557,148 +549,10 @@
   </script>
 </div>
 
-<script>
-/* ===== General setup toggles ===== */
-(function(){
-  var root = document.getElementById("setup-root");
-  var modeSelect = document.getElementById("id_mode");
-  function syncMode(){
-    var mode = (modeSelect && modeSelect.value ? modeSelect.value : "venue").toLowerCase();
-    root.setAttribute("data-mode", mode);
-  }
-  if (modeSelect){ modeSelect.addEventListener("change", syncMode); }
-  syncMode();
+</div>
+{% endblock %}
 
-  var enabled = document.getElementById("id_membership_enabled");
-  var block = document.getElementById("tiers-block");
-  function syncMembership(){ block.style.display = enabled && enabled.checked ? "block" : "none"; }
-  if (enabled){ enabled.addEventListener("change", syncMembership); syncMembership(); }
-})();
-</script>
-
-<script>
-/* ===== Formset utilities ===== */
-function replaceIndex(str, newIndex){
-  return str.replace(/-(\d+)-/g, `-${newIndex}-`).replace(/_(\d+)_/g, `_${newIndex}_`);
-}
-function markFormRowDeleted(btn){
-  const row = btn.closest('tr');
-  if (!row) return;
-  const del = row.querySelector("input[name$='-DELETE']");
-  if (del){
-    if (del.type === 'checkbox') del.checked = true;
-    else del.value = 'on';
-  }
-  row.style.display = 'none';
-}
-(function() {
-  function addForm(prefix, tableId, rowClass) {
-    const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
-    const formCount = parseInt(totalForms.value, 10);
-    const table = document.getElementById(tableId);
-    const templateRow = table.querySelector('.' + rowClass);
-    if (!templateRow) return;
-
-    const newRow = templateRow.cloneNode(true);
-
-    newRow.querySelectorAll('input,select,textarea').forEach(el => {
-      if (el.name) el.name = replaceIndex(el.name, formCount);
-      if (el.id)   el.id   = replaceIndex(el.id,   formCount);
-
-      if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
-      else if (el.tagName === 'SELECT') el.selectedIndex = -1;
-      else el.value = '';
-    });
-
-    const idField = newRow.querySelector("input[name$='-id']");
-    if (idField) idField.value = '';
-    const del = newRow.querySelector("input[name$='-DELETE']");
-    if (del){ if (del.type === 'checkbox') del.checked = false; else del.value = ''; }
-
-    newRow.style.display = '';
-    table.appendChild(newRow);
-    totalForms.value = formCount + 1;
-  }
-
-  const addTierBtn = document.getElementById('add-tier');
-  if (addTierBtn) addTierBtn.addEventListener('click', function(){ addForm('tiers', 'tiers-table', 'tier-form'); });
-
-  const addRoleBtn = document.getElementById('add-role');
-  if (addRoleBtn) addRoleBtn.addEventListener('click', function(){ addForm('roles', 'roles-table', 'role-form'); });
-})();
-</script>
-
-
-
-<script>
-/* ===== Collapsible cards with persistence ===== */
-(function() {
-  function uid() { return 'c' + Math.random().toString(36).slice(2, 8); }
-  function keyFor(card, headingText) {
-    return card.getAttribute('data-collapsible-key') ||
-           ('setup:' + (headingText || '').trim().toLowerCase().replace(/\s+/g,'-'));
-  }
-
-  // a11y helper for screen readers (kept invisible visually)
-  (function ensureSR(){
-    var sr = document.getElementById('sr-only-style');
-    if (sr) return;
-    sr = document.createElement('style');
-    sr.id = 'sr-only-style';
-    sr.innerHTML = '.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}';
-    document.head.appendChild(sr);
-  })();
-
-  document.querySelectorAll('.card').forEach(function(card) {
-    var h2 = card.querySelector('h2');
-    if (!h2) return;
-
-    // Wrap following siblings of h2 into a .card__body (idempotent)
-    var body = card.querySelector('.card__body');
-    if (!body) {
-      var bodyId = uid();
-      body = document.createElement('div');
-      body.className = 'card__body';
-      body.id = bodyId;
-
-      var n = h2.nextSibling, toMove = [];
-      while (n) { toMove.push(n); n = n.nextSibling; }
-      toMove.forEach(function(node){ body.appendChild(node); });
-      card.appendChild(body);
-
-      var btn = h2.querySelector('.collapse-toggle');
-      if (!btn) {
-        btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'collapse-toggle';
-        btn.innerHTML = '<span class="chev">▸</span><span class="sr-only">Toggle section</span>';
-        h2.insertBefore(btn, h2.firstChild);
-      }
-      btn.setAttribute('aria-controls', bodyId);
-    }
-
-    var headingText = h2.textContent || '';
-    var key = keyFor(card, headingText);
-    var saved = localStorage.getItem(key);
-    var open = saved == null ? true : (saved === '1');
-
-    card.setAttribute('aria-expanded', open ? 'true' : 'false');
-
-    function toggle() {
-      var nowOpen = card.getAttribute('aria-expanded') !== 'true';
-      card.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
-      localStorage.setItem(key, nowOpen ? '1' : '0');
-    }
-
-    h2.addEventListener('click', function(e){
-      var t = e.target;
-      if (t.closest('button, a, input, select, textarea')) return;
-      toggle();
-    });
-    var btnEl = h2.querySelector('.collapse-toggle');
-    if (btnEl) btnEl.addEventListener('click', function(e){ e.stopPropagation(); toggle(); });
-  });
-})();
-</script>
-
+{% block extra_body %}
+  {{ block.super }}
+  <script src="{% static 'setup/setup.js' %}" defer></script>
 {% endblock %}

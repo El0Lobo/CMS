@@ -1,6 +1,8 @@
 import json
 
 from django import forms
+from django.conf import settings
+from django.utils import translation
 from django.utils.text import slugify
 
 from .models import Page
@@ -25,6 +27,10 @@ class PageForm(forms.ModelForm):
     custom_nav_items = forms.CharField(
         required=False,
         widget=forms.HiddenInput(attrs={"data-nav-items": "json"}),
+    )
+    layout_override = forms.BooleanField(
+        required=False,
+        label="Make layout unique for this language",
     )
 
     class Meta:
@@ -72,7 +78,8 @@ class PageForm(forms.ModelForm):
             raise forms.ValidationError("Blocks payload must be a JSON array.")
         return parsed
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, language=None, **kwargs):
+        self.language = language or translation.get_language() or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
         super().__init__(*args, **kwargs)
         initial_nav = (
             self.instance.custom_nav_items
@@ -85,6 +92,21 @@ class PageForm(forms.ModelForm):
             initial_json = "[]"
         self.fields["custom_nav_items"].initial = initial_json
         self.initial["custom_nav_items"] = initial_json
+
+        # Blocks per language
+        if self.instance:
+            blocks_initial = self.instance.get_blocks_for_language(self.language)
+        else:
+            blocks_initial = []
+        try:
+            blocks_json = json.dumps(blocks_initial)
+        except TypeError:
+            blocks_json = "[]"
+        self.fields["blocks"].initial = blocks_json
+        self.initial["blocks"] = blocks_json
+
+        overrides = set(self.instance.layout_overrides or []) if self.instance else set()
+        self.fields["layout_override"].initial = self.language in overrides
 
     def clean_custom_nav_items(self):
         raw = self.cleaned_data.get("custom_nav_items") or "[]"
@@ -111,10 +133,17 @@ class PageForm(forms.ModelForm):
 
     def clean(self):
         data = super().clean()
-        if not data.get("show_navigation_bar"):
-            data["custom_nav_items"] = []
-            self.cleaned_data["custom_nav_items"] = []
         return data
+
+    def save(self, commit=True):
+        page = super().save(commit=False)
+        blocks_data = self.cleaned_data.get("blocks") or []
+        override = bool(self.cleaned_data.get("layout_override"))
+        page.set_blocks_for_language(self.language, blocks_data, override)
+        if commit:
+            page.save()
+            self.save_m2m()
+        return page
 
 
 class PagePreviewForm(PageForm):

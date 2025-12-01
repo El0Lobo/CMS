@@ -7,44 +7,40 @@ from .models import Category, Item, ItemVariant, Unit
 
 class CategoryForm(forms.ModelForm):
     """
-    Form for creating/editing menu categories.
-    - Enforces that parent categories are from the same kind (drink/food).
-    - Root kind is passed in via `root_kind` on initialization.
+    Form for creating/editing menu categories with an unrestricted tree structure.
     """
 
     class Meta:
         model = Category
-        fields = ["name", "parent"]
+        fields = ["name", "parent", "unit_group"]
         widgets = {
             "name": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Category name"}
             ),
             "parent": forms.Select(attrs={"class": "form-select"}),
+            "unit_group": forms.Select(attrs={"class": "form-select"}),
         }
 
     def __init__(self, *args, **kwargs):
-        self.root_kind = kwargs.pop("root_kind", None)  # passed from view
         super().__init__(*args, **kwargs)
-
-        # Determine kind: existing instance or root passed in
-        kind = self.instance.kind if self.instance and self.instance.pk else self.root_kind
-
-        # Restrict parent selection to same kind
-        qs = Category.objects.filter(kind=kind) if kind else Category.objects.all()
+        qs = Category.objects.all().order_by("name")
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
         self.fields["parent"].queryset = qs
+        self.fields["parent"].required = False
+        self.fields["parent"].empty_label = "— Top level —"
+        self.fields["unit_group"].required = False
 
-    def save(self, commit=True):
-        """
-        Ensure `kind` is set based on parent or root_kind.
-        """
-        obj = super().save(commit=False)
-        if obj.parent:
-            obj.kind = obj.parent.kind
-        elif self.root_kind:
-            obj.kind = self.root_kind
-        if commit:
-            obj.save()
-        return obj
+    def clean_parent(self):
+        parent = self.cleaned_data.get("parent")
+        instance_pk = self.instance.pk
+        if parent and instance_pk:
+            current = parent
+            while current:
+                if current.pk == instance_pk:
+                    raise forms.ValidationError("A category cannot be its own parent.")
+                current = current.parent
+        return parent
 
 
 class ItemForm(forms.ModelForm):
@@ -93,8 +89,6 @@ class ItemForm(forms.ModelForm):
 class ItemVariantForm(forms.ModelForm):
     """
     Form for item variants (e.g., Small/0.5 L vs. Large/1.0 L).
-    - Restricts available units depending on item kind (drinks vs. food).
-    - Hides ABV field for food.
     """
 
     class Meta:
@@ -115,21 +109,10 @@ class ItemVariantForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.item_kind = kwargs.pop("item_kind", None)  # passed from view
         super().__init__(*args, **kwargs)
-
-        # Restrict units by kind
-        if self.item_kind == Category.KIND_DRINK:
-            self.fields["unit"].queryset = Unit.objects.filter(code__in=["L", "mL"]).order_by(
-                "code"
-            )
-            self.fields["quantity"].widget.attrs.update({"min": "0.01"})
-        else:
-            self.fields["unit"].queryset = Unit.objects.filter(code__in=["g", "pcs"]).order_by(
-                "code"
-            )
-            self.fields["abv"].widget = forms.HiddenInput()
-            self.fields["abv"].required = False
+        self.fields["unit"].queryset = Unit.objects.all().order_by("display")
+        self.fields["abv"].required = False
+        self.fields["abv"].help_text = "Optional. Alcohol by volume (%)"
 
     def clean(self):
         """

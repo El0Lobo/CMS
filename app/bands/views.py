@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -14,7 +15,7 @@ def index(request):
 
     qs = Band.objects.all()
     if q:
-        qs = qs.filter(name__icontains=q)
+        qs = qs.filter(Q(name__icontains=q) | Q(genre__icontains=q))
     if f_type in {"band", "dj", "solo"}:
         qs = qs.filter(performer_type=f_type)
     if f_pub in {"0", "1"}:

@@ -24,12 +24,13 @@ class BandAdmin(admin.ModelAdmin):
             "Identity",
             {
                 "fields": (
-                    "performer_type",
-                    "name",
-                    "slug",  # auto-filled, not shown in CMS form
-                    "description",
-                    "photo",
-                    "preview_photo",
+                "performer_type",
+                "name",
+                "slug",  # auto-filled, not shown in CMS form
+                "description",
+                "genre",
+                "photo",
+                "preview_photo",
                 )
             },
         ),

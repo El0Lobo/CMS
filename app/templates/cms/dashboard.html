@@ -3,9 +3,32 @@
 {% block title %}{% trans "Dashboard" %}{% endblock %}
 {% block content %}
   <h1>{% trans "Dashboard" %}</h1>
-  <div class="cards">
-    {% for c in cards %}
-    <article class="card"><h3>{{ c.title }}</h3><p>{{ c.body }}</p></article>
-    {% endfor %}
-  </div>
+  {% if cards %}
+    <div class="cards">
+      {% for c in cards %}
+      <article class="card"><h3>{{ c.title }}</h3><p>{{ c.body }}</p></article>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if inventory_alerts %}
+    <section class="card" style="margin-top:1rem;">
+      <h2>Inventory alerts</h2>
+      <p class="text-muted" style="margin-top:.25rem;">Items that need restocking.</p>
+      <ul class="list-group list-group-flush" style="margin-top:.5rem;">
+        {% for item in inventory_alerts %}
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div>
+              <strong>{{ item.name }}</strong>
+              {% if item.location %}<span class="text-muted small"> · {{ item.location }}</span>{% endif %}
+            </div>
+            <small>{{ item.current_stock }} / {{ item.desired_stock }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+      <div style="margin-top:.75rem;">
+        <a class="btn btn-outline-primary btn-sm" href="/cms/inventory/">Open inventory</a>
+      </div>
+    </section>
+  {% endif %}
 {% endblock %}

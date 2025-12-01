@@ -64,9 +64,11 @@ class UnitGroup(models.Model):
 
 
 class Category(models.Model):
+    KIND_GENERIC = "generic"
     KIND_DRINK = "drink"
     KIND_FOOD = "food"
     KIND_CHOICES = [
+        (KIND_GENERIC, "General"),
         (KIND_DRINK, "Drink"),
         (KIND_FOOD, "Food"),
     ]
@@ -76,7 +78,12 @@ class Category(models.Model):
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
     )
-    kind = models.CharField(max_length=16, choices=KIND_CHOICES)
+    kind = models.CharField(
+        max_length=16,
+        choices=KIND_CHOICES,
+        default=KIND_GENERIC,
+        blank=True,
+    )
     unit_group = models.ForeignKey(UnitGroup, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:

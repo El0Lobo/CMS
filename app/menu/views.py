@@ -9,20 +9,11 @@ from django.utils import timezone
 
 from .forms import CategoryForm, ItemForm, ItemVariantFormSet
 from .models import Category, Item
+from app.setup.models import SiteSettings
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _roots() -> tuple[Category | None, Category | None]:
-    """
-    Return the single root 'Drinks' and 'Food' categories, if present.
-    We rely on seed data/migrations to have created them.
-    """
-    drinks = Category.objects.filter(parent__isnull=True, kind=Category.KIND_DRINK).first()
-    food = Category.objects.filter(parent__isnull=True, kind=Category.KIND_FOOD).first()
-    return drinks, food
 
 
 def _now():
@@ -39,18 +30,24 @@ def _now():
 def manage_menu(request):
     """
     Top-level CMS page for managing the menu tree.
-    Warn if the expected roots are missing so the user knows to run seeds.
     """
-    drinks_root, food_root = _roots()
-    if not drinks_root or not food_root:
-        messages.warning(
-            request,
-            "Drinks and Food root categories are missing. Run migrations/seed to create them.",
+    roots = (
+        Category.objects.filter(parent__isnull=True)
+        .prefetch_related(
+            "items__variants",
+            "children",
+            "children__items__variants",
+            "children__children",
+            "children__children__items__variants",
         )
+        .order_by("name")
+    )
+    site_settings = SiteSettings.get_solo()
+    currency = site_settings.default_currency or "€"
     return render(
         request,
         "menu/manage.html",
-        {"drinks_root": drinks_root, "food_root": food_root, "now": _now()},
+        {"root_categories": roots, "now": _now(), "currency": currency},
     )
 
 
@@ -73,30 +70,29 @@ def items_list(request):
 
 
 @login_required
-def category_create(request, root=None, parent_slug=None):
+def category_create(request, parent_slug=None):
     """
-    Create a category either under a specific parent or directly under a root
-    ('drinks'/'food') by setting the form's allowed kind.
+    Create a category optionally under a specific parent.
     """
-    parent = None
-    root_kind = None
-
-    if parent_slug:
-        parent = get_object_or_404(Category, slug=parent_slug)
-        root_kind = parent.kind
-    elif root in ("drinks", "food"):
-        root_kind = Category.KIND_DRINK if root == "drinks" else Category.KIND_FOOD
+    parent = get_object_or_404(Category, slug=parent_slug) if parent_slug else None
+    if parent is None:
+        parent_param = request.GET.get("parent")
+        if parent_param:
+            parent = Category.objects.filter(slug=parent_param).first()
 
     if request.method == "POST":
-        form = CategoryForm(request.POST, root_kind=root_kind)
+        form = CategoryForm(request.POST)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            if parent:
+                obj.parent = parent
+            obj.save()
             messages.success(request, f"Category “{obj.name}” created.")
             return redirect("menu:manage")
     else:
-        form = CategoryForm(root_kind=root_kind, initial={"parent": parent})
+        form = CategoryForm(initial={"parent": parent})
 
-    ctx = {"form": form, "parent": parent, "root_kind": root_kind}
+    ctx = {"form": form, "parent": parent}
     return render(request, "menu/category_form.html", ctx)
 
 
@@ -108,13 +104,13 @@ def category_edit(request, slug):
     obj = get_object_or_404(Category, slug=slug)
 
     if request.method == "POST":
-        form = CategoryForm(request.POST, instance=obj, root_kind=obj.kind)
+        form = CategoryForm(request.POST, instance=obj)
         if form.is_valid():
             form.save()
             messages.success(request, "Category updated.")
             return redirect("menu:manage")
     else:
-        form = CategoryForm(instance=obj, root_kind=obj.kind)
+        form = CategoryForm(instance=obj)
 
     return render(request, "menu/category_form.html", {"form": form, "obj": obj})
 
@@ -122,13 +118,9 @@ def category_edit(request, slug):
 @login_required
 def category_delete(request, slug):
     """
-    Delete a non-root category. Root categories are protected.
+    Delete a category.
     """
     obj = get_object_or_404(Category, slug=slug)
-
-    if obj.parent is None:
-        messages.error(request, "Cannot delete root categories.")
-        return redirect("menu:manage")
 
     if request.method == "POST":
         obj.delete()
@@ -148,8 +140,7 @@ def category_delete(request, slug):
 def item_create(request, parent_slug):
     """
     Create an item under the given parent category and manage its variants
-    via an inline formset. The formset receives the parent kind so it can
-    validate units/fields appropriately (drinks vs food).
+    via an inline formset.
     """
     parent = get_object_or_404(Category, slug=parent_slug)
     item = Item(category=parent)  # unsaved, used to bind the formset instance
@@ -159,7 +150,6 @@ def item_create(request, parent_slug):
         formset = ItemVariantFormSet(
             request.POST,
             instance=item,
-            form_kwargs={"item_kind": parent.kind},
         )
 
         if form.is_valid() and formset.is_valid():
@@ -183,7 +173,6 @@ def item_create(request, parent_slug):
         form = ItemForm(instance=item)
         formset = ItemVariantFormSet(
             instance=item,
-            form_kwargs={"item_kind": parent.kind},
         )
 
     ctx = {
@@ -210,7 +199,6 @@ def item_edit(request, slug):
         formset = ItemVariantFormSet(
             request.POST,
             instance=item,
-            form_kwargs={"item_kind": parent.kind},
         )
 
         if form.is_valid() and formset.is_valid():
@@ -229,7 +217,6 @@ def item_edit(request, slug):
         form = ItemForm(instance=item)
         formset = ItemVariantFormSet(
             instance=item,
-            form_kwargs={"item_kind": parent.kind},
         )
 
     ctx = {

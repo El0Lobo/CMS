@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal, ROUND_HALF_UP
+
 from django import forms
 from django.conf import settings as dj_settings
 from django.contrib.auth.models import Group
@@ -93,6 +95,7 @@ class SettingsForm(ModelForm):
             "logo_secondary",
             "publish_opening_times",
             "public_pages_enabled",
+            "dev_login_enabled",
             # Address & geodata
             "address_street",
             "address_number",
@@ -139,6 +142,8 @@ class SettingsForm(ModelForm):
             "maximum_attendee_capacity",
             "awareness_team_available",
             "awareness_contact",
+            "inventory_notification_groups",
+            "inventory_dashboard_groups",
         ]
         widgets = {
             "same_as": forms.Textarea(
@@ -249,7 +254,6 @@ class SettingsForm(ModelForm):
 
     def clean(self):
         data = super().clean()
-
         # ---- Currency
         cur_from_post = self.data.get("currency_text")
         cur_from_clean = self.cleaned_data.get("currency_text")
@@ -312,3 +316,17 @@ class VisibilityRuleForm(ModelForm):
         model = VisibilityRule
         fields = ["key", "label", "is_enabled", "allowed_groups", "notes"]
         widgets = {"allowed_groups": forms.CheckboxSelectMultiple}
+    inventory_notification_groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.order_by("name"),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"size": 6}),
+        label="Inventory notifications",
+        help_text="Members of these groups receive reorder messages.",
+    )
+    inventory_dashboard_groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.order_by("name"),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"size": 6}),
+        label="Dashboard visibility",
+        help_text="Members of these groups see inventory alerts on the dashboard.",
+    )

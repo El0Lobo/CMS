@@ -1,57 +1,74 @@
+{% load static i18n %}
 <footer class="page-block page-block--footer">
   <div class="page-block__container">
     <div class="page-footer">
-      <div class="page-footer__sections">
-        {% if props.brand_logo_resolved or props.brand_name or props.brand_tagline %}
-          <div class="page-footer__section page-footer__brand">
-            {% if props.brand_logo_resolved %}
+      <div class="page-footer__grid">
+        <div class="page-footer__brand">
+          {% if props.brand_logo_resolved %}
+            <div class="page-footer__logo">
               <img src="{{ props.brand_logo_resolved }}" alt="{{ props.brand_name|default:'Logo' }}">
+            </div>
+          {% endif %}
+          <div class="page-footer__brand-text">
+
+            <h2 class="page-footer__name">{{ props.brand_name|default:site.name }}</h2>
+            {% if props.address_html %}
+              <div class="page-footer__address">{{ props.address_html|linebreaksbr }}</div>
             {% endif %}
-            <div>
-              {% if props.brand_name %}<strong>{{ props.brand_name }}</strong>{% endif %}
-              {% if props.brand_tagline %}<p>{{ props.brand_tagline }}</p>{% endif %}
-            </div>
           </div>
-        {% endif %}
-
-        {% if props.address_html %}
-          <address class="page-footer__section page-footer__address">
-            {{ props.address_html|linebreaksbr }}
-          </address>
-        {% endif %}
-
-        {% if links %}
-          <div class="page-footer__section page-footer__links">
-            <h4>Explore</h4>
-            <div class="page-footer__linklist">
-              {% for link in links %}
-                <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
-              {% endfor %}
-            </div>
-          </div>
-        {% endif %}
-
-        {% if legal %}
-          <div class="page-footer__section page-footer__legal">
-            <h4>Legal</h4>
-            <div class="page-footer__linklist">
-              {% for link in legal %}
-                <a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a>
-              {% endfor %}
-            </div>
-          </div>
-        {% endif %}
-
-        {% if social_links %}
-          <div class="page-footer__section page-footer__socials">
-            <h4>Connect</h4>
-            <div class="page-footer__linklist">
-              {% for item in social_links %}
-                {% if item.href %}
-                  <a href="{{ item.href }}" {% if item.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ item.label }}</a>
+          {% with lang_count=enabled_languages|length %}
+            {% if social_links or props.show_language_switcher and lang_count > 1 %}
+              <div class="page-footer__bottom">
+                {% if social_links %}
+                  <div class="page-footer__socials">
+                    {% if props.social_heading %}
+                      <p class="page-footer__title">{{ props.social_heading }}</p>
+                    {% endif %}
+                    <div class="page-footer__social-links">
+                      {% for link in social_links %}
+                        <a
+                          href="{{ link.href }}"
+                          class="page-footer__social-link"
+                          aria-label="{{ link.label|default:link.href }}"
+                          {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}
+                        >
+                          {% if link.icon %}
+                            <img src="{% static link.icon %}" alt="" aria-hidden="true">
+                          {% else %}
+                            <span>{{ link.label|default:link.href }}</span>
+                          {% endif %}
+                        </a>
+                      {% endfor %}
+                    </div>
+                  </div>
                 {% endif %}
+
+              </div>
+            {% endif %}
+          {% endwith %}
+        </div>
+        {% if links %}
+          <div class="page-footer__group">
+            {% if props.links_heading %}
+              <p class="page-footer__title">{{ props.links_heading }}</p>
+            {% endif %}
+            <ul class="page-footer__list">
+              {% for link in links %}
+                <li><a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label|default:link.href }}</a></li>
               {% endfor %}
-            </div>
+            </ul>
+          </div>
+        {% endif %}
+        {% if legal %}
+          <div class="page-footer__group">
+            {% if props.legal_heading %}
+              <p class="page-footer__title">{{ props.legal_heading }}</p>
+            {% endif %}
+            <ul class="page-footer__list page-footer__list--compact">
+              {% for link in legal %}
+                <li><a href="{{ link.href }}" {% if link.new_tab %}target="_blank" rel="noopener"{% endif %}>{{ link.label|default:link.href }}</a></li>
+              {% endfor %}
+            </ul>
           </div>
         {% endif %}
       </div>

@@ -6,68 +6,6 @@
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'pages/builder.css' %}">
   <style>
-    .nav-builder {
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
-      padding: 1rem;
-      margin-top: 1rem;
-    }
-    .nav-builder__list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
-    }
-    .nav-builder__item {
-      flex: 1 1 280px;
-      max-width: 220px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: .5rem;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 10px;
-      padding: .5rem .6rem;
-      background: rgba(0,0,0,0.12);
-    }
-    .nav-builder__order {
-      font-variant-numeric: tabular-nums;
-      font-weight: 600;
-      font-size: .9rem;
-      padding: .2rem .45rem;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.08);
-    }
-    .nav-builder__label {
-      display: inline-flex;
-      align-items: center;
-      gap: .45rem;
-      margin: 0;
-      font-weight: 500;
-      font-size: .95rem;
-      flex: 0 1 auto;
-      line-height: 1.1;
-      justify-content: center;
-      text-align: center;
-    }
-    .nav-builder__label input { margin: 0; }
-    .nav-label { display: inline-block; line-height: 1.1; }
-    .nav-builder__actions {
-      display: inline-flex;
-      gap: .2rem;
-      align-items: center;
-    }
-    .nav-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      margin: 0;
-      font-weight: 500;
-      width: fit-content;
-    }
-    .nav-toggle input {
-      margin: 0;
-      order: -1;
-    }
     .page-meta-card {
       padding: 1rem 1.1rem;
     }
@@ -213,56 +151,8 @@
       </div>
     {% endif %}
     {{ form.blocks }}
-
-
-    <section class="card card-collapsible"
-             data-page-collapse="navigation"
-             aria-expanded="true"
-             style="margin-bottom:1.5rem;">
-      <header class="card-collapsible__header">
-        <div>
-          <h2>Navigation</h2>
-          <p class="muted" style="margin:.25rem 0 0;">Pick which links appear in this page’s navbar. Leave them all unchecked to hide the bar entirely.</p>
-        </div>
-        <div class="card-collapsible__actions">
-          <button type="button"
-                  class="btn btn-xs btn-outline-secondary card-collapsible__toggle"
-                  data-page-collapse-toggle
-                  aria-expanded="true">
-            <span data-text-when="open">Hide</span>
-            <span data-text-when="closed">Show</span>
-          </button>
-        </div>
-      </header>
-      <div class="card-collapsible__body">
-        <label class="form-label checkbox nav-toggle" style="display: block ruby;accent-color: ;">
-          <span>Show navigation bar on this page</span>
-          {{ form.show_navigation_bar }}
-        </label>
-        <p class="text-warning" id="nav-empty-hint" hidden>Select at least one link to render the navigation bar.</p>
-        {{ form.custom_nav_items }}
-        <div id="nav-builder" class="nav-builder">
-          <div class="nav-builder__list" data-role="nav-list">
-            {% for item in nav_builder_items %}
-              <div class="nav-builder__item" data-slug="{{ item.slug }}">
-                <span class="nav-builder__order">-</span>
-                <label class="nav-builder__label">
-                  <input type="checkbox" class="nav-check" {% if item.checked %}checked{% endif %}>
-                  <span class="nav-label">{{ item.title }}</span>
-                </label>
-                <div class="nav-builder__actions">
-                  <button type="button" class="btn btn-xs btn-outline-secondary" data-move="-1" aria-label="Move up">▲</button>
-                  <button type="button" class="btn btn-xs btn-outline-secondary" data-move="1" aria-label="Move down">▼</button>
-                </div>
-              </div>
-            {% empty %}
-              <p class="muted" style="margin:0;">Create more pages to build a custom navigation menu.</p>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    </section>
-
+    {{ form.custom_nav_items }}
+    {{ form.show_navigation_bar.as_hidden }}
 
 
     <div class="card page-meta-card" style="margin-bottom:1.25rem;">
@@ -363,6 +253,15 @@
           <div id="builder-settings"></div>
         </aside>
       </div>
+      {% if not form.fields.layout_override.widget.is_hidden %}
+        <div class="alert alert-info" style="margin-top:.75rem;">
+          <label class="form-label checkbox" style="margin:0;">
+            {{ form.layout_override }}
+            Make layout unique for {{ request.LANGUAGE_CODE|upper }}.
+          </label>
+          <p class="muted" style="margin:.25rem 0 0;">Unchecked = layout shared across all languages.</p>
+        </div>
+      {% endif %}
     </section>
 
     <div id="asset-browser" class="asset-browser is-hidden" aria-hidden="true">
@@ -438,97 +337,6 @@
     window.__PAGE_BUILDER__ = {{ builder_boot|safe }};
   </script>
   <script type="module" src="{% static 'pages/builder.js' %}"></script>
-  <script>
-  (function(){
-    const wrapper = document.getElementById('nav-builder');
-    if(!wrapper) return;
-    const list = wrapper.querySelector('[data-role="nav-list"]');
-    const hidden = document.getElementById('{{ form.custom_nav_items.id_for_label }}') || document.getElementById('id_custom_nav_items');
-    const toggle = document.getElementById('{{ form.show_navigation_bar.id_for_label }}') || document.getElementById('id_show_navigation_bar');
-    const emptyHint = document.getElementById('nav-empty-hint');
-
-    function currentSelection(){
-      const slugs = [];
-      list.querySelectorAll('.nav-builder__item').forEach(item => {
-        const cb = item.querySelector('.nav-check');
-        if (cb && cb.checked) {
-          slugs.push(item.dataset.slug);
-        }
-      });
-      return slugs;
-    }
-
-    function syncHidden(selection){
-      if (!hidden) return;
-      hidden.value = JSON.stringify(selection);
-    }
-
-    function renumber(selection){
-      let idx = 1;
-      list.querySelectorAll('.nav-builder__item').forEach(item => {
-        const orderEl = item.querySelector('.nav-builder__order');
-        if (!orderEl) return;
-        if (selection.includes(item.dataset.slug)){
-          orderEl.textContent = String(idx++).padStart(2, '0');
-        } else {
-          orderEl.textContent = '–';
-        }
-      });
-    }
-
-    function move(item, delta){
-      const items = Array.from(list.children);
-      const idx = items.indexOf(item);
-      if (idx === -1) return;
-      const nextIndex = Math.max(0, Math.min(items.length - 1, idx + delta));
-      if (idx === nextIndex) return;
-      if (delta > 0){
-        list.insertBefore(item, items[nextIndex].nextElementSibling);
-      } else {
-        list.insertBefore(item, items[nextIndex]);
-      }
-      refresh();
-    }
-
-    list.addEventListener('change', function(e){
-      if (e.target.classList.contains('nav-check')){
-        refresh();
-      }
-    });
-
-    list.addEventListener('click', function(e){
-      const btn = e.target.closest('[data-move]');
-      if (!btn) return;
-      e.preventDefault();
-      move(btn.closest('.nav-builder__item'), Number(btn.dataset.move));
-    });
-
-    function applyState(selection){
-      const navEnabled = toggle ? !!toggle.checked : true;
-      wrapper.classList.toggle('is-disabled', !navEnabled);
-      list.querySelectorAll('input,button').forEach(el => {
-        el.disabled = !navEnabled;
-      });
-      if (emptyHint){
-        emptyHint.hidden = !(navEnabled && selection.length === 0);
-      }
-    }
-
-    function refresh(){
-      const selection = currentSelection();
-      syncHidden(selection);
-      renumber(selection);
-      applyState(selection);
-    }
-
-    if (toggle){
-      toggle.addEventListener('change', refresh);
-    }
-
-    refresh();
-  })();
-  </script>
-
   <script>
   (function(){
     const toggle = document.getElementById('{{ form.render_body_only.id_for_label }}') || document.getElementById('id_render_body_only');

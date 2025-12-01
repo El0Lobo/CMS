@@ -42,6 +42,9 @@
               {{ b.get_performer_type_display }}
               {% if b.last_performed_on %} · {{ b.last_performed_on|date:"d-m-Y" }}{% endif %}
             </div>
+            {% if b.genre %}
+              <div style="font-size:.85rem;color:#888;">Genre: {{ b.genre }}</div>
+            {% endif %}
           </div>
         </div>
 

@@ -67,7 +67,9 @@
   <div class="backdrop" data-nav-close></div>
 
   <aside id="cmsSide" class="cms-nav" role="navigation" aria-label="CMS">
-    {% include "cms/nav.html" %}
+    <div class="cms-nav__inner">
+      {% include "cms/nav.html" %}
+    </div>
   </aside>
 
   <main id="main" class="cms-main">

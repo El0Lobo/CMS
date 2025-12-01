@@ -68,6 +68,10 @@ class SiteSettings(models.Model):
         default=True,
         help_text=_("Expose the public-facing site powered by the Pages app."),
     )
+    dev_login_enabled = models.BooleanField(
+        default=True,
+        help_text=_("Show the developer login shortcut when running in development/test."),
+    )
 
     # Multilingual settings
     enabled_languages = models.JSONField(
@@ -127,6 +131,18 @@ class SiteSettings(models.Model):
         default=False,
         verbose_name="Show opening times on public pages",
         help_text="If checked, opening times will be rendered on public pages.",
+    )
+    inventory_notification_groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="inventory_notification_sites",
+        help_text=_("Users in these groups receive inventory reorder messages. Leave empty to notify superusers only."),
+    )
+    inventory_dashboard_groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="inventory_dashboard_sites",
+        help_text=_("Users in these groups see inventory alerts on the dashboard. Leave empty to restrict to superusers."),
     )
 
     def __str__(self):

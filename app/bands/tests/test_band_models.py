@@ -152,6 +152,11 @@ class BandModelTests(TestCase):
         )
         self.assertEqual(band.comment_internal, "Great to work with, very professional")
 
+    def test_band_genre_field(self):
+        """Bands can store a genre label."""
+        band = Band.objects.create(name="Genre Band", genre="Techno")
+        self.assertEqual(band.genre, "Techno")
+
     def test_band_contact_notes(self):
         """Test contact notes field."""
         band = Band.objects.create(

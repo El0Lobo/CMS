@@ -29,7 +29,12 @@ ENV = env("DJANGO_ENV")  # development, test, staging, production
 DEBUG = env("DJANGO_DEBUG")
 SECRET_KEY = env("SECRET_KEY")
 ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS").split(",") if h.strip()]
+if ".trycloudflare.com" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".trycloudflare.com")
 CSRF_TRUSTED_ORIGINS = [u.strip() for u in env("CSRF_TRUSTED_ORIGINS").split(",") if u.strip()]
+cloudflare_origin = "https://*.trycloudflare.com"
+if cloudflare_origin not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(cloudflare_origin)
 
 FIELD_ENCRYPTION_KEYS = [
     key.strip() for key in env("FIELD_ENCRYPTION_KEYS", default="").split(",") if key.strip()

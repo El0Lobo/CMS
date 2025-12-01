@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import re
 from typing import TYPE_CHECKING, Any
 
 from django.template.loader import render_to_string
@@ -58,8 +59,8 @@ def render_block(
     return renderer(context=context, request=request)
 
 
-def _render_template(template_name: str, context: Context) -> str:
-    return render_to_string(template_name, context)
+def _render_template(template_name: str, context: Context, request=None) -> str:
+    return render_to_string(template_name, context, request=request)
 
 
 def _hero_renderer(*, context: Context, request=None) -> str:
@@ -68,11 +69,11 @@ def _hero_renderer(*, context: Context, request=None) -> str:
     props.setdefault("alignment", "center")
     props.setdefault("overlay", 0.4)
     props.setdefault("actions", [])
-    return _render_template("pages/blocks/hero.html", context)
+    return _render_template("pages/blocks/hero.html", context, request=request)
 
 
 def _rich_text_renderer(*, context: Context, request=None) -> str:
-    return _render_template("pages/blocks/rich_text.html", context)
+    return _render_template("pages/blocks/rich_text.html", context, request=request)
 
 
 def _events_renderer(*, context: Context, request=None) -> str:
@@ -86,27 +87,100 @@ def _events_renderer(*, context: Context, request=None) -> str:
         if request and event.get("url") and event["url"].startswith("/"):
             event["url"] = request.build_absolute_uri(event["url"])
     context = {**context, "events": events}
-    return _render_template("pages/blocks/events.html", context)
+    return _render_template("pages/blocks/events.html", context, request=request)
 
 
 def _menu_renderer(*, context: Context, request=None) -> str:
     props = context["props"]
     categories = data_sources.get_menu_structure(props.get("category_slugs"))
     context = {**context, "categories": categories}
-    return _render_template("pages/blocks/menu.html", context)
+    return _render_template("pages/blocks/menu.html", context, request=request)
 
 
 def _opening_hours_renderer(*, context: Context, request=None) -> str:
     site = data_sources.get_site_context()
     context = {**context, "site": site, "hours": site["opening_hours"]}
-    return _render_template("pages/blocks/opening_hours.html", context)
+    return _render_template("pages/blocks/opening_hours.html", context, request=request)
 
 
 def _contact_renderer(*, context: Context, request=None) -> str:
     site = data_sources.get_site_context()
     site["logo"] = _resolve_media(request, site.get("logo"))
-    context = {**context, "site": site}
-    return _render_template("pages/blocks/contact.html", context)
+    props = context.get("props", {})
+    site_contact = site.get("contact", {}) or {}
+    site_address = site.get("address", {}) or {}
+    site_social = site.get("social", {}) or {}
+
+    default_contact_fields = [field for field, _ in CONTACT_BLOCK_FIELDS]
+    selected_contact_fields = props.get("contact_fields")
+    if isinstance(selected_contact_fields, list):
+        selected_contact_fields = [
+            field for field in selected_contact_fields if field in default_contact_fields
+        ]
+    else:
+        selected_contact_fields = default_contact_fields
+
+    social_defaults = [field for field, _ in CONTACT_BLOCK_SOCIALS]
+    selected_social_fields = props.get("social_fields")
+    if isinstance(selected_social_fields, list):
+        selected_social_fields = [
+            field for field in selected_social_fields if field in social_defaults
+        ]
+    else:
+        selected_social_fields = social_defaults if props.get("show_social", True) else []
+
+    def _clean_url(value: str | None) -> str:
+        if not value:
+            return ""
+        value = re.sub(r"^https?://", "", value)
+        return value.rstrip("/")
+
+    if site_contact.get("website"):
+        site_contact["website_display"] = _clean_url(site_contact.get("website"))
+
+    social_links: list[dict[str, str]] = []
+    for key, label in CONTACT_BLOCK_SOCIALS:
+        if key not in selected_social_fields:
+            continue
+        url = site_social.get(key)
+        if not url:
+            continue
+        social_links.append(
+            {
+                "label": label,
+                "href": url,
+                "display": _clean_url(url),
+                "icon": SOCIAL_ICON_FILES.get(key),
+            }
+        )
+
+    address_has_any = any(
+        [
+            site_address.get("street"),
+            site_address.get("number"),
+            site_address.get("postal_code"),
+            site_address.get("city"),
+            site_address.get("country"),
+        ]
+    )
+
+    show_address = "address" in selected_contact_fields and address_has_any
+    show_phone = "phone" in selected_contact_fields and bool(site_contact.get("phone"))
+    show_email = "email" in selected_contact_fields and bool(site_contact.get("email"))
+    show_website = "website" in selected_contact_fields and bool(site_contact.get("website"))
+
+    context = {
+        **context,
+        "site": site,
+        "contact_fields": selected_contact_fields,
+        "social_links": social_links,
+        "show_address": show_address,
+        "show_phone": show_phone,
+        "show_email": show_email,
+        "show_website": show_website,
+        "contact_icons": CONTACT_ICON_FILES,
+    }
+    return _render_template("pages/blocks/contact.html", context, request=request)
 
 
 SOCIAL_FIELD_LABELS = [
@@ -122,6 +196,47 @@ SOCIAL_FIELD_LABELS = [
     ("social_mastodon", "Mastodon"),
     ("website_url", "Website"),
 ]
+
+CONTACT_BLOCK_FIELDS = [
+    ("address", "Address"),
+    ("phone", "Phone"),
+    ("email", "Email"),
+    ("website", "Website"),
+]
+
+CONTACT_BLOCK_SOCIALS = [
+    ("facebook", "Facebook"),
+    ("instagram", "Instagram"),
+    ("twitter", "Twitter"),
+    ("tiktok", "TikTok"),
+    ("youtube", "YouTube"),
+    ("spotify", "Spotify"),
+    ("soundcloud", "SoundCloud"),
+    ("bandcamp", "Bandcamp"),
+    ("linkedin", "LinkedIn"),
+    ("mastodon", "Mastodon"),
+]
+
+CONTACT_ICON_FILES = {
+    "address": "icons/home.svg",
+    "phone": "icons/phone.svg",
+    "email": "icons/email.svg",
+    "website": "icons/globe.svg",
+}
+
+SOCIAL_ICON_FILES = {
+    "facebook": "icons/facebook.svg",
+    "instagram": "icons/instagram.svg",
+    "twitter": "icons/twitter.svg",
+    "tiktok": "icons/tiktok.svg",
+    "youtube": "icons/youtube.svg",
+    "spotify": "icons/spotify.svg",
+    "soundcloud": "icons/soundcloud.svg",
+    "bandcamp": "icons/bandcamp.svg",
+    "linkedin": "icons/linkedin.svg",
+    "mastodon": "icons/mastodon.svg",
+    "website": "icons/globe.svg",
+}
 
 
 def _format_address(settings: SiteSettings) -> str:
@@ -139,9 +254,24 @@ def _format_address(settings: SiteSettings) -> str:
     return "\n".join(lines)
 
 
+def _social_icon_for(*values: str | None) -> str | None:
+    for raw in values:
+        if not raw:
+            continue
+        slug = re.sub(r"[^a-z0-9]+", "", raw.lower())
+        if slug.startswith("social"):
+            slug = slug.removeprefix("social")
+        if slug.endswith("url"):
+            slug = slug[: -len("url")]
+        if slug in SOCIAL_ICON_FILES:
+            return SOCIAL_ICON_FILES[slug]
+    return None
+
+
 def _footer_renderer(*, context: Context, request=None) -> str:
     props = {**context["props"]}
     settings = SiteSettings.get_solo()
+    site_context = data_sources.get_site_context()
 
     if not props.get("brand_name"):
         props["brand_name"] = settings.org_name
@@ -170,8 +300,10 @@ def _footer_renderer(*, context: Context, request=None) -> str:
             normalised.append(
                 {
                     "label": item.get("label"),
+                    "display": item.get("display"),
                     "href": href,
                     "new_tab": bool(item.get("new_tab")),
+                    "icon": item.get("icon"),
                 }
             )
         return [item for item in normalised if item.get("label") or item.get("href")]
@@ -180,9 +312,30 @@ def _footer_renderer(*, context: Context, request=None) -> str:
         socials: list[dict] = []
         for field, label in SOCIAL_FIELD_LABELS:
             url = getattr(settings, field, "")
-            if url:
-                socials.append({"label": label, "href": url, "new_tab": True})
+            if not url:
+                continue
+            socials.append(
+                {
+                    "label": label,
+                    "href": url,
+                    "new_tab": True,
+                    "icon": _social_icon_for(field, label),
+                }
+            )
         props["social_links"] = socials
+    else:
+        provided: list[dict[str, Any]] = []
+        for item in props.get("social_links") or []:
+            if not item:
+                continue
+            icon = item.get("icon") or _social_icon_for(item.get("label"))
+            provided.append({**item, "icon": icon})
+        props["social_links"] = provided
+
+    props.setdefault("show_language_switcher", True)
+    props.setdefault("links_heading", "Explore")
+    props.setdefault("legal_heading", "Legal")
+    props.setdefault("social_heading", "Connect")
 
     context = {
         **context,
@@ -190,8 +343,10 @@ def _footer_renderer(*, context: Context, request=None) -> str:
         "links": _normalise_links(props.get("links")),
         "legal": _normalise_links(props.get("legal")),
         "social_links": _normalise_links(props.get("social_links")),
+        "site": site_context,
+        "enabled_languages": settings.get_enabled_languages(),
     }
-    return _render_template("pages/blocks/footer.html", context)
+    return _render_template("pages/blocks/footer.html", context, request=request)
 
 
 def _gallery_renderer(*, context: Context, request=None) -> str:
@@ -200,7 +355,42 @@ def _gallery_renderer(*, context: Context, request=None) -> str:
     for item in items:
         item["image_resolved"] = _resolve_media(request, item.get("image"))
     context = {**context, "items": items}
-    return _render_template("pages/blocks/gallery.html", context)
+    return _render_template("pages/blocks/gallery.html", context, request=request)
+
+
+def _inventory_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    categories = props.get("category_slugs")
+    if isinstance(categories, str):
+        categories = [slug.strip() for slug in categories.split(",") if slug.strip()]
+    items = data_sources.get_public_inventory(categories)
+    context = {**context, "items": items, "props": props}
+    return _render_template("pages/blocks/inventory.html", context, request=request)
+
+
+def _navigation_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    from .navigation import build_nav_payload, get_navigation_entries, serialize_nav_entries
+
+    if props.get("enabled") is False:
+        return ""
+    site = data_sources.get_site_context()
+    logo = _resolve_media(request, site.get("logo"))
+    override_links = props.get("links") or context.get("nav_override") or []
+    if override_links:
+        nav_entries = build_nav_payload(override_links)
+    else:
+        nav_entries = serialize_nav_entries(get_navigation_entries())
+    enabled_languages = SiteSettings.get_solo().get_enabled_languages()
+    context = {
+        **context,
+        "props": props,
+        "site": site,
+        "logo": logo,
+        "nav_items": nav_entries,
+        "enabled_languages": enabled_languages,
+    }
+    return _render_template("pages/blocks/navigation.html", context, request=request)
 
 
 BLOCK_RENDERERS = {
@@ -212,4 +402,6 @@ BLOCK_RENDERERS = {
     "contact": _contact_renderer,
     "footer": _footer_renderer,
     "gallery": _gallery_renderer,
+    "inventory": _inventory_renderer,
+    "navigation": _navigation_renderer,
 }

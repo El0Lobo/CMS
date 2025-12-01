@@ -67,6 +67,41 @@ const DEFAULT_BLOCK_LIBRARY = [
     ],
   },
   {
+    type: "navigation",
+    icon: "🧭",
+    label: "Navigation bar",
+    description: "Configure the main site navigation (brand link + menu).",
+    defaults: {
+      enabled: true,
+      show_logo: true,
+      logo_text: "",
+      show_language_switcher: true,
+      layout: "center",
+      links: [],
+    },
+    fields: [
+      { key: "enabled", type: "toggle", label: "Show navigation bar" },
+      { key: "show_logo", type: "toggle", label: "Show logo image if available" },
+      { key: "logo_text", type: "text", label: "Brand text override", help: "Defaults to site name." },
+      {
+        key: "layout",
+        type: "select",
+        label: "Alignment",
+        options: [
+          { value: "center", label: "Centered" },
+          { value: "left", label: "Left" },
+        ],
+      },
+      { key: "show_language_switcher", type: "toggle", label: "Show language switcher" },
+      {
+        key: "links",
+        type: "navlinks",
+        label: "Navigation links",
+        help: "Pick and order the page links for this navigation bar.",
+      },
+    ],
+  },
+  {
     type: "rich_text",
     icon: "✍️",
     label: "Rich text",
@@ -168,10 +203,48 @@ const DEFAULT_BLOCK_LIBRARY = [
     label: "Contact",
     description: "Contact details and social links sourced from site settings.",
     defaults: {
+      contact_fields: null,
+      social_fields: null,
       show_social: true,
     },
     fields: [
-      { key: "show_social", type: "toggle", label: "Show social links" },
+      {
+        key: "contact_fields",
+        type: "checkboxes",
+        label: "Contact details to show",
+        optionsSource: "contact",
+        defaultAll: true,
+        help: "Select which address, phone, email, or website info from Site Settings appears.",
+      },
+      {
+        key: "social_fields",
+        type: "checkboxes",
+        label: "Social profiles",
+        optionsSource: "social",
+        defaultAll: true,
+        help: "Toggle which social links to render. Leave everything unchecked to hide socials.",
+      },
+    ],
+  },
+  {
+    type: "inventory",
+    icon: "📦",
+    label: "Inventory list",
+    description: "List publicly visible inventory items such as board games or gear.",
+    defaults: {
+      title: "Available gear",
+      subtitle: "",
+      category_slugs: "",
+    },
+    fields: [
+      { key: "title", type: "text", label: "Title" },
+      { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
+      {
+        key: "category_slugs",
+        type: "sluglist",
+        label: "Limit to categories",
+        help: "Optional comma-separated inventory category slugs. Leave empty to show all public items.",
+      },
     ],
   },
   {
@@ -207,15 +280,19 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "footer",
     icon: "🦶",
     label: "Footer",
-    description: "Footer bar with brand, navigation, legal, and social links.",
+    description: "Layered footer with brand story, navigation, legal, and social links.",
     defaults: {
       brand_name: "",
       brand_tagline: "",
       brand_logo: "",
       address_html: "",
+      links_heading: "Explore",
+      legal_heading: "Legal",
+      social_heading: "Connect",
       links: [],
       legal: [],
       social_links: [],
+      show_language_switcher: true,
     },
     fields: [
       { key: "brand_name", type: "text", label: "Brand name" },
@@ -227,7 +304,19 @@ const DEFAULT_BLOCK_LIBRARY = [
         help: "Paste an image URL from the media library.",
         assetKinds: ["image"],
       },
-      { key: "address_html", type: "textarea", label: "Address / notes", rows: 3 },
+      {
+        key: "address_html",
+        type: "textarea",
+        label: "About / contact text",
+        rows: 3,
+        help: "Supports line breaks to highlight address, office hours, or other notes.",
+      },
+      {
+        key: "links_heading",
+        type: "text",
+        label: "Primary links heading",
+        help: "Optional title shown above the primary link column.",
+      },
       {
         key: "links",
         type: "list",
@@ -239,6 +328,12 @@ const DEFAULT_BLOCK_LIBRARY = [
           { key: "href", type: "url", label: "URL" },
           { key: "new_tab", type: "toggle", label: "Open in new tab" },
         ],
+      },
+      {
+        key: "legal_heading",
+        type: "text",
+        label: "Legal links heading",
+        help: "Optional title shown above the legal / utility links.",
       },
       {
         key: "legal",
@@ -253,6 +348,12 @@ const DEFAULT_BLOCK_LIBRARY = [
         ],
       },
       {
+        key: "social_heading",
+        type: "text",
+        label: "Social heading",
+        help: "Optional title shown above social link chips.",
+      },
+      {
         key: "social_links",
         type: "list",
         label: "Social links",
@@ -264,14 +365,41 @@ const DEFAULT_BLOCK_LIBRARY = [
           { key: "new_tab", type: "toggle", label: "Open in new tab" },
         ],
       },
+      {
+        key: "show_language_switcher",
+        type: "toggle",
+        label: "Show language switcher",
+      },
     ],
   },
+];
+
+const CONTACT_FIELD_BLUEPRINT = [
+  { value: "address", label: "Address" },
+  { value: "phone", label: "Phone" },
+  { value: "email", label: "Email" },
+  { value: "website", label: "Website" },
+];
+
+const SOCIAL_FIELD_BLUEPRINT = [
+  { value: "facebook", label: "Facebook" },
+  { value: "instagram", label: "Instagram" },
+  { value: "twitter", label: "Twitter" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "youtube", label: "YouTube" },
+  { value: "spotify", label: "Spotify" },
+  { value: "soundcloud", label: "SoundCloud" },
+  { value: "bandcamp", label: "Bandcamp" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "mastodon", label: "Mastodon" },
 ];
 
 const state = {
   blocks: [],
   selectedId: null,
   dirty: false,
+  siteContext: null,
+  siteLoading: false,
 };
 
 function escapeHtml(value = "") {
@@ -287,10 +415,82 @@ function cssUrl(value = "") {
   return String(value).replace(/"/g, '\\"');
 }
 
+function formatAddressPreview(address = {}) {
+  if (!address) return "";
+  const line1 = [address.street, address.number].filter(Boolean).join(" ").trim();
+  const line2 = [address.postal_code, address.city].filter(Boolean).join(" ").trim();
+  const parts = [line1, line2, address.country].filter(Boolean);
+  return parts.join(", ");
+}
+
+function buildContactOptions() {
+  const site = state.siteContext;
+  if (!site) {
+    return CONTACT_FIELD_BLUEPRINT;
+  }
+  const contact = site.contact || {};
+  const options = [];
+  const addressPreview = formatAddressPreview(site.address || {});
+  options.push({
+    value: "address",
+    label: addressPreview ? `Address - ${addressPreview}` : "Address (not set)",
+    disabled: !addressPreview,
+  });
+  options.push({
+    value: "phone",
+    label: contact.phone ? `Phone - ${contact.phone}` : "Phone (not set)",
+    disabled: !contact.phone,
+  });
+  options.push({
+    value: "email",
+    label: contact.email ? `Email - ${contact.email}` : "Email (not set)",
+    disabled: !contact.email,
+  });
+  options.push({
+    value: "website",
+    label: contact.website ? `Website - ${contact.website}` : "Website (not set)",
+    disabled: !contact.website,
+  });
+  return options;
+}
+
+function buildSocialOptions() {
+  const site = state.siteContext;
+  if (!site) {
+    return SOCIAL_FIELD_BLUEPRINT;
+  }
+  const social = site.social || {};
+  return SOCIAL_FIELD_BLUEPRINT.map((option) => {
+    const value = social[option.value];
+    return {
+      value: option.value,
+      label: value ? `${option.label} - ${value}` : `${option.label} (not set)`,
+      disabled: !value,
+    };
+  });
+}
+
+function getCheckboxOptions(field) {
+  if (Array.isArray(field.options)) {
+    return field.options;
+  }
+  if (field.optionsSource === "contact") {
+    return buildContactOptions();
+  }
+  if (field.optionsSource === "social") {
+    return buildSocialOptions();
+  }
+  if (typeof field.getOptions === "function") {
+    return field.getOptions(state, field);
+  }
+  return [];
+}
+
 const dom = {};
 let config = {};
 let previewTimer = null;
 let previewInflight = null;
+let siteContextRequest = null;
 
 const assetState = {
   modal: null,
@@ -462,6 +662,15 @@ function normaliseBlock(block) {
           props[key] = [];
         }
         break;
+      case "checkboxes":
+        if (value === null || value === undefined) {
+          props[key] = null;
+        } else if (Array.isArray(value)) {
+          props[key] = value.filter((item) => typeof item === "string");
+        } else {
+          props[key] = [];
+        }
+        break;
       case "list":
         if (!Array.isArray(value)) {
           props[key] = [];
@@ -544,11 +753,19 @@ async function fetchPreview() {
     try {
       navItems = JSON.parse(navField.value || "[]");
     } catch (error) {
-      console.warn("Could not parse navigation items for preview", error);
       navItems = [];
     }
   }
-  const showNav = showNavField ? !!showNavField.checked : false;
+  let showNav = false;
+  const navBlock = state.blocks.find((block) => block.type === "navigation");
+  if (navBlock) {
+    showNav = navBlock.props.enabled !== false;
+    navItems = Array.isArray(navBlock.props.links) && navBlock.props.links.length
+      ? navBlock.props.links
+      : navItems;
+  } else if (showNavField) {
+    showNav = false;
+  }
   const bodyField = document.getElementById("id_body");
   const renderRawField = document.getElementById("id_render_body_only");
   const payload = {
@@ -777,6 +994,8 @@ function renderField(block, field) {
         updateBlockProp(block.id, field.key, event.target.checked);
       });
       break;
+    case "navlinks":
+      return renderNavLinksField(block, field, container);
     case "sluglist":
       input = document.createElement("input");
       input.type = "text";
@@ -793,6 +1012,8 @@ function renderField(block, field) {
       break;
     case "list":
       return renderListField(block, field);
+    case "checkboxes":
+      return renderCheckboxField(block, field, container);
     default:
       input = document.createElement("input");
       input.type = "text";
@@ -825,6 +1046,114 @@ function renderField(block, field) {
     }
   }
 
+  return container;
+}
+
+function renderCheckboxField(block, field, container) {
+  const options = getCheckboxOptions(field);
+  const wrapper = document.createElement("div");
+  wrapper.className = "builder-checkboxes";
+
+  if (!options.length) {
+    const message = document.createElement("p");
+    message.className = "muted";
+    message.textContent = state.siteLoading
+      ? "Loading site details..."
+      : "No options available. Update Site Settings first.";
+    wrapper.appendChild(message);
+    container.appendChild(wrapper);
+    return container;
+  }
+
+  const enabledValues = options.filter((opt) => !opt.disabled).map((opt) => opt.value);
+  const stored = block.props[field.key];
+  const defaultSelection = field.defaultAll === false ? [] : enabledValues;
+  const initialSelection =
+    Array.isArray(stored) && stored.length ? stored.filter((val) => enabledValues.includes(val)) : defaultSelection;
+  const selected = new Set(initialSelection);
+  const checkboxes = [];
+
+  options.forEach((option) => {
+    const item = document.createElement("label");
+    item.className = "builder-checkboxes__item";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = option.value;
+    checkbox.disabled = Boolean(option.disabled);
+    checkbox.checked = selected.has(option.value) && !checkbox.disabled;
+    checkbox.addEventListener("change", () => {
+      if (checkbox.disabled) {
+        return;
+      }
+      if (checkbox.checked) {
+        selected.add(option.value);
+      } else {
+        selected.delete(option.value);
+      }
+      updateBlockProp(block.id, field.key, Array.from(selected));
+    });
+
+    const text = document.createElement("span");
+    text.textContent = option.label || option.value;
+
+    item.appendChild(checkbox);
+    item.appendChild(text);
+    wrapper.appendChild(item);
+    checkboxes.push({ checkbox, option });
+  });
+
+  container.appendChild(wrapper);
+
+  const actions = document.createElement("div");
+  actions.className = "builder-checkboxes__actions";
+
+  const selectAll = document.createElement("button");
+  selectAll.type = "button";
+  selectAll.className = "btn btn-xs";
+  selectAll.textContent = "Select all";
+  selectAll.addEventListener("click", () => {
+    selected.clear();
+    checkboxes.forEach(({ checkbox, option }) => {
+      if (option.disabled) {
+        checkbox.checked = false;
+        return;
+      }
+      checkbox.checked = true;
+      selected.add(option.value);
+    });
+    updateBlockProp(block.id, field.key, Array.from(selected));
+  });
+  actions.appendChild(selectAll);
+
+  const clearAll = document.createElement("button");
+  clearAll.type = "button";
+  clearAll.className = "btn btn-xs btn-outline-secondary";
+  clearAll.textContent = "Clear";
+  clearAll.addEventListener("click", () => {
+    selected.clear();
+    checkboxes.forEach(({ checkbox }) => {
+      checkbox.checked = false;
+    });
+    updateBlockProp(block.id, field.key, []);
+  });
+  actions.appendChild(clearAll);
+
+  const refreshBtn = document.createElement("button");
+  refreshBtn.type = "button";
+  refreshBtn.className = "btn btn-xs";
+  refreshBtn.textContent = "Refresh site info";
+  refreshBtn.addEventListener("click", () => {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Refreshing…";
+    fetchSiteContext(true).finally(() => {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = "Refresh site info";
+    });
+  });
+  actions.appendChild(refreshBtn);
+
+  container.appendChild(actions);
   return container;
 }
 
@@ -947,6 +1276,122 @@ function renderListField(block, field) {
   return container;
 }
 
+function renderNavLinksField(block, field, container) {
+  const items = config.nav_items || [];
+  if (!items.length) {
+    const message = document.createElement("p");
+    message.className = "muted";
+    message.textContent = "Add more pages to configure navigation links.";
+    container.appendChild(message);
+    return container;
+  }
+
+  const legacyField = document.getElementById("id_custom_nav_items");
+  const legacyToggle = document.getElementById("id_show_navigation_bar");
+  if (legacyToggle) legacyToggle.value = "True";
+
+  const stored = Array.isArray(block.props[field.key]) ? block.props[field.key].slice() : null;
+  let selectedOrder = Array.isArray(stored) && stored.length
+    ? stored.slice()
+    : items.filter((item) => item.checked).map((item) => item.slug);
+  selectedOrder = Array.from(new Set(selectedOrder));
+  const allOrder = selectedOrder.concat(
+    items.map((item) => item.slug).filter((slug) => !selectedOrder.includes(slug))
+  );
+
+  const list = document.createElement("div");
+  list.className = "builder-navlinks__list";
+  container.appendChild(list);
+
+  function updateSelection() {
+    const checked = [];
+    Array.from(list.children).forEach((row) => {
+      const slug = row.dataset.slug;
+      const checkbox = row.querySelector("input[type='checkbox']");
+      if (checkbox && checkbox.checked) {
+        checked.push(slug);
+      }
+    });
+    if (legacyField) legacyField.value = JSON.stringify(checked);
+    updateBlockProp(block.id, field.key, checked);
+  }
+
+  function moveRow(row, direction) {
+    if (!row) return;
+    if (direction === -1 && row.previousElementSibling) {
+      list.insertBefore(row, row.previousElementSibling);
+    } else if (direction === 1 && row.nextElementSibling) {
+      list.insertBefore(row.nextElementSibling, row);
+    }
+    updateSelection();
+  }
+
+  allOrder.forEach((slug) => {
+    const meta = items.find((item) => item.slug === slug) || { slug, title: slug };
+    const row = document.createElement("div");
+    row.className = "builder-navlinks__item";
+    row.dataset.slug = slug;
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked =
+      (stored && stored.length ? stored.includes(slug) : undefined) ?? Boolean(meta.checked);
+    checkbox.addEventListener("change", updateSelection);
+
+    const name = document.createElement("span");
+    name.textContent = meta.title || slug;
+
+    const actions = document.createElement("div");
+    actions.className = "builder-navlinks__actions";
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "btn btn-xs";
+    upBtn.textContent = "▲";
+    upBtn.addEventListener("click", () => moveRow(row, -1));
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "btn btn-xs";
+    downBtn.textContent = "▼";
+    downBtn.addEventListener("click", () => moveRow(row, 1));
+    actions.appendChild(upBtn);
+    actions.appendChild(downBtn);
+
+    row.appendChild(checkbox);
+    row.appendChild(name);
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+
+  const bulk = document.createElement("div");
+  bulk.className = "builder-navlinks__bulk";
+  const selectAll = document.createElement("button");
+  selectAll.type = "button";
+  selectAll.className = "btn btn-xs";
+  selectAll.textContent = "Select all";
+  selectAll.addEventListener("click", () => {
+    list.querySelectorAll("input[type='checkbox']").forEach((box) => {
+      box.checked = true;
+    });
+    updateSelection();
+  });
+  const clearAll = document.createElement("button");
+  clearAll.type = "button";
+  clearAll.className = "btn btn-xs btn-outline-secondary";
+  clearAll.textContent = "Clear";
+  clearAll.addEventListener("click", () => {
+    list.querySelectorAll("input[type='checkbox']").forEach((box) => {
+      box.checked = false;
+    });
+    updateSelection();
+  });
+  bulk.appendChild(selectAll);
+  bulk.appendChild(clearAll);
+  container.appendChild(bulk);
+
+  updateSelection();
+  return container;
+}
+
 function updateBlockProp(blockId, key, value) {
   const block = state.blocks.find((item) => item.id === blockId);
   if (!block) {
@@ -968,7 +1413,21 @@ function addBlock(type) {
     type,
     props: clone(blueprint.defaults),
   };
-  state.blocks.push(block);
+  if (type === "navigation" && Array.isArray(config.nav_items)) {
+    const defaultLinks = config.nav_items.filter((item) => item.checked).map((item) => item.slug);
+    if (defaultLinks.length) {
+      block.props.links = defaultLinks;
+    }
+  }
+  let nextBlocks = state.blocks.slice();
+  if (type === "navigation") {
+    nextBlocks.unshift(block);
+  } else if (type === "footer") {
+    nextBlocks.push(block);
+  } else {
+    nextBlocks.push(block);
+  }
+  state.blocks = nextBlocks;
   state.selectedId = block.id;
   state.dirty = true;
   renderBlockList();
@@ -1029,12 +1488,47 @@ function handlePreviewButton(event) {
   schedulePreview(true);
 }
 
+function fetchSiteContext(force = false) {
+  if (!config.urls || !config.urls.site) {
+    return Promise.resolve(null);
+  }
+  if (!force && state.siteContext && !state.siteLoading) {
+    return Promise.resolve(state.siteContext);
+  }
+  if (state.siteLoading && siteContextRequest) {
+    return siteContextRequest;
+  }
+  state.siteLoading = true;
+  siteContextRequest = fetch(config.urls.site, { headers: { Accept: "application/json" } })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to load site context");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      state.siteContext = data;
+      return data;
+    })
+    .catch(() => {
+      state.siteContext = null;
+      return null;
+    })
+    .finally(() => {
+      state.siteLoading = false;
+      renderSettings();
+    });
+  return siteContextRequest;
+}
+
 function bootstrap() {
   const root = document.getElementById("page-builder");
   if (!root) {
     return;
   }
   config = window.__PAGE_BUILDER__ || {};
+  config.nav_items = config.nav_items || [];
+  state.siteContext = config.site_context || state.siteContext;
 
   dom.form = document.getElementById("page-form");
   dom.blocksInput = document.getElementById("id_blocks");
@@ -1126,6 +1620,7 @@ function bootstrap() {
   if (state.blocks.length) {
     schedulePreview(true);
   }
+  fetchSiteContext(!state.siteContext);
 }
 
 if (document.readyState === "loading") {

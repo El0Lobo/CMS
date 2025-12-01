@@ -13,6 +13,9 @@
           {{ band.get_performer_type_display }}
           {% if band.last_performed_on %} · Performed {{ band.last_performed_on|date:"F j, Y" }}{% endif %}
         </p>
+        {% if band.genre %}
+          <p style="margin:.15rem 0; color:#888;">Genre: {{ band.genre }}</p>
+        {% endif %}
         <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
           {% if band.website %}<a href="{{ band.website }}" rel="noopener nofollow">Website</a>{% endif %}
           {% if band.instagram %}<a href="{{ band.instagram }}" rel="noopener nofollow">Instagram</a>{% endif %}

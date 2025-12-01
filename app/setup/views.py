@@ -1,3 +1,8 @@
+import logging
+import subprocess
+import sys
+from pathlib import Path
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import Group
@@ -9,6 +14,10 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
+from django.utils.safestring import mark_safe
+from django.conf import settings
+from django.core.management import call_command
+from django.contrib.auth import get_user_model
 
 from .forms import GroupFormSet, HourFormSet, SettingsForm, TierFormSet, VisibilityRuleForm
 from .helpers import is_allowed
@@ -16,6 +25,7 @@ from .models import OpeningHour, SiteSettings, VisibilityRule
 from .icon_pack import IconPackError, import_icon_pack
 from .branding_assets import sync_branding_assets
 
+logger = logging.getLogger(__name__)
 
 def setup_access_required(u):
     if not getattr(u, "is_authenticated", False):
@@ -44,6 +54,8 @@ def setup_view(request):
     ensure_hours_for(settings_obj)
 
     if request.method == "POST":
+        scope = request.POST.get("save_scope") or "all"
+        logger.info("Setup POST received (scope=%s) by %s", scope, request.user)
         form = SettingsForm(request.POST, request.FILES, instance=settings_obj)
         tiers = TierFormSet(request.POST, instance=settings_obj, prefix="tiers")
         hours = HourFormSet(request.POST, instance=settings_obj, prefix="hours")
@@ -83,16 +95,19 @@ def setup_view(request):
                 tiers.save()
             else:
                 skipped.append("Membership tiers")
+                logger.warning("Membership tiers form invalid: %s", tiers.errors if hasattr(tiers, "errors") else "unknown")
 
             if hours_ok:
                 hours.save()
             else:
                 skipped.append("Opening times")
+                logger.warning("Opening hours form invalid: %s", hours.errors if hasattr(hours, "errors") else "unknown")
 
             if roles_ok:
                 roles.save()
             else:
                 skipped.append("Roles")
+                logger.warning("Roles form invalid: %s", roles.errors if hasattr(roles, "errors") else "unknown")
 
             msg = "Settings saved."
             messages.success(request, msg)
@@ -106,6 +121,7 @@ def setup_view(request):
 
             return redirect("setup:setup")
         else:
+            logger.warning("Setup settings form invalid: %s", form.errors)
             # With our permissive form, this should be rare; still show what failed
             messages.error(
                 request, "Could not save the core settings. Please review the highlighted fields."
@@ -126,8 +142,132 @@ def setup_view(request):
             "hours": hours,
             "roles": roles,
             "current_mode": current_mode,
+            "tunnel_url": tunnel_manager.current_url(),
+            "tunnel_running": tunnel_manager.is_running(),
         },
     )
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def seed_export(request):
+    seed_path = Path(settings.BASE_DIR) / "seed_full.json"
+    try:
+        with seed_path.open("w", encoding="utf-8") as seed_file:
+            call_command(
+                "dumpdata",
+                use_natural_foreign_keys=True,
+                use_natural_primary_keys=True,
+                indent=2,
+                stdout=seed_file,
+            )
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Could not generate seed file: {exc}")
+    else:
+        rel = seed_path.relative_to(settings.BASE_DIR)
+        messages.success(request, f"Seed written to {rel}.")
+    return redirect("setup:setup")
+
+
+def _run_manage_command(*args):
+    """Run a management command in a fresh process so destructive actions work reliably."""
+
+    cmd = [sys.executable, str(Path(settings.BASE_DIR) / "manage.py"), *args]
+    result = subprocess.run(cmd, capture_output=True, text=True)  # nosec - dev tool only
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "Command failed")
+    return result.stdout.strip()
+
+
+def _ensure_dev_admin():
+    User = get_user_model()
+    if not User.objects.filter(is_superuser=True).exists():
+        _run_manage_command("create_dev_admin")
+
+
+def _normalise_menu_categories():
+    """
+    Ensure imported seed data leaves menu categories in a usable state.
+    """
+
+    try:
+        from app.menu.models import Category
+    except ImportError:
+        return
+
+    Category.objects.filter(kind__isnull=True).update(kind=Category.KIND_GENERIC)
+    Category.objects.filter(kind="").update(kind=Category.KIND_GENERIC)
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def seed_reset(request):
+    seed_path = Path(settings.BASE_DIR) / "seed_full.json"
+    if not seed_path.exists():
+        messages.error(request, "seed_full.json not found in project root.")
+        return redirect("setup:setup")
+    try:
+        _run_manage_command("flush", "--no-input")
+        _run_manage_command("migrate", "--no-input")
+        _run_manage_command("loaddata", str(seed_path))
+        _ensure_dev_admin()
+        _normalise_menu_categories()
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Reset from seed failed: {exc}")
+    else:
+        messages.success(request, "Database reset from seed_full.json (dev admin ensured).")
+    return redirect("setup:setup")
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def seed_clear(request):
+    try:
+        _run_manage_command("flush", "--no-input")
+        _run_manage_command("migrate", "--no-input")
+        _ensure_dev_admin()
+        _normalise_menu_categories()
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Database clear failed: {exc}")
+    else:
+        messages.success(request, "Database cleared. Fresh schema applied (dev admin ensured).")
+    return redirect("setup:setup")
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def tunnel_start(request):
+    target = getattr(settings, "CLOUDFLARE_TUNNEL_URL", "http://127.0.0.1:8000")
+    try:
+        url = tunnel_manager.start_tunnel(target)
+    except Exception as exc:  # pragma: no cover - operational safeguard
+        messages.error(request, f"Could not start Cloudflare tunnel: {exc}")
+    else:
+        settings_obj = SiteSettings.get_solo()
+        if settings_obj.dev_login_enabled:
+            settings_obj.dev_login_enabled = False
+            settings_obj.save(update_fields=["dev_login_enabled"])
+            messages.info(request, "Dev login shortcut disabled while tunnel is active.")
+        messages.success(
+            request,
+            mark_safe(f'Tunnel ready: <a href="{url}" target="_blank" rel="noopener">{url}</a>'),
+        )
+    return redirect("setup:setup")
+
+
+@login_required
+@user_passes_test(setup_access_required)
+@require_http_methods(["POST"])
+def tunnel_stop(request):
+    if tunnel_manager.stop_tunnel():
+        messages.success(request, "Cloudflare tunnel stopped.")
+    else:
+        messages.info(request, "No tunnel was running.")
+    return redirect("setup:setup")
 
 
 @login_required

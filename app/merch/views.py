@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CategoryForm, ProductForm, ProductImageFormSet, ProductVariantFormSet
 from .models import Category, Product
+from app.setup.models import SiteSettings
 
 # ---------------- CMS ----------------
 
@@ -24,7 +25,13 @@ def manage(request):
         )
         .order_by("order", "name")
     )
-    return render(request, "merch/manage.html", {"top_categories": top_categories})
+    settings = SiteSettings.get_solo()
+    currency = settings.default_currency or "€"
+    return render(
+        request,
+        "merch/manage.html",
+        {"top_categories": top_categories, "currency": currency},
+    )
 
 
 @login_required

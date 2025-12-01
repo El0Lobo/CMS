@@ -7,9 +7,9 @@ app_name = "menu"
 urlpatterns = [
     path("", views.manage_menu, name="manage"),  # resolves to /cms/menu/
     path("items/", views.items_list, name="items_list"),
-    path("categories/new/<slug:root>/", views.category_create, name="category_create_root"),
+    path("categories/new/", views.category_create, name="category_create"),
     path(
-        "categories/new/sub/<slug:parent_slug>/", views.category_create, name="category_create_sub"
+        "categories/<slug:parent_slug>/new/", views.category_create, name="category_create_child"
     ),
     path("categories/<slug:slug>/edit/", views.category_edit, name="category_edit"),
     path("categories/<slug:slug>/delete/", views.category_delete, name="category_delete"),

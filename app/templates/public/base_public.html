@@ -14,35 +14,11 @@
 </head>
 <body>
   <div class="site-shell">
-    {% if page_show_nav|default:True and public_pages %}
-      <header class="site-header">
-        <nav class="site-nav">
-          {% for p in public_pages %}
-            {% with nav_url=p.pretty_url|default:p.url %}
-              <a href="{{ nav_url }}" class="{% if request.path == nav_url %}active{% endif %}">{{ p.title }}</a>
-            {% endwith %}
-          {% endfor %}
-        </nav>
-
-        {# Language switcher #}
-        {% if enabled_languages|length > 1 %}
-        <div class="language-switcher">
-          {% get_current_language as LANGUAGE_CODE %}
-          <form action="{% url 'set_language' %}" method="post" style="display: inline;">
-            {% csrf_token %}
-            <input name="next" type="hidden" value="{{ request.get_full_path }}" />
-            <select name="language" onchange="this.form.submit()" aria-label="{% trans 'Choose language' %}">
-              {% for lang_code, lang_name in enabled_languages %}
-                <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
-                  {{ lang_name }}
-                </option>
-              {% endfor %}
-            </select>
-          </form>
-        </div>
-        {% endif %}
-      </header>
-    {% endif %}
+    {% block site_nav %}
+      {% if navigation_html %}
+        {{ navigation_html|safe }}
+      {% endif %}
+    {% endblock %}
 
     <main class="site-main">
       {% block content %}{% endblock %}

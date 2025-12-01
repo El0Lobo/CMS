@@ -107,7 +107,7 @@
   .switch{ display:inline-flex; align-items:center; gap:6px; }
 </style>
 
-<div class="door-demo">
+<div class="door-demo" data-max-capacity="{{ max_capacity|default:'' }}">
   <!-- Counter -->
   <div class="counter">
     <div class="counter-grid">
@@ -127,6 +127,9 @@
       <button class="btn" id="toggleMode" type="button">Switch to Tally</button>
       <span id="tallyNumber" class="tally-legend">0</span>
       <button class="btn" id="resetCounter" type="button" title="Reset only the counter">Reset Counter</button>
+      <span class="muted" id="capacityHint" {% if not max_capacity %}style="display:none;"{% endif %}>
+        {% if max_capacity %}Capacity: {{ max_capacity }}{% endif %}
+      </span>
     </div>
   </div>
 
@@ -260,6 +263,13 @@
   const toggleBtn    = document.getElementById('toggleMode');
   const tallyNumber  = document.getElementById('tallyNumber');
 
+  const rootEl        = document.querySelector('.door-demo');
+  const MAX_CAPACITY  = rootEl && rootEl.dataset.maxCapacity
+    ? (Number(rootEl.dataset.maxCapacity) || null)
+    : null;
+  const capacityHint  = document.getElementById('capacityHint');
+  if (capacityHint && !MAX_CAPACITY) capacityHint.style.display = 'none';
+
   const PLUS          = document.getElementById('plus');
   const MINUS         = document.getElementById('minus');
   const RESET_COUNTER = document.getElementById('resetCounter');
@@ -268,17 +278,34 @@
 
   /* --- UI helpers --- */
   function updateMinusDisabled(){ MINUS.disabled = (count <= 0); }
-  function clamp(n){ return Math.max(0, n); }
+  function updatePlusDisabled(){
+    if (MAX_CAPACITY == null){
+      PLUS.disabled = false;
+      return;
+    }
+    PLUS.disabled = count >= MAX_CAPACITY;
+  }
+  function clamp(n){
+    let next = Math.max(0, n);
+    if (MAX_CAPACITY != null){
+      next = Math.min(MAX_CAPACITY, next);
+    }
+    return next;
+  }
 
   /* Set + render the counter (clamped to ≥ 0) */
   function setCount(n){
     const next = clamp(n);
-    if (next === count && count === 0) { updateMinusDisabled(); return; }
+    if (next === count && count === 0) { updateMinusDisabled(); updatePlusDisabled(); return; }
     count = next;
     if (mode === 'odometer') renderOdometer(count);
     if (mode === 'tally')    { renderTally(count); tallyNumber.textContent = String(count); }
     updateMinusDisabled();
+    updatePlusDisabled();
   }
+
+  updateMinusDisabled();
+  updatePlusDisabled();
 
   /* Build odometer columns (called when digit count changes) */
   function buildOdometerColumns(digits){

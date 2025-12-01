@@ -153,8 +153,63 @@ class FooterBlockDefaultsTests(TestCase):
             is_visible=True,
         )
 
-        main_html, footer_html = page.render_content_segments()
+        main_html, footer_html, nav_html = page.render_content_segments()
 
         self.assertIn("Body", main_html)
         self.assertNotIn("page-block--footer", main_html)
         self.assertIn("page-block--footer", footer_html)
+        self.assertIn("page-block--navigation", nav_html)
+
+    def test_set_blocks_for_language_override(self):
+        page = Page.objects.create(
+            title="Home",
+            slug="home",
+            blocks=[{"id": "hero", "type": "rich_text", "props": {"html": "<p>Base</p>"}}],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        page.set_blocks_for_language("de", [{"id": "hero", "type": "rich_text", "props": {"html": "<p>DE</p>"}}], override=True)
+        self.assertIn("de", page.layout_overrides)
+        self.assertEqual(page.get_blocks_for_language("de")[0]["props"]["html"], "<p>DE</p>")
+
+        page.set_blocks_for_language("de", [{"id": "hero", "type": "rich_text", "props": {"html": "<p>Shared</p>"}}], override=False)
+        self.assertNotIn("de", page.layout_overrides)
+        self.assertEqual(page.get_blocks_for_language("de")[0]["props"]["html"], "<p>Shared</p>")
+
+    def test_shared_layout_updates_from_non_default_language(self):
+        page = Page.objects.create(
+            title="Home",
+            slug="home-shared",
+            blocks=[],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        page.set_blocks_for_language(
+            "de",
+            [{"id": "hero", "type": "rich_text", "props": {"html": "<p>DE layout</p>"}}],
+            override=False,
+        )
+
+        self.assertNotIn("de", page.layout_overrides)
+        self.assertEqual(page.get_blocks_for_language("en")[0]["props"]["html"], "<p>DE layout</p>")
+        self.assertEqual(page.get_blocks_for_language("fr")[0]["props"]["html"], "<p>DE layout</p>")
+
+    def test_language_translation_used_even_without_override_flag(self):
+        page = Page.objects.create(
+            title="Home",
+            slug="home-legacy",
+            blocks=[],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+        page.layout_overrides = []
+        page.__dict__[page._meta.get_field("blocks").attname] = []
+        setattr(
+            page,
+            "blocks_es",
+            [{"id": "hero", "type": "rich_text", "props": {"html": "<p>Legacy ES</p>"}}],
+        )
+
+        self.assertEqual(page.get_blocks_for_language("es")[0]["props"]["html"], "<p>Legacy ES</p>")

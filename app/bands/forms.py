@@ -13,6 +13,7 @@ class BandForm(forms.ModelForm):
             "name",
             "slug",
             "description",
+            "genre",
             "photo",
             "last_performed_on",
             "contact_type",
@@ -37,6 +38,7 @@ class BandForm(forms.ModelForm):
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
+            "genre": forms.TextInput(attrs={"placeholder": "House, Indie Rock, Techno…"}),
             "comment_internal": forms.Textarea(attrs={"rows": 4}),
             "seo_description": forms.Textarea(attrs={"rows": 2}),
             "last_performed_on": forms.DateInput(attrs={"type": "date"}),
