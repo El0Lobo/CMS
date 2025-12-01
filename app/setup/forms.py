@@ -13,6 +13,7 @@ from django.forms import ModelForm
 from django.forms.models import inlineformset_factory, modelformset_factory
 
 from .models import MembershipTier, OpeningHour, SiteSettings, VisibilityRule
+from .widgets import SetupClearableFileInput
 
 SMOKING_CHOICES = (
     ("", "— not specified —"),
@@ -71,6 +72,16 @@ class SettingsForm(ModelForm):
     maximum_attendee_capacity = forms.IntegerField(required=False, min_value=0)
     awareness_team_available = forms.BooleanField(required=False)
     awareness_contact = forms.CharField(required=False, label="Awareness contact (free text)")
+    icon_pack = forms.FileField(
+        required=False,
+        label="Site icon pack (ZIP)",
+        widget=SetupClearableFileInput,
+        help_text=(
+            "Upload favicon.ico, favicon.svg, apple-touch-icon.png, favicon-96x96.png, "
+            "web-app-manifest-192x192.png, web-app-manifest-512x512.png, and site.webmanifest "
+            "(e.g., from RealFaviconGenerator). Replaces previous icons."
+        ),
+    )
 
     class Meta:
         model = SiteSettings
@@ -79,6 +90,7 @@ class SettingsForm(ModelForm):
             "mode",
             "org_name",
             "logo",
+            "logo_secondary",
             "publish_opening_times",
             "public_pages_enabled",
             # Address & geodata
@@ -183,6 +195,20 @@ class SettingsForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        for field_name in ("logo", "logo_secondary"):
+            if field_name in self.fields:
+                self.fields[field_name].widget = SetupClearableFileInput()
+                self.fields[field_name].widget.attrs["data_preview"] = "image"
+        if "icon_pack" in self.fields and not isinstance(
+            self.fields["icon_pack"].widget, SetupClearableFileInput
+        ):
+            self.fields["icon_pack"].widget = SetupClearableFileInput()
+        if getattr(self.instance, "logo", None) and self.instance.logo.name:
+            self.fields["logo"].widget.attrs["data-current"] = self.instance.logo.name
+        if getattr(self.instance, "logo_secondary", None) and self.instance.logo_secondary.name:
+            self.fields["logo_secondary"].widget.attrs["data-current"] = self.instance.logo_secondary.name
+        if getattr(self.instance, "icon_pack_filename", ""):
+            self.fields["icon_pack"].widget.attrs["data-current"] = self.instance.icon_pack_filename
 
         self.fields["currency_text"].initial = (
             self.instance.default_currency or guess_default_currency()
@@ -218,6 +244,8 @@ class SettingsForm(ModelForm):
         _update_widget_fields(
             "address_country", id="country", autocomplete="country", enterkeyhint="done"
         )
+        _update_widget_fields("geo_lat", id="geo-lat", step="0.000001", inputmode="decimal")
+        _update_widget_fields("geo_lng", id="geo-lng", step="0.000001", inputmode="decimal")
 
     def clean(self):
         data = super().clean()

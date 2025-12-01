@@ -135,9 +135,36 @@
           <div class="field">{{ form.org_name.label_tag }} {{ form.org_name }}</div>
           <div class="field">
             {{ form.logo.label_tag }} {{ form.logo }}
-            {% if form.instance.logo %}
-              <div class="mt-2"><img src="{{ form.instance.logo.url }}" alt="Logo" style="height:64px"></div>
+            {% with current=form.logo.field.widget.attrs.data_current %}
+              {% if current %}<p class="text-muted mb-0" aria-live="polite">Current: {{ current }}</p>{% endif %}
+            {% endwith %}
+            {% if form.instance.logo and form.instance.logo.url %}
+              <p class="text-muted mb-0" aria-live="polite">Using: {{ form.instance.logo.name }}</p>
             {% endif %}
+          </div>
+          <div class="field">
+            {{ form.logo_secondary.label_tag }} {{ form.logo_secondary }}
+            {% with current=form.logo_secondary.field.widget.attrs.data_current %}
+              {% if current %}<p class="text-muted mb-0" aria-live="polite">Current: {{ current }}</p>{% endif %}
+            {% endwith %}
+          </div>
+          <div class="field">
+            {{ form.icon_pack.label_tag }} {{ form.icon_pack }}
+            {% if form.icon_pack.help_text %}
+              <p class="text-muted" style="margin:4px 0 0;">{{ form.icon_pack.help_text }}</p>
+            {% endif %}
+            <p class="text-muted" style="margin:4px 0 0;">
+              Generate these files via
+              <a href="https://realfavicongenerator.net/" target="_blank" rel="noopener">
+                RealFaviconGenerator
+              </a>
+              (download the favicon package ZIP) and upload it here.
+            </p>
+            {% with current=form.icon_pack.field.widget.attrs.data_current %}
+              {% if current %}
+                <p class="text-muted mb-0" aria-live="polite">Current: {{ current }}</p>
+              {% endif %}
+            {% endwith %}
           </div>
         </div>
       </div>
@@ -151,6 +178,12 @@
       </h2>
       <div class="card__body stack">
         <div class="address-ui address-ui--stacked stack">
+          <div class="field">
+            <label for="address-search">Search & autofill</label>
+            <input id="address-search" type="text" placeholder="Start typing an address" data-geo-search autocomplete="off">
+            <p class="text-muted" style="margin:4px 0 0;">Powered by OpenStreetMap Nominatim (free tier). Select a result to fill the address and coordinates.</p>
+            <div class="geo-suggestions" data-geo-results style="display:none; position:relative;"></div>
+          </div>
           <div class="field">{{ form.address_street.label_tag }} {{ form.address_street }}</div>
           <div class="field">{{ form.address_number.label_tag }} {{ form.address_number }}</div>
           <div class="field">{{ form.address_postal_code.label_tag }} {{ form.address_postal_code }}</div>
@@ -164,8 +197,9 @@
             </select>
           </div>
 
-          <div class="field mt-1">
-            <label>{{ form.address_autocomplete }} Enable address autocomplete (bring your own API)</label>
+          <div class="grid-2">
+            <div class="field">{{ form.geo_lat.label_tag }} {{ form.geo_lat }}</div>
+            <div class="field">{{ form.geo_lng.label_tag }} {{ form.geo_lng }}</div>
           </div>
         </div>
       </div>
@@ -207,12 +241,8 @@
       </h2>
       <div class="card__body stack">
         <div class="grid-3">
-          <div class="field">{{ form.geo_lat.label_tag }} {{ form.geo_lat }}</div>
-          <div class="field">{{ form.geo_lng.label_tag }} {{ form.geo_lng }}</div>
           <div class="field">{{ form.price_range.label_tag }} {{ form.price_range }}</div>
-        </div>
-
-        <div class="mt-2 field">
+               <div class="mt-2 field">
           <label for="currency_text">Currency</label>
           {{ form.currency_text }}
           <datalist id="currency_list">
@@ -225,6 +255,10 @@
           {{ form.default_currency.as_hidden }}
           <small class="text-muted">Pick a common currency or type your own. Defaults from timezone, fallback EUR.</small>
         </div>
+        </div>
+
+
+
 
         <div class="mt-3 field">
           <label for="{{ form.maximum_attendee_capacity.id_for_label }}">Max attendee capacity</label>
@@ -437,6 +471,90 @@
       <button class="btn btn-primary">Save Settings</button>
     </div>
   </form>
+
+  <script>
+    (function() {
+      const searchInput = document.querySelector('[data-geo-search]');
+      const resultsBox = document.querySelector('[data-geo-results]');
+      const street = document.getElementById('street-address');
+      const number = document.getElementById('street-number');
+      const postal = document.getElementById('postal-code');
+      const city = document.getElementById('city');
+      const country = document.getElementById('country');
+      const lat = document.getElementById('geo-lat');
+      const lng = document.getElementById('geo-lng');
+
+      if (!searchInput || !resultsBox) return;
+
+      const debounce = (fn, delay = 350) => {
+        let t;
+        return (...args) => {
+          clearTimeout(t);
+          t = setTimeout(() => fn(...args), delay);
+        };
+      };
+
+      const renderResults = (items) => {
+        if (!items || !items.length) {
+          resultsBox.style.display = 'none';
+          resultsBox.innerHTML = '';
+          return;
+        }
+        const list = document.createElement('ul');
+        list.style.listStyle = 'none';
+        list.style.margin = '6px 0 0';
+        list.style.padding = '8px';
+        list.style.background = 'rgba(0,0,0,0.5)';
+        list.style.border = '1px solid rgba(255,255,255,0.1)';
+        list.style.borderRadius = '6px';
+        list.style.maxHeight = '240px';
+        list.style.overflowY = 'auto';
+        items.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item.display_name;
+          li.style.padding = '4px 6px';
+          li.style.cursor = 'pointer';
+          li.addEventListener('click', () => {
+            resultsBox.style.display = 'none';
+            searchInput.value = item.display_name;
+            const addr = item.address || {};
+            if (street) street.value = addr.road || addr.pedestrian || addr.neighbourhood || street.value;
+            if (number) number.value = addr.house_number || number.value;
+            if (postal) postal.value = addr.postcode || postal.value;
+            if (city) city.value = addr.city || addr.town || addr.village || city.value;
+            if (country) country.value = addr.country || country.value;
+            if (lat) lat.value = item.lat || lat.value;
+            if (lng) lng.value = item.lon || lng.value;
+          });
+          list.appendChild(li);
+        });
+        resultsBox.innerHTML = '';
+        resultsBox.appendChild(list);
+        resultsBox.style.display = 'block';
+      };
+
+      const search = debounce(async (q) => {
+        if (!q || q.length < 3) { renderResults([]); return; }
+        try {
+          const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&q=${encodeURIComponent(q)}` , {
+            headers: { 'Accept': 'application/json', 'User-Agent': 'CMS-Setup-Autocomplete/1.0' }
+          });
+          if (!resp.ok) throw new Error('Search failed');
+          const data = await resp.json();
+          renderResults(data.slice(0, 8));
+        } catch (e) {
+          renderResults([]);
+        }
+      }, 400);
+
+      searchInput.addEventListener('input', (e) => search(e.target.value));
+      document.addEventListener('click', (e) => {
+        if (!resultsBox.contains(e.target) && e.target !== searchInput) {
+          resultsBox.style.display = 'none';
+        }
+      });
+    })();
+  </script>
 </div>
 
 <script>

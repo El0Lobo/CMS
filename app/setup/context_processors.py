@@ -3,8 +3,29 @@ from __future__ import annotations
 from django.utils.text import slugify
 
 from app.pages.navigation import get_navigation_entries, serialize_nav_entries
+from app.assets.models import Asset
 
 from .models import SiteSettings
+from .icon_pack import ICON_FILE_SPECS
+
+
+def _build_site_icon_links():
+    slug_map = {spec["slug"]: spec for spec in ICON_FILE_SPECS.values()}
+    links = []
+    qs = Asset.objects.filter(collection__slug="site-icons")
+    for asset in qs:
+        url = asset.file.url if asset.file else asset.url
+        if not url:
+            continue
+        spec = slug_map.get(asset.slug, {})
+        link = {"href": url, "rel": spec.get("link", {}).get("rel", "icon")}
+        if spec.get("link", {}).get("type"):
+            link["type"] = spec["link"]["type"]
+        if spec.get("link", {}).get("sizes"):
+            link["sizes"] = spec["link"]["sizes"]
+        links.append(link)
+    links.sort(key=lambda l: (l.get("rel", ""), l.get("sizes", "")))
+    return links
 
 
 def site_settings_context(request):
@@ -52,4 +73,5 @@ def site_settings_context(request):
         "site_address_line2": line2,
         "site_address_line3": line3,
         "site_address_compact": compact,
+        "site_icon_links": _build_site_icon_links(),
     }

@@ -7,14 +7,14 @@ Bands:
 - add Genre
 
 Events:
-- Events must have a performer even if its just a Kneipe needs fixin'
+- Events must have a performer even if its just a Kneipe
 
 Menu:
 - Menu items need to show their size in l and the currency
 - Menu should be as merch is not force the user into drinks and food
 
 Inventory:
-- Inventory should be as merch and be autopopulated with the menu and merch items
+- Inventory should be as merch and be autopopulated with the menu and merch items 
 - It should be possible to set a desired amount and a minimum amount which then triggers a notification based on roles
 
 POS:

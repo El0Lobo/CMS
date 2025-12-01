@@ -13,6 +13,8 @@ from django.views.decorators.http import require_http_methods
 from .forms import GroupFormSet, HourFormSet, SettingsForm, TierFormSet, VisibilityRuleForm
 from .helpers import is_allowed
 from .models import OpeningHour, SiteSettings, VisibilityRule
+from .icon_pack import IconPackError, import_icon_pack
+from .branding_assets import sync_branding_assets
 
 
 def setup_access_required(u):
@@ -56,9 +58,26 @@ def setup_view(request):
         roles_ok = roles.is_valid()
 
         if main_ok:
-            form.save()
+            settings_saved = form.save()
+            sync_branding_assets(
+                settings_saved,
+                uploads={
+                    "logo": request.FILES.get("logo"),
+                    "logo_secondary": request.FILES.get("logo_secondary"),
+                },
+            )
 
             skipped = []
+            icon_msg = None
+
+            icon_pack = form.cleaned_data.get("icon_pack")
+            if icon_pack:
+                try:
+                    import_icon_pack(icon_pack, settings_saved)
+                    icon_msg = "Icon pack uploaded."
+                except IconPackError as exc:
+                    icon_msg = None
+                    messages.error(request, f"Icon pack not processed: {exc}")
 
             if tiers_ok:
                 tiers.save()
@@ -77,6 +96,8 @@ def setup_view(request):
 
             msg = "Settings saved."
             messages.success(request, msg)
+            if icon_msg:
+                messages.success(request, icon_msg)
 
             if skipped:
                 messages.warning(
