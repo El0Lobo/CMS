@@ -14,6 +14,8 @@ from django.contrib.auth.models import Group
 from django.forms import ModelForm
 from django.forms.models import inlineformset_factory, modelformset_factory
 
+from app.pos.models import POSQuickButton
+
 from .models import MembershipTier, OpeningHour, SiteSettings, VisibilityRule
 from .widgets import SetupClearableFileInput
 
@@ -96,6 +98,11 @@ class SettingsForm(ModelForm):
             "publish_opening_times",
             "public_pages_enabled",
             "dev_login_enabled",
+            "pos_show_discounts",
+            "pos_apply_discounts",
+            "pos_show_tax",
+            "pos_apply_tax",
+            "pos_tax_rate",
             # Address & geodata
             "address_street",
             "address_number",
@@ -196,6 +203,11 @@ class SettingsForm(ModelForm):
             "same_as": "Same as",
             "price_range": "Price range",
             "default_currency": "Default currency",
+            "pos_show_discounts": "Show discount panel in POS",
+            "pos_apply_discounts": "Allow discounts to change totals",
+            "pos_show_tax": "Show tax row in POS",
+            "pos_apply_tax": "Apply tax to POS totals",
+            "pos_tax_rate": "Default POS tax rate (%)",
         }
 
     def __init__(self, *args, **kwargs):
@@ -336,6 +348,17 @@ GroupFormSet = modelformset_factory(
     fields=["name"],
     extra=1,
     can_delete=True,
+)
+
+POSQuickButtonFormSet = modelformset_factory(
+    model=POSQuickButton,
+    fields=["label", "discount_type", "value", "scope", "reason", "sort_order", "is_active"],
+    extra=0,
+    can_delete=True,
+    widgets={
+        "value": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+        "sort_order": forms.NumberInput(attrs={"step": "1", "min": "0"}),
+    },
 )
 
 

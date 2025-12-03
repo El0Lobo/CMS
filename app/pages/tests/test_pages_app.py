@@ -1,7 +1,7 @@
 import json
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from app.pages.models import Page
@@ -213,3 +213,15 @@ class FooterBlockDefaultsTests(TestCase):
         )
 
         self.assertEqual(page.get_blocks_for_language("es")[0]["props"]["html"], "<p>Legacy ES</p>")
+
+
+class LoginDevButtonTests(TestCase):
+    @override_settings(ENV="development", DEBUG=False)
+    def test_login_page_shows_dev_button_when_dev_env(self):
+        settings_obj = SiteSettings.get_solo()
+        settings_obj.dev_login_enabled = True
+        settings_obj.save()
+
+        response = self.client.get(reverse("login"))
+
+        self.assertContains(response, "Force Login (Dev)")

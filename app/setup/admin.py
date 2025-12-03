@@ -23,6 +23,11 @@ class SiteSettingsForm(forms.ModelForm):
             "logo",
             "public_pages_enabled",
             "dev_login_enabled",
+            "pos_show_discounts",
+            "pos_apply_discounts",
+            "pos_show_tax",
+            "pos_apply_tax",
+            "pos_tax_rate",
             "enabled_languages",
             "address_street",
             "address_number",
@@ -107,6 +112,18 @@ class SiteSettingsAdmin(admin.ModelAdmin):
                     "logo",
                     "public_pages_enabled",
                     "dev_login_enabled",
+                )
+            },
+        ),
+        (
+            "POS",
+            {
+                "fields": (
+                    "pos_show_discounts",
+                    "pos_apply_discounts",
+                    "pos_show_tax",
+                    "pos_apply_tax",
+                    "pos_tax_rate",
                 )
             },
         ),

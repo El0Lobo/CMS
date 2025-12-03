@@ -19,7 +19,16 @@ from django.conf import settings
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
 
-from .forms import GroupFormSet, HourFormSet, SettingsForm, TierFormSet, VisibilityRuleForm
+from app.pos.models import POSQuickButton
+
+from .forms import (
+    GroupFormSet,
+    HourFormSet,
+    POSQuickButtonFormSet,
+    SettingsForm,
+    TierFormSet,
+    VisibilityRuleForm,
+)
 from .helpers import is_allowed
 from .models import OpeningHour, SiteSettings, VisibilityRule
 from .icon_pack import IconPackError, import_icon_pack
@@ -55,6 +64,17 @@ def setup_view(request):
     ensure_hours_for(settings_obj)
 
     if request.method == "POST":
+        op = request.POST.get("op")
+        if op == "seed_export":
+            return seed_export(request)
+        if op == "seed_reset":
+            return seed_reset(request)
+        if op == "seed_clear":
+            return seed_clear(request)
+        if op == "tunnel_start":
+            return tunnel_start(request)
+        if op == "tunnel_stop":
+            return tunnel_stop(request)
         scope = request.POST.get("save_scope") or "all"
         logger.info("Setup POST received (scope=%s) by %s", scope, request.user)
         form = SettingsForm(request.POST, request.FILES, instance=settings_obj)
@@ -63,12 +83,18 @@ def setup_view(request):
         roles = GroupFormSet(
             request.POST, queryset=Group.objects.all().order_by("name"), prefix="roles"
         )
+        quickbuttons = POSQuickButtonFormSet(
+            request.POST,
+            queryset=POSQuickButton.objects.all().order_by("sort_order", "id"),
+            prefix="quickbuttons",
+        )
 
         # Partial-save: save what validates, warn on the rest
         main_ok = form.is_valid()
         tiers_ok = tiers.is_valid()
         hours_ok = hours.is_valid()
         roles_ok = roles.is_valid()
+        quickbuttons_ok = quickbuttons.is_valid()
 
         if main_ok:
             address_before = {
@@ -123,6 +149,15 @@ def setup_view(request):
                 skipped.append("Roles")
                 logger.warning("Roles form invalid: %s", roles.errors if hasattr(roles, "errors") else "unknown")
 
+            if quickbuttons_ok:
+                quickbuttons.save()
+            else:
+                skipped.append("Quick discounts")
+                logger.warning(
+                    "Quick buttons form invalid: %s",
+                    quickbuttons.errors if hasattr(quickbuttons, "errors") else "unknown",
+                )
+
             msg = "Settings saved."
             messages.success(request, msg)
             if icon_msg:
@@ -145,6 +180,10 @@ def setup_view(request):
         tiers = TierFormSet(instance=settings_obj, prefix="tiers")
         hours = HourFormSet(instance=settings_obj, prefix="hours")
         roles = GroupFormSet(queryset=Group.objects.all().order_by("name"), prefix="roles")
+        quickbuttons = POSQuickButtonFormSet(
+            queryset=POSQuickButton.objects.all().order_by("sort_order", "id"),
+            prefix="quickbuttons",
+        )
 
     current_mode = (form.instance.mode or "VENUE").lower()
     return render(
@@ -155,6 +194,7 @@ def setup_view(request):
             "tiers": tiers,
             "hours": hours,
             "roles": roles,
+            "quickbuttons": quickbuttons,
             "current_mode": current_mode,
             "tunnel_url": tunnel_manager.current_url(),
             "tunnel_running": tunnel_manager.is_running(),
@@ -162,12 +202,20 @@ def setup_view(request):
     )
 
 
-@login_required
-@user_passes_test(setup_access_required)
-@require_http_methods(["POST"])
-def seed_export(request):
+def _op_response(request, func):
     seed_path = Path(settings.BASE_DIR) / "seed_full.json"
     try:
+        return func()
+    except Exception as exc:  # pragma: no cover
+        messages.error(request, str(exc))
+    return redirect("setup:setup")
+
+
+@login_required
+@user_passes_test(setup_access_required)
+def seed_export(request):
+    def _run():
+        seed_path = Path(settings.BASE_DIR) / "seed_full.json"
         with seed_path.open("w", encoding="utf-8") as seed_file:
             call_command(
                 "dumpdata",
@@ -176,12 +224,10 @@ def seed_export(request):
                 indent=2,
                 stdout=seed_file,
             )
-    except Exception as exc:  # pragma: no cover - operational safeguard
-        messages.error(request, f"Could not generate seed file: {exc}")
-    else:
         rel = seed_path.relative_to(settings.BASE_DIR)
         messages.success(request, f"Seed written to {rel}.")
-    return redirect("setup:setup")
+
+    return _op_response(request, _run)
 
 
 def _run_manage_command(*args):
@@ -216,7 +262,6 @@ def _normalise_menu_categories():
 
 @login_required
 @user_passes_test(setup_access_required)
-@require_http_methods(["POST"])
 def seed_reset(request):
     seed_path = Path(settings.BASE_DIR) / "seed_full.json"
     if not seed_path.exists():
@@ -237,7 +282,6 @@ def seed_reset(request):
 
 @login_required
 @user_passes_test(setup_access_required)
-@require_http_methods(["POST"])
 def seed_clear(request):
     try:
         _run_manage_command("flush", "--no-input")
@@ -253,7 +297,6 @@ def seed_clear(request):
 
 @login_required
 @user_passes_test(setup_access_required)
-@require_http_methods(["POST"])
 def tunnel_start(request):
     target = getattr(settings, "CLOUDFLARE_TUNNEL_URL", "http://127.0.0.1:8000")
     try:
@@ -275,7 +318,6 @@ def tunnel_start(request):
 
 @login_required
 @user_passes_test(setup_access_required)
-@require_http_methods(["POST"])
 def tunnel_stop(request):
     if tunnel_manager.stop_tunnel():
         messages.success(request, "Cloudflare tunnel stopped.")

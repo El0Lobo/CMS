@@ -1,4 +1,5 @@
 # app/pos/views.py
+import json
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.contrib.auth.decorators import login_required
@@ -12,16 +13,40 @@ from django.views import View
 from django.views.decorators.http import require_POST
 
 from app.menu.models import ItemVariant  # your real models
+from app.setup.models import SiteSettings
 
 from .models import Payment, POSQuickButton, Sale, SaleItem
-
-# === Config ===
-TAX_RATE_DEFAULT = Decimal("19.00")  # 19% VAT default
 
 
 # === Money helpers ===
 def _money(v):
     return Decimal(v).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _get_pos_config() -> dict:
+    settings_obj = SiteSettings.get_solo()
+    tax_rate = settings_obj.pos_tax_rate or Decimal("0.00")
+    if not isinstance(tax_rate, Decimal):
+        tax_rate = Decimal(tax_rate)
+    return {
+        "tax_rate": tax_rate.quantize(Decimal("0.01")),
+        "show_tax": bool(settings_obj.pos_show_tax),
+        "apply_tax": bool(settings_obj.pos_apply_tax),
+        "show_discounts": bool(settings_obj.pos_show_discounts),
+        "apply_discounts": bool(settings_obj.pos_apply_discounts),
+    }
+
+
+def _config_for_client(config: dict) -> str:
+    return json.dumps(
+        {
+            "taxRate": str(config.get("tax_rate", Decimal("0.00"))),
+            "showTax": config.get("show_tax", True),
+            "applyTax": config.get("apply_tax", True),
+            "showDiscounts": config.get("show_discounts", True),
+            "applyDiscounts": config.get("apply_discounts", True),
+        }
+    )
 
 
 # === Cart session helpers ===
@@ -47,13 +72,26 @@ def _save_cart(req, cart):
     req.session.modified = True
 
 
-def _reprice_cart(cart: dict) -> dict:
+def _reprice_cart(cart: dict, config: dict | None = None) -> dict:
+    config = config or _get_pos_config()
+    apply_discounts = config.get("apply_discounts", True)
+    apply_tax = config.get("apply_tax", True)
+    tax_rate_default = config.get("tax_rate", Decimal("0.00")) or Decimal("0.00")
+    if not isinstance(tax_rate_default, Decimal):
+        tax_rate_default = Decimal(tax_rate_default)
+    tax_rate_default = tax_rate_default.quantize(Decimal("0.01"))
+
     subtotal = Decimal("0.00")
     discount_total = Decimal("0.00")
     tax_total = Decimal("0.00")
     grand_total = Decimal("0.00")
 
     lines = cart.get("lines", [])
+    if not apply_discounts:
+        cart["order_discount"] = None
+        for line in lines:
+            line["discount"] = None
+
     for line in lines:
         qty = int(line.get("qty", 0))
         unit = _money(line.get("unit_price", "0.00"))
@@ -61,20 +99,50 @@ def _reprice_cart(cart: dict) -> dict:
 
         # per-line discount
         line_disc = Decimal("0.00")
-        d = line.get("discount")
-        if d:
-            dtype = d.get("type")
-            dval = _money(d.get("value", "0"))
+        discount_entries: list[dict] = []
+        if apply_discounts:
+            if line.get("discounts"):
+                discount_entries = line.get("discounts", [])
+            elif line.get("discount"):
+                discount_entries = [line["discount"]]
+                line.pop("discount", None)
+            line["discounts"] = discount_entries
+        else:
+            discount_entries = []
+
+        free_units = 0
+        discounted_units = 0
+        for entry in discount_entries:
+            dtype = entry.get("type")
+            dval = _money(entry.get("value", "0"))
+            per_unit = bool(entry.get("per_item"))
+            count = int(entry.get("count", 1) or 1)
+            button_qty = min(count, qty) if per_unit else 1
+            base = unit if per_unit else line_sub
+            amount = Decimal("0.00")
             if dtype == "FREE":
-                line_disc = line_sub
+                amount = base
             elif dtype == "PERCENT":
-                line_disc = (line_sub * dval / Decimal("100")).quantize(Decimal("0.01"))
+                amount = (base * dval / Decimal("100")).quantize(Decimal("0.01"))
             elif dtype == "AMOUNT":
-                line_disc = min(dval, line_sub)
+                amount = min(dval, base)
+            if per_unit:
+                amount *= button_qty
+                if dtype == "FREE":
+                    free_units += button_qty
+                else:
+                    discounted_units += button_qty
+            elif dtype == "FREE":
+                free_units = qty
+            if amount > line_sub - line_disc:
+                amount = line_sub - line_disc
+            line_disc += amount
 
         line_after_disc = _money(line_sub - line_disc)
 
-        tax_rate = _money(line.get("tax_rate", TAX_RATE_DEFAULT))
+        tax_rate = _money(line.get("tax_rate", tax_rate_default))
+        if not apply_tax:
+            tax_rate = Decimal("0.00")
         line_tax = (line_after_disc * tax_rate / Decimal("100")).quantize(Decimal("0.01"))
         line_total = _money(line_after_disc + line_tax)
 
@@ -82,6 +150,8 @@ def _reprice_cart(cart: dict) -> dict:
         line["calc_discount"] = str(_money(line_disc))
         line["calc_tax"] = str(_money(line_tax))
         line["calc_total"] = str(_money(line_total))
+        line["free_units"] = min(free_units, qty)
+        line["discount_units"] = max(discounted_units, 0)
 
         subtotal += line_sub
         discount_total += line_disc
@@ -90,7 +160,7 @@ def _reprice_cart(cart: dict) -> dict:
 
     # order-level discount
     order_disc_amount = Decimal("0.00")
-    od = cart.get("order_discount")
+    od = cart.get("order_discount") if apply_discounts else None
     if od:
         base = _money(subtotal - discount_total)
         dtype = od.get("type")
@@ -103,7 +173,7 @@ def _reprice_cart(cart: dict) -> dict:
             order_disc_amount = min(dval, base)
 
         # naive proportional tax reduction to reflect order discount
-        if base > 0:
+        if base > 0 and apply_tax:
             fraction = (base - order_disc_amount) / base
             tax_total = (tax_total * fraction).quantize(Decimal("0.01"))
             grand_total = _money((base - order_disc_amount) + tax_total)
@@ -122,22 +192,17 @@ def _reprice_cart(cart: dict) -> dict:
     return cart
 
 
-def _variant_display_title(variant: ItemVariant) -> str:
-    """
-    "{Item.name} — {label or '<qty> <unit>'}"
-    """
-    base = variant.item.name
-    if variant.label:
-        tail = variant.label
+def _variant_display_parts(variant: ItemVariant) -> tuple[str, str]:
+    title = variant.item.name
+    label = (variant.label or "").strip()
+    qty = _variant_size_quantity(variant)
+    if label and qty:
+        detail = f"{label} — {qty}"
+    elif label:
+        detail = label
     else:
-        # e.g. "0.3 L"
-        q = (
-            f"{variant.quantity.normalize():g}"
-            if hasattr(variant.quantity, "normalize")
-            else str(variant.quantity)
-        )
-        tail = f"{q} {variant.unit.code}"
-    return f"{base} — {tail}"
+        detail = qty
+    return title, detail
 
 
 def _variant_size_label(v: ItemVariant) -> str:
@@ -145,10 +210,10 @@ def _variant_size_label(v: ItemVariant) -> str:
     Size/variant label for buttons inside an item tile.
     Prefer explicit label; else derive from quantity + unit (e.g., '0.3 L').
     """
+    base = _variant_size_quantity(v)
     if v.label:
-        return v.label
-    q = f"{v.quantity.normalize():g}" if hasattr(v.quantity, "normalize") else str(v.quantity)
-    return f"{q} {v.unit.code}"
+        return f"{v.label} ({base})"
+    return base
 
 
 # === Views ===
@@ -157,8 +222,14 @@ class IndexView(View):
     template_name = "pos/index.html"
 
     def get(self, request):
-        cart = _reprice_cart(_get_cart(request))
-        return render(request, self.template_name, {"cart": cart})
+        config = _get_pos_config()
+        cart = _reprice_cart(_get_cart(request), config=config)
+        context = {
+            "cart": cart,
+            "pos_config": config,
+            "pos_config_json": _config_for_client(config),
+        }
+        return render(request, self.template_name, context)
 
 
 @login_required
@@ -196,7 +267,7 @@ def api_search_items(request):
         it["variants"].append(
             {
                 "id": v.id,
-                "size": _variant_size_quantity(v),
+                "size": _variant_size_label(v),
                 "price": str(_money(v.price)),
             }
         )
@@ -254,7 +325,7 @@ def api_browse_items(request):
         it["variants"].append(
             {
                 "id": v.id,
-                "size": _variant_size_quantity(v),
+                "size": _variant_size_label(v),
                 "price": str(_money(v.price)),
             }
         )
@@ -279,13 +350,15 @@ def api_cart_add(request):
     qty = int(request.POST.get("qty", "1"))
     if not var_id or qty < 1:
         return HttpResponseBadRequest("Invalid parameters")
+    config = _get_pos_config()
 
     try:
         v = ItemVariant.objects.select_related("item", "unit").get(pk=var_id)
     except ItemVariant.DoesNotExist:
         return HttpResponseBadRequest("Variant not found")
 
-    title = _variant_display_title(v)
+    title_main, detail = _variant_display_parts(v)
+    title_full = f"{title_main} — {detail}" if detail else title_main
     unit_price = _money(v.price)
 
     cart = _get_cart(request)
@@ -298,15 +371,17 @@ def api_cart_add(request):
         cart["lines"].append(
             {
                 "id": v.id,
-                "title": title,
+                "title": title_full,
+                "title_main": title_main,
+                "variant_label": detail,
                 "qty": qty,
                 "unit_price": str(unit_price),
-                "discount": None,
-                "tax_rate": str(TAX_RATE_DEFAULT),
+                "discounts": [],
+                "tax_rate": str(config.get("tax_rate", Decimal("0.00"))),
             }
         )
 
-    _reprice_cart(cart)
+    _reprice_cart(cart, config=config)
     _save_cart(request, cart)
     return JsonResponse(cart)
 
@@ -317,11 +392,12 @@ def api_cart_remove(request):
     item_id = request.POST.get("id")
     if not item_id:
         return HttpResponseBadRequest("Missing id")
+    config = _get_pos_config()
     cart = _get_cart(request)
     cart["lines"] = [
         line_item for line_item in cart["lines"] if str(line_item["id"]) != str(item_id)
     ]
-    _reprice_cart(cart)
+    _reprice_cart(cart, config=config)
     _save_cart(request, cart)
     return JsonResponse(cart)
 
@@ -333,6 +409,7 @@ def api_cart_update(request):
     qty = int(request.POST.get("qty", "1"))
     if not item_id or qty < 0:
         return HttpResponseBadRequest("Invalid parameters")
+    config = _get_pos_config()
     cart = _get_cart(request)
     for line_item in list(cart["lines"]):
         if str(line_item["id"]) == str(item_id):
@@ -341,7 +418,7 @@ def api_cart_update(request):
             else:
                 line_item["qty"] = qty
             break
-    _reprice_cart(cart)
+    _reprice_cart(cart, config=config)
     _save_cart(request, cart)
     return JsonResponse(cart)
 
@@ -349,8 +426,9 @@ def api_cart_update(request):
 @login_required
 @require_POST
 def api_cart_clear(request):
+    config = _get_pos_config()
     cart = {"lines": [], "order_discount": None}
-    _reprice_cart(cart)
+    _reprice_cart(cart, config=config)
     _save_cart(request, cart)
     return JsonResponse(cart)
 
@@ -375,11 +453,18 @@ def api_quick_buttons(request):
 @login_required
 @require_POST
 def api_cart_apply_discount(request):
+    config = _get_pos_config()
+    if not config.get("apply_discounts", True):
+        return HttpResponseBadRequest("Discounts are disabled.")
+
     scope = request.POST.get("scope")  # ORDER or ITEM
     dtype = request.POST.get("type")  # PERCENT/AMOUNT/FREE
     value = request.POST.get("value", "0")
     reason_id = request.POST.get("reason_id")
     item_id = request.POST.get("item_id")
+    increment = request.POST.get("increment") == "true"
+    label = request.POST.get("label") or ""
+    button_id = request.POST.get("button_id")
 
     if scope not in ("ORDER", "ITEM") or dtype not in ("PERCENT", "AMOUNT", "FREE"):
         return HttpResponseBadRequest("Invalid discount")
@@ -390,23 +475,56 @@ def api_cart_apply_discount(request):
             "type": dtype,
             "value": value,
             "reason_id": int(reason_id) if reason_id else None,
+            "label": label,
         }
     else:
         if not item_id:
             return HttpResponseBadRequest("Missing item_id for item discount")
         for line_item in cart["lines"]:
             if str(line_item["id"]) == str(item_id):
-                line_item["discount"] = {"type": dtype, "value": value}
+                discounts = line_item.setdefault("discounts", [])
+                if line_item.get("discount") and not discounts:
+                    discounts.append(
+                        {
+                            "type": line_item["discount"].get("type"),
+                            "value": line_item["discount"].get("value"),
+                            "per_item": line_item["discount"].get("per_item"),
+                            "count": int(line_item["discount"].get("count", 1) or 1),
+                            "button_id": line_item["discount"].get("button_id"),
+                            "label": line_item["discount"].get("label", ""),
+                        }
+                    )
+                    line_item.pop("discount", None)
+                target = None
+                if increment and button_id:
+                    for entry in discounts:
+                        if entry.get("button_id") == button_id:
+                            target = entry
+                            break
+                if target:
+                    target["count"] = int(target.get("count", 0) or 0) + 1
+                else:
+                    discounts.append(
+                        {
+                            "type": dtype,
+                            "value": value,
+                            "per_item": True,
+                            "count": 1,
+                            "button_id": button_id,
+                            "label": label,
+                        }
+                    )
                 break
 
-    _reprice_cart(cart)
+    _reprice_cart(cart, config=config)
     _save_cart(request, cart)
     return JsonResponse(cart)
 
 
 @login_required
 def api_cart_totals(request):
-    cart = _reprice_cart(_get_cart(request))
+    config = _get_pos_config()
+    cart = _reprice_cart(_get_cart(request), config=config)
     return JsonResponse(cart)
 
 
@@ -421,7 +539,8 @@ def api_checkout(request):
       - amount: "12.34"
       - note: optional
     """
-    cart = _reprice_cart(_get_cart(request))
+    config = _get_pos_config()
+    cart = _reprice_cart(_get_cart(request), config=config)
     if not cart["lines"]:
         return HttpResponseBadRequest("Cart is empty")
 
@@ -483,8 +602,12 @@ def api_checkout(request):
 
 
 def _variant_size_quantity(v):
-    # Return numeric quantity as a clean string, e.g. "0.3"
+    # Return numeric quantity + unit as a clean string, e.g. "0.3 L"
     try:
-        return f"{v.quantity.normalize():g}"
+        qty = f"{v.quantity.normalize():g}"
     except Exception:
-        return str(v.quantity)
+        qty = str(v.quantity)
+    unit_code = getattr(v.unit, "code", "")
+    if unit_code:
+        return f"{qty} {unit_code}".strip()
+    return qty

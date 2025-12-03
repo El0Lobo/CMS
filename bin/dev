@@ -4,24 +4,24 @@ Django Development Server Launcher
 Platform-agnostic dev server for Windows, Linux, and macOS
 """
 import os
-import sys
-import subprocess
 import platform
+import subprocess
+import sys
 from pathlib import Path
 
 # Add bin directory to path for shared module
 sys.path.insert(0, str(Path(__file__).parent))
 
 from _shared import (
+    check_virtualenv,
     console,
+    get_project_root,
+    get_venv_python,
     print_error,
     print_info,
     print_warning,
-    get_project_root,
-    get_venv_python,
-    check_virtualenv,
-    show_demoscene_intro,
     show_banner,
+    show_demoscene_intro,
 )
 
 

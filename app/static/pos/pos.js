@@ -4,6 +4,13 @@
 
   // ---------- DOM ----------
   let root, endpoints, el = {};
+  let posConfig = {
+    taxRate: "0.00",
+    showTax: true,
+    applyTax: true,
+    showDiscounts: true,
+    applyDiscounts: true,
+  };
   const state = {
     cart: null,
     selectedLineId: null, // for item-scope discounts
@@ -25,6 +32,27 @@
       return;
     }
 
+    const cfgRaw = root.getAttribute("data-config");
+    if (cfgRaw) {
+      try {
+        const parsed = JSON.parse(cfgRaw);
+        posConfig = {
+          ...posConfig,
+          taxRate: parsed.taxRate ?? posConfig.taxRate,
+          showTax: typeof parsed.showTax === "boolean" ? parsed.showTax : posConfig.showTax,
+          applyTax: typeof parsed.applyTax === "boolean" ? parsed.applyTax : posConfig.applyTax,
+          showDiscounts:
+            typeof parsed.showDiscounts === "boolean" ? parsed.showDiscounts : posConfig.showDiscounts,
+          applyDiscounts:
+            typeof parsed.applyDiscounts === "boolean"
+              ? parsed.applyDiscounts
+              : posConfig.applyDiscounts,
+        };
+      } catch (err) {
+        console.warn("[POS] Failed to parse POS config", err);
+      }
+    }
+
     // cache elements
     el.search = root.querySelector("#posSearch");
     el.results = root.querySelector("#posResults");
@@ -42,20 +70,24 @@
 
   async function bootstrap() {
     try {
-      // load quick buttons + current cart snapshot + browse categories
-      const promises = [getJSON(endpoints.buttons), getJSON(endpoints.totals)];
-      if (endpoints.browse) promises.push(getJSON(endpoints.browse));
-      const [btns, cart, browse] = await Promise.all(promises);
+      const buttonPromise =
+        posConfig.showDiscounts && endpoints.buttons
+          ? getJSON(endpoints.buttons)
+          : Promise.resolve(null);
+      const totalsPromise = getJSON(endpoints.totals);
+      const browsePromise = endpoints.browse ? getJSON(endpoints.browse) : Promise.resolve(null);
 
-      state.quickButtons = (btns && btns.buttons) || [];
-      renderQuickButtons(state.quickButtons);
+      const [btns, cart, browse] = await Promise.all([buttonPromise, totalsPromise, browsePromise]);
+
+      if (posConfig.showDiscounts) {
+        state.quickButtons = (btns && btns.buttons) || [];
+        renderQuickButtons(state.quickButtons);
+      }
       renderCart(cart);
 
-      // show categories on load (if endpoint exists)
       if (browse && browse.categories) {
         renderBrowseGrouped(browse.categories);
       } else if (endpoints.browse) {
-        // fallback fetch (in case Promise.all short-circuited)
         const b = await getJSON(endpoints.browse);
         renderBrowseGrouped((b && b.categories) || []);
       }
@@ -117,15 +149,17 @@
         const type = b.getAttribute("data-type");   // PERCENT|AMOUNT|FREE
         const value = b.getAttribute("data-value") || "0";
         const reasonId = b.getAttribute("data-reason-id") || "";
+        const label = b.getAttribute("data-label") || "";
+        const buttonId = b.getAttribute("data-btn-id") || "";
         if (scope === "ITEM") {
           if (!state.selectedLineId) {
             toast("Select a cart line first for item discount.", "error");
             return;
           }
-          applyDiscount({ scope, type, value, reasonId, itemId: state.selectedLineId })
+          applyDiscount({ scope, type, value, reasonId, itemId: state.selectedLineId, increment: true, label, buttonId })
             .catch(logAndToast("Discount failed."));
         } else {
-          applyDiscount({ scope, type, value, reasonId })
+          applyDiscount({ scope, type, value, reasonId, label })
             .catch(logAndToast("Discount failed."));
         }
       });
@@ -298,6 +332,7 @@
   }
 
   function renderQuickButtons(buttons) {
+    if (!el.quickButtons) return;
     el.quickButtons.innerHTML = "";
     if (!buttons.length) {
       el.quickButtons.innerHTML = `<div class="empty">No quick buttons configured.</div>`;
@@ -313,6 +348,8 @@
       btn.setAttribute("data-scope", b.scope);
       btn.setAttribute("data-value", b.value);
       if (b.reason_id) btn.setAttribute("data-reason-id", b.reason_id);
+      if (b.label) btn.setAttribute("data-label", b.label);
+      if (b.id) btn.setAttribute("data-btn-id", b.id);
       el.quickButtons.appendChild(btn);
     }
   }
@@ -323,6 +360,13 @@
     el.cartLines.innerHTML = "";
 
     const lines = (cart && cart.lines) || [];
+    const orderDiscount = cart && cart.order_discount;
+    const orderFreeTotal =
+      orderDiscount &&
+      orderDiscount.type === "FREE" &&
+      Number(cart.totals && cart.totals.grand_total) <= 0.0001;
+    const orderHasDiscount =
+      orderDiscount && Number(cart.totals && cart.totals.discount_total) > 0;
     if (!lines.length) {
       el.cartLines.innerHTML = `<div class="empty-cart">Cart is empty</div>`;
       updateTotals({ subtotal: "0.00", discount_total: "0.00", tax_total: "0.00", grand_total: "0.00" });
@@ -336,27 +380,69 @@
       wrap.className = "cart-line" + (isSel ? " is-selected" : "");
       wrap.setAttribute("data-id", String(line.id));
 
-      const discountBadge = line.discount
-        ? `<span class="badge">${esc(line.discount.type)}${line.discount.type !== "FREE" ? " " + esc(line.discount.value) : ""}</span>`
-        : "";
+      const discountEntries = Array.isArray(line.discounts)
+        ? line.discounts
+        : line.discount
+        ? [line.discount]
+        : [];
+      const primaryDiscount =
+        discountEntries.find((entry) => entry && entry.type === "FREE") || discountEntries[0] || null;
+      const lineSubtotal = Number(line.calc_subtotal || "0");
+      const lineTotal = Number(line.calc_total || "0");
+      const isLineFree = lineTotal <= 0.0001;
+      const discountReason = primaryDiscount || (orderFreeTotal ? orderDiscount : null);
+      const showFreeBadge =
+        (isLineFree || orderFreeTotal) &&
+        discountReason &&
+        discountReason.type === "FREE";
+      const discountBadge = showFreeBadge ? `<span class="badge">FREE</span>` : "";
+      const titleMain = line.title_main || line.title || "";
+      const titleDetail = line.variant_label || "";
+      const notes = [];
+      const freeUnits = Number(line.free_units || 0);
+      const discountUnits = Number(line.discount_units || 0);
+      if (!showFreeBadge && freeUnits > 0) {
+        notes.push(`Contains ${freeUnits} free`);
+      }
+      if (discountUnits > 0) {
+        notes.push(`Contains ${discountUnits} discounted`);
+      }
+      if (!notes.length && !showFreeBadge && orderHasDiscount) {
+        notes.push(orderDiscount.type === "FREE" ? "Contains free" : "Contains discount");
+      }
+      const titleBlock = `
+        <div class="title-text">${esc(titleMain)} ${discountBadge}</div>
+        ${titleDetail ? `<div class="title-detail">${esc(titleDetail)}</div>` : ""}
+        ${notes.map((note) => `<div class="title-detail title-detail--note">${note}</div>`).join("")}
+      `;
+
+      const metaBits = [
+        `<span class="sub">Sub: <strong>${esc(line.calc_subtotal)}</strong></span>`,
+      ];
+      if (posConfig.showDiscounts) {
+        metaBits.push(
+          `<span class="disc">Disc: <strong>${esc(line.calc_discount)}</strong></span>`
+        );
+      }
+      if (posConfig.showTax) {
+        metaBits.push(`<span class="tax">Tax: <strong>${esc(line.calc_tax)}</strong></span>`);
+      }
 
       wrap.innerHTML = `
         <div class="row compact">
           <button class="select" type="button" data-select-id="${line.id}" aria-pressed="${isSel ? "true" : "false"}">${isSel ? "●" : "○"}</button>
-          <div class="title">${esc(line.title)} ${discountBadge}</div>
+          <div class="title">${titleBlock}</div>
           <div class="qty">
-            <button class="dec" type="button" data-dec-id="${line.id}">−</button>
+            <button class="qty-btn" type="button" data-dec-id="${line.id}" aria-label="Decrease quantity">−</button>
             <input type="number" min="0" step="1" class="qty-input" data-qty-id="${line.id}" value="${Number(line.qty)}" inputmode="numeric" pattern="[0-9]*">
-            <button class="inc" type="button" data-inc-id="${line.id}">+</button>
+            <button class="qty-btn" type="button" data-inc-id="${line.id}" aria-label="Increase quantity">+</button>
           </div>
           <div class="unit">${esc(line.unit_price)}</div>
           <div class="line-total"><strong>${esc(line.calc_total)}</strong></div>
           <button class="remove" type="button" data-remove-id="${line.id}" title="Remove">✕</button>
         </div>
         <div class="row meta">
-          <span class="sub">Sub: <strong>${esc(line.calc_subtotal)}</strong></span>
-          <span class="disc">Disc: <strong>${esc(line.calc_discount)}</strong></span>
-          <span class="tax">Tax: <strong>${esc(line.calc_tax)}</strong></span>
+          ${metaBits.join("")}
         </div>
       `;
       el.cartLines.appendChild(wrap);
@@ -407,10 +493,15 @@
     state.selectedLineId = null;
   }
 
-  async function applyDiscount({ scope, type, value = "0", reasonId = "", itemId = "" }) {
+  async function applyDiscount({ scope, type, value = "0", reasonId = "", itemId = "", increment = false, label = "", buttonId = "" }) {
     const payload = { scope, type, value };
     if (reasonId) payload.reason_id = reasonId;
-    if (scope === "ITEM") payload.item_id = itemId;
+    if (label) payload.label = label;
+    if (buttonId) payload.button_id = buttonId;
+    if (scope === "ITEM") {
+      payload.item_id = itemId;
+      if (increment) payload.increment = "true";
+    }
     const data = await postForm(endpoints.applyDiscount, payload);
     renderCart(data);
   }

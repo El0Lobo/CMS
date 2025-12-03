@@ -13,12 +13,12 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from rich import box as rich_box
     from rich.console import Console
     from rich.panel import Panel
     from rich.progress import Progress, SpinnerColumn, TextColumn
     from rich.table import Table
     from rich.text import Text
-    from rich import box as rich_box
 
     console = Console()
     RICH_AVAILABLE = True

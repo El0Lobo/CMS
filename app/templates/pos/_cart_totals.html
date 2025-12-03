@@ -1,8 +1,12 @@
-{% with totals=cart.totals %}
+{% with totals=cart.totals show_disc=pos_config.show_discounts|default_if_none:True show_tax=pos_config.show_tax|default_if_none:True %}
 <div class="totals">
   <div><span>Subtotal</span><span data-total-subtotal>{{ totals.subtotal }}</span></div>
-  <div><span>Discounts</span><span data-total-discount>{{ totals.discount_total }}</span></div>
-  <div><span>Tax</span><span data-total-tax>{{ totals.tax_total }}</span></div>
+  {% if show_disc %}
+    <div><span>Discounts</span><span data-total-discount>{{ totals.discount_total }}</span></div>
+  {% endif %}
+  {% if show_tax %}
+    <div><span>Tax</span><span data-total-tax>{{ totals.tax_total }}</span></div>
+  {% endif %}
   <div class="grand"><span>Total</span><span data-total-grand>{{ totals.grand_total }}</span></div>
 </div>
 {% endwith %}

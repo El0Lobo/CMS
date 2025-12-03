@@ -1,7 +1,5 @@
 from copy import deepcopy
 
-from copy import deepcopy
-
 from django.conf import settings
 from django.db import models
 from django.utils import timezone, translation
@@ -152,7 +150,7 @@ class Page(models.Model):
             base_field = self._meta.get_field("blocks").attname
             self.__dict__[base_field] = shared_value
             with translation.override(default_lang):
-                setattr(self, "blocks", shared_value)
+                self.blocks = shared_value
             if lang != default_lang:
                 field = build_localized_fieldname("blocks", lang)
                 setattr(self, field, None)
@@ -184,10 +182,16 @@ class Page(models.Model):
 
         main_html = render_blocks(main_blocks, request=request, extra_context=extra)
         footer_html = render_blocks(footer_blocks, request=request, extra_context=extra)
+        nav_html = mark_safe("")
         if nav_blocks:
             nav_html = render_blocks(nav_blocks[:1], request=request, extra_context=extra)
-        else:
-            nav_html = mark_safe("")
+        elif self.show_navigation_bar:
+            auto_block = {
+                "id": "auto-navigation",
+                "type": "navigation",
+                "props": {**DEFAULT_NAV_PROPS},
+            }
+            nav_html = render_blocks([auto_block], request=request, extra_context=extra)
         return main_html, footer_html, nav_html
 
     def render_content(self, *, request=None, extra_context=None) -> str:

@@ -112,7 +112,10 @@
   align-items: center;
   border-bottom: 1px solid var(--border);
 }
-.cart-line .title { font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.cart-line .title { font-weight: 700; display: flex; flex-direction: column; gap: 2px; }
+.cart-line .title-text { display: inline-flex; align-items: center; gap: 8px; }
+.cart-line .title-detail { font-size: 0.85rem; color: var(--text-dim); font-weight: 500; }
+.cart-line .title-detail--note { color: var(--warning); font-style: italic; }
 .cart-line .line-total { font-variant-numeric: tabular-nums; font-weight: 700; }
 .cart-line .unit, .cart-line .sub, .cart-line .disc, .cart-line .total { color: var(--text-dim); }
 .cart-line .remove {
@@ -135,16 +138,6 @@
   font-size: .75rem;
   padding: 2px 6px;
   border-radius: 999px;
-}
-
-/* Qty control (works with your existing markup) */
-.qty-wrap { display: inline-flex; gap: 6px; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 2px; }
-.qty-wrap input { width: 60px; text-align: center; background: transparent; border: 0; color: var(--text); }
-.qty-wrap button {
-  background: var(--bg-hover);
-  border: 1px solid var(--border);
-  color: var(--text);
-  width: 34px; height: 34px; border-radius: 8px;
 }
 
 /* Totals */
@@ -257,12 +250,32 @@
   gap: 8px; align-items: center;
 }
 #pos-root .cart-line .row.meta {
-  display: grid; grid-template-columns: repeat(3, auto); gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, auto));
+  gap: 14px;
   padding-top: 2px; font-size: .85rem; color: var(--text-dim, #c1c8d0);
 }
 #pos-root .cart-line .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #pos-root .cart-line .qty { display: inline-flex; gap: 6px; align-items: center; }
-#pos-root .cart-line .qty-input { width: 56px; text-align: center; }
+#pos-root .cart-line .qty-input { width: 56px; text-align: center; -moz-appearance: textfield; }
+#pos-root .cart-line .qty-input::-webkit-outer-spin-button,
+#pos-root .cart-line .qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#pos-root .cart-line .qty-btn {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 1rem;
+  line-height: 1;
+}
+#pos-root .cart-line .qty-btn:hover {
+  background: var(--bg-hover);
+}
 #pos-root .cart-line .unit, 
 #pos-root .cart-line .line-total { font-variant-numeric: tabular-nums; }
 #pos-root .cart-line .line-total strong { font-weight: 800; }

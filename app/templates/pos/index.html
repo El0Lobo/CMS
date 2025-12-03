@@ -22,7 +22,7 @@
   "totals":"{% url 'pos:api_cart_totals' %}",
   "checkout":"{% url 'pos:api_checkout' %}",
   "buttons":"{% url 'pos:api_quick_buttons' %}"
-}'>
+}' data-config='{{ pos_config_json|default:"{}" }}'>
 
   <div class="pos-left">
     <div class="search-bar">
@@ -43,16 +43,18 @@
         {# filled by JS #}
       </div>
       <footer id="cartTotals">
-        {% include "pos/_cart_totals.html" with cart=cart %}
+        {% include "pos/_cart_totals.html" with cart=cart pos_config=pos_config %}
       </footer>
     </div>
 
-    <div class="buttons-card">
-      <header><h3>Quick Discounts</h3></header>
-      <div id="quickButtons" class="buttons-grid">
-        {# populated by JS from /api/quick-buttons/ #}
+    {% if pos_config.show_discounts %}
+      <div class="buttons-card" id="posDiscountsCard">
+        <header><h3>Quick Discounts</h3></header>
+        <div id="quickButtons" class="buttons-grid">
+          {# populated by JS from /api/quick-buttons/ #}
+        </div>
       </div>
-    </div>
+    {% endif %}
 
     <div class="checkout-card">
       <header><h3>Checkout</h3></header>

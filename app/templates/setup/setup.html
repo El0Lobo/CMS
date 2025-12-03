@@ -3,6 +3,18 @@
 {% block extra_head %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'setup/setup.css' %}">
+  <style>
+    .btn-danger {
+      background: #a61d3e;
+      border-color: #a61d3e;
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background: #c6284f;
+      border-color: #c6284f;
+      color: #fff;
+    }
+  </style>
 {% endblock %}
 {% block content %}
 
@@ -17,60 +29,51 @@
     You have unsaved changes. Remember to save before leaving this page.
   </div>
 
-  <section class="card card--seeding" data-collapsible-key="setup:seed">
-    <h2>
-      <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
-      Seeding tools <small>Backup or reset demo content</small>
-    </h2>
-    <div class="card__body stack">
-      <form method="post" action="{% url 'setup:seed_export' %}" class="stack">
-        {% csrf_token %}
-        <p class="text-muted mb-0">Dump the current database into <code>seed_full.json</code>. Ideal after curating demo content.</p>
-        <button type="submit" class="btn btn-secondary btn-sm" style="width:max-content;">Generate seed_full.json</button>
-      </form>
-      <hr class="rule">
-      <form method="post" action="{% url 'setup:seed_reset' %}" class="stack" onsubmit="return confirm('This will flush the database, re-run migrations, and load seed_full.json. Continue?');">
-        {% csrf_token %}
-        <p class="text-muted mb-0"><strong>Danger:</strong> This clears the database (including users) and reloads <code>seed_full.json</code>. Use only in development.</p>
-        <button type="submit" class="btn btn-danger btn-sm" style="width:max-content;">Reset database from seed</button>
-      </form>
-      <form method="post" action="{% url 'setup:seed_clear' %}" class="stack" onsubmit="return confirm('This will flush the database and run fresh migrations WITHOUT loading seed data. Continue?');">
-        {% csrf_token %}
-        <p class="text-muted mb-0"><strong>Danger:</strong> Flush everything and leave the schema empty (except the auto-created dev admin).</p>
-        <button type="submit" class="btn btn-danger btn-sm" style="width:max-content;">Clear database only</button>
-      </form>
-    </div>
-  </section>
-
-  <section class="card" data-collapsible-key="setup:tunnel">
-    <h2>
-      <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
-      Cloudflare tunnel <small>Share this site temporarily</small>
-    </h2>
-    <div class="card__body stack">
-      <p class="text-muted mb-0">
-        Spins up <code>cloudflared</code> with a random trycloudflare.com URL and disables the dev login shortcut automatically.
-      </p>
-      {% if tunnel_url %}
-        <p class="text-success mb-0">Active tunnel: <a href="{{ tunnel_url }}" target="_blank" rel="noopener">{{ tunnel_url }}</a></p>
-      {% else %}
-        <p class="text-muted mb-0">No tunnel is running.</p>
-      {% endif %}
-      <form method="post" action="{% url 'setup:tunnel_start' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary btn-sm" {% if tunnel_running %}disabled{% endif %}>Start tunnel</button>
-      </form>
-      <form method="post" action="{% url 'setup:tunnel_stop' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-secondary btn-sm" {% if not tunnel_running %}disabled{% endif %}>Stop tunnel</button>
-      </form>
-      <p class="text-muted mb-0" style="font-size:0.85rem;">Requires the <code>cloudflared</code> CLI in PATH.</p>
-    </div>
-  </section>
-
-  <form id="setup-form" method="post" enctype="multipart/form-data" novalidate class="stack-lg">
+  <form method="post" action="" class="stack-lg" id="setup-form" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
+    <section class="card card--seeding" data-collapsible-key="setup:seed">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+        Seeding tools <small>Backup or reset demo content</small>
+      </h2>
+      <div class="card__body action-list">
+        <div class="action">
+          <p class="text-muted mb-0">Dump the current database into <code>seed_full.json</code>. Ideal after curating demo content.</p>
+          <button type="submit" name="op" value="seed_export" class="btn btn-secondary btn-sm" style="width:max-content;">Generate seed_full.json</button>
+        </div>
+        <div class="action">
+          <p class="text-muted mb-0"><strong>Danger:</strong> This clears the database (including users) and reloads <code>seed_full.json</code>. Use only in development.</p>
+          <button type="submit" name="op" value="seed_reset" class="btn btn-danger btn-sm" style="width:max-content;" onclick="return confirm('This will flush the database, re-run migrations, and load seed_full.json. Continue?');">Reset database from seed</button>
+        </div>
+        <div class="action">
+          <p class="text-muted mb-0"><strong>Danger:</strong> Flush everything and leave the schema empty (except the auto-created dev admin).</p>
+          <button type="submit" name="op" value="seed_clear" class="btn btn-danger btn-sm" style="width:max-content;" onclick="return confirm('This will flush the database and run fresh migrations WITHOUT loading seed data. Continue?');">Clear database only</button>
+        </div>
+      </div>
+    </section>
 
+    <section class="card" data-collapsible-key="setup:tunnel">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+        Cloudflare tunnel <small>Share this site temporarily</small>
+      </h2>
+      <div class="card__body stack">
+        <p class="text-muted mb-0">
+          Spins up <code>cloudflared</code> with a random trycloudflare.com URL and disables the dev login shortcut automatically.
+        </p>
+        {% if tunnel_url %}
+          <p class="text-success mb-0">Active tunnel: <a href="{{ tunnel_url }}" target="_blank" rel="noopener">{{ tunnel_url }}</a></p>
+        {% else %}
+          <p class="text-muted mb-0">No tunnel is running.</p>
+        {% endif %}
+        <div class="action">
+          <button type="submit" name="op" value="tunnel_start" class="btn btn-primary btn-sm" {% if tunnel_running %}disabled{% endif %}>Start tunnel</button>
+          <button type="submit" name="op" value="tunnel_stop" class="btn btn-secondary btn-sm" {% if not tunnel_running %}disabled{% endif %}>Stop tunnel</button>
+        </div>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Requires the <code>cloudflared</code> CLI in PATH.</p>
+      </div>
+    </section>
+  
     <!-- ===== Section: General ===== -->
     <section class="card" data-collapsible-key="setup:general">
       <h2>
@@ -135,6 +138,122 @@
             {{ form.inventory_dashboard_groups.label_tag }} {{ form.inventory_dashboard_groups }}
             <p class="text-muted small mb-0">{{ form.inventory_dashboard_groups.help_text }}</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" data-collapsible-key="setup:pos">
+      <h2>
+        <button type="button" class="collapse-toggle"><span class="chev">▸</span><span class="sr-only">Toggle section</span></button>
+        POS settings
+      </h2>
+      <div class="card__body stack">
+        <p class="text-muted mb-0">Control whether discounts/tax are shown in the register UI and whether they affect totals.</p>
+        <div class="grid-2">
+          <div class="field">
+            <label class="checkbox">
+              {{ form.pos_show_discounts }} <span>{{ form.pos_show_discounts.label }}</span>
+            </label>
+            {% if form.pos_show_discounts.help_text %}
+              <p class="text-muted small mb-0">{{ form.pos_show_discounts.help_text }}</p>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label class="checkbox">
+              {{ form.pos_apply_discounts }} <span>{{ form.pos_apply_discounts.label }}</span>
+            </label>
+            {% if form.pos_apply_discounts.help_text %}
+              <p class="text-muted small mb-0">{{ form.pos_apply_discounts.help_text }}</p>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label class="checkbox">
+              {{ form.pos_show_tax }} <span>{{ form.pos_show_tax.label }}</span>
+            </label>
+            {% if form.pos_show_tax.help_text %}
+              <p class="text-muted small mb-0">{{ form.pos_show_tax.help_text }}</p>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label class="checkbox">
+              {{ form.pos_apply_tax }} <span>{{ form.pos_apply_tax.label }}</span>
+            </label>
+            {% if form.pos_apply_tax.help_text %}
+              <p class="text-muted small mb-0">{{ form.pos_apply_tax.help_text }}</p>
+            {% endif %}
+          </div>
+          <div class="field">
+            {{ form.pos_tax_rate.label_tag }} {{ form.pos_tax_rate }}
+            {% if form.pos_tax_rate.help_text %}
+              <p class="text-muted small mb-0">{{ form.pos_tax_rate.help_text }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <hr class="rule">
+        <div class="stack" data-formset-prefix="{{ quickbuttons.prefix }}">
+          <div class="flex-between">
+            <h3 class="mb-0">Quick discount buttons</h3>
+            <button type="button" class="btn btn-sm" data-add-form>Add button</button>
+          </div>
+          <p class="text-muted mb-0">Each button can target the whole order or the selected cart line.</p>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Label</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                  <th>Scope</th>
+                  <th>Reason</th>
+                  <th>Sort</th>
+                  <th>Active</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{ quickbuttons.management_form }}
+                {% for qform in quickbuttons %}
+                  <tr>
+                    <td>{{ qform.id }}{{ qform.label }}</td>
+                    <td>{{ qform.discount_type }}</td>
+                    <td>{{ qform.value }}</td>
+                    <td>{{ qform.scope }}</td>
+                    <td>{{ qform.reason }}</td>
+                    <td>{{ qform.sort_order }}</td>
+                    <td>{{ qform.is_active }}</td>
+                  <td class="text-center">
+                    {% if qform.DELETE %}
+                      <span class="delete-field" style="display:none;">{{ qform.DELETE }}</span>
+                      <button type="button" class="btn btn-sm btn-danger" data-delete-row>Delete</button>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% if qform.non_field_errors %}
+                  <tr><td colspan="8" class="text-danger small">{{ qform.non_field_errors }}</td></tr>
+                {% endif %}
+              {% empty %}
+                  <tr><td colspan="8" class="text-muted">No quick discounts configured yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <template id="quickbuttons-empty-row">
+            <tr>
+              <td>{{ quickbuttons.empty_form.id }}{{ quickbuttons.empty_form.label }}</td>
+              <td>{{ quickbuttons.empty_form.discount_type }}</td>
+              <td>{{ quickbuttons.empty_form.value }}</td>
+              <td>{{ quickbuttons.empty_form.scope }}</td>
+              <td>{{ quickbuttons.empty_form.reason }}</td>
+              <td>{{ quickbuttons.empty_form.sort_order }}</td>
+              <td>{{ quickbuttons.empty_form.is_active }}</td>
+              <td class="text-center">
+                {% if quickbuttons.empty_form.DELETE %}
+                  <span class="delete-field" style="display:none;">{{ quickbuttons.empty_form.DELETE }}</span>
+                  <button type="button" class="btn btn-sm btn-danger" data-delete-row>Delete</button>
+                {% endif %}
+              </td>
+            </tr>
+          </template>
         </div>
       </div>
     </section>
@@ -457,5 +576,47 @@
 
 {% block extra_body %}
   {{ block.super }}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const wrapper = document.querySelector('[data-formset-prefix="{{ quickbuttons.prefix }}"]');
+      if (!wrapper) return;
+      const prefix = wrapper.getAttribute("data-formset-prefix");
+      const addBtn = wrapper.querySelector("[data-add-form]");
+      const totalInput = wrapper.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+      const tbody = wrapper.querySelector("tbody");
+      const template = wrapper.querySelector("#quickbuttons-empty-row");
+      if (!addBtn || !totalInput || !tbody || !template) return;
+      const templateHTML = template.innerHTML.trim();
+      addBtn.addEventListener("click", function () {
+        const parser = document.createElement("tbody");
+        const index = parseInt(totalInput.value || "0", 10);
+        parser.innerHTML = templateHTML.replace(/__prefix__/g, index);
+        const row = parser.firstElementChild;
+        if (row) {
+          tbody.appendChild(row);
+          totalInput.value = index + 1;
+        }
+      });
+      wrapper.addEventListener("click", function (e) {
+        const btn = e.target.closest("[data-delete-row]");
+        if (!btn) return;
+        const row = btn.closest("tr");
+        if (!row) return;
+        const checkbox = row.querySelector(".delete-field input[type='checkbox']");
+        if (!checkbox) return;
+        if (checkbox.checked) {
+          checkbox.checked = false;
+          row.classList.remove("is-deleted");
+          row.style.display = "";
+          return;
+        }
+        if (confirm("Remove this discount button?")) {
+          checkbox.checked = true;
+          row.classList.add("is-deleted");
+          row.style.display = "none";
+        }
+      });
+    });
+  </script>
   <script src="{% static 'setup/setup.js' %}" defer></script>
 {% endblock %}

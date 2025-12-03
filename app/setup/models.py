@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth.models import Group
 from django.core.validators import RegexValidator
 from django.db import models
@@ -71,6 +73,28 @@ class SiteSettings(models.Model):
     dev_login_enabled = models.BooleanField(
         default=True,
         help_text=_("Show the developer login shortcut when running in development/test."),
+    )
+    pos_show_discounts = models.BooleanField(
+        default=True,
+        help_text=_("Show the Quick Discounts panel in the POS."),
+    )
+    pos_apply_discounts = models.BooleanField(
+        default=True,
+        help_text=_("Allow item/order discounts to modify POS totals."),
+    )
+    pos_show_tax = models.BooleanField(
+        default=True,
+        help_text=_("Show tax rows in the POS UI."),
+    )
+    pos_apply_tax = models.BooleanField(
+        default=True,
+        help_text=_("Apply tax to POS carts when calculating totals."),
+    )
+    pos_tax_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("19.00"),
+        help_text=_("Default POS tax rate (%)"),
     )
 
     # Multilingual settings

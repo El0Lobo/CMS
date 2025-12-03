@@ -4,21 +4,15 @@ Django Management Command Wrapper
 Platform-agnostic wrapper for manage.py commands
 """
 import os
-import sys
-import subprocess
 import platform
+import subprocess
+import sys
 from pathlib import Path
 
 # Add bin directory to path for shared module
 sys.path.insert(0, str(Path(__file__).parent))
 
-from _shared import (
-    Colors,
-    print_error,
-    get_project_root,
-    get_venv_python,
-    check_virtualenv
-)
+from _shared import Colors, check_virtualenv, get_project_root, get_venv_python, print_error
 
 
 def run_management_command():

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from copy import deepcopy
 import re
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 from django.template.loader import render_to_string
