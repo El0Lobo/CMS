@@ -21,6 +21,7 @@
 .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--setup-gap); }
 .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--setup-gap); }
 .field { display: grid; gap: 6px; }
+.field.field--full { grid-column: 1 / -1; max-width: fit-content;}
 
 .card { border: var(--setup-border) solid var(--setup-border-color); border-radius: var(--setup-radius); background: var(--setup-card-bg); padding: 12px; }
 .card + .card { margin-top: var(--setup-gap-lg); }

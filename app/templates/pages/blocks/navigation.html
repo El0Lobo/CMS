@@ -1,6 +1,11 @@
 {% load static %}
 {% load i18n %}
-<section class="page-block page-block--navigation" data-builder-nav>
+{% if props.style_font_faces %}
+  {% for css in props.style_font_faces %}
+    <style>{{ css|safe }}</style>
+  {% endfor %}
+{% endif %}
+<section class="page-block page-block--navigation" data-builder-nav {% if props.style_inline %}style="{{ props.style_inline }}"{% endif %}>
   <div class="page-block__container">
     <header class="page-nav page-nav--{{ props.layout|default:'center' }}">
       <div class="page-nav__brand">

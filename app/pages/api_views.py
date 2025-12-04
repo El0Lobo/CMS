@@ -4,12 +4,14 @@ import json
 from typing import Any
 
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_POST
 
+from app.assets.models import Asset, Collection
 from . import data_sources
 from .models import Page
 from .navigation import build_nav_payload
@@ -58,6 +60,51 @@ def assets_library(request):
     for asset in assets:
         asset["url"] = _absolute_media(request, asset.get("url"))
     return JsonResponse({"assets": assets})
+
+
+def _get_or_create_font_collection() -> Collection:
+    collection, created = Collection.objects.get_or_create(
+        slug="fonts",
+        defaults={"title": "Fonts", "visibility_mode": "public"},
+    )
+    if created:
+        return collection
+    if collection.visibility_mode != "public":
+        collection.visibility_mode = "public"
+        collection.save(update_fields=["visibility_mode"])
+    return collection
+
+
+@login_required
+@require_POST
+def upload_font_asset(request):
+    if not request.user.has_perm("assets.add_asset"):
+        return HttpResponseForbidden("Not allowed to upload assets.")
+    upload = request.FILES.get("file")
+    if not upload:
+        return HttpResponseBadRequest("Missing font file.")
+    filename = (upload.name or "font").lower()
+    if not filename.endswith((".woff2", ".woff", ".ttf", ".otf")):
+        return HttpResponseBadRequest("Only WOFF2/WOFF/TTF/OTF files are supported.")
+    collection = _get_or_create_font_collection()
+    title = request.POST.get("title") or upload.name or "Font"
+    asset = Asset(
+        collection=collection,
+        title=title,
+        visibility="public",
+        appears_on="page-builder-fonts",
+    )
+    asset.file = upload
+    asset.save()
+    data = {
+        "id": asset.pk,
+        "title": asset.title,
+        "slug": asset.slug,
+        "kind": asset.kind,
+        "url": asset.file.url if asset.file else asset.url,
+        "mime_type": asset.mime_type,
+    }
+    return JsonResponse({"asset": data}, status=201)
 
 
 def _parse_json(request) -> dict[str, Any]:

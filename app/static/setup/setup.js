@@ -64,20 +64,6 @@
     });
   }
 
-  function initModeToggle() {
-    const root = document.getElementById('setup-root');
-    const select = document.getElementById('id_mode');
-    if (!root || !select) return;
-
-    const sync = () => {
-      const mode = (select.value || 'venue').toLowerCase();
-      root.setAttribute('data-mode', mode);
-    };
-
-    select.addEventListener('change', sync);
-    sync();
-  }
-
   function initMembershipToggle() {
     const checkbox = document.getElementById('id_membership_enabled');
     const block = document.getElementById('tiers-block');
@@ -330,7 +316,6 @@
 
   onReady(() => {
     initUnsavedWarning();
-    initModeToggle();
     initMembershipToggle();
     initAddressAutocomplete();
     initFormsetHelpers();

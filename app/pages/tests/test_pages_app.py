@@ -1,9 +1,14 @@
 import json
+import shutil
+import tempfile
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from app.assets.models import Asset, Collection
 from app.pages.models import Page
 from app.setup.models import SiteSettings
 
@@ -50,6 +55,120 @@ class PageRenderContentTests(TestCase):
 
         self.assertIn("Raw body", rendered)
         self.assertNotIn("page-block--richtext", rendered)
+
+    def test_block_styles_render_inline_overrides(self):
+        page = Page.objects.create(
+            title="Styled story",
+            slug="styled-story",
+            blocks=[
+                {
+                    "id": "block-1",
+                    "type": "rich_text",
+                    "props": {
+                        "html": "<p>Content</p>",
+                        "style": {
+                            "text_color": "#FF0044",
+                            "background_color": "#000",
+                            "font_family": "display",
+                            "font_size": "xxl",
+                        },
+                    },
+                }
+            ],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        rendered = page.render_content()
+
+        self.assertIn('color:#ff0044', rendered)
+        self.assertIn('background-color:#000000', rendered)
+        self.assertIn('font-size:1.6rem', rendered)
+        self.assertIn('font-family:&quot;Oswald&quot;', rendered)
+
+    def test_invalid_block_styles_are_ignored(self):
+        page = Page.objects.create(
+            title="Styled story invalid",
+            slug="styled-invalid",
+            blocks=[
+                {
+                    "id": "block-1",
+                    "type": "rich_text",
+                    "props": {
+                        "html": "<p>Content</p>",
+                        "style": {
+                            "text_color": "rgb(0,0,0)",
+                            "background_color": "javascript:alert('x')",
+                            "font_family": "unknown",
+                            "font_size": "200px",
+                        },
+                    },
+                }
+            ],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        rendered = page.render_content()
+
+        self.assertNotIn("rgb(0,0,0)", rendered)
+        self.assertNotIn("javascript:alert", rendered)
+        self.assertNotIn("200px", rendered)
+
+    def test_style_targets_apply_to_titles(self):
+        page = Page.objects.create(
+            title="Events",
+            slug="events-styled",
+            blocks=[
+                {
+                    "id": "block-1",
+                    "type": "events",
+                    "props": {
+                        "title": "Upcoming",
+                        "style_targets": {"title": {"text_color": "#112233", "font_size": "lg"}},
+                    },
+                }
+            ],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        rendered = page.render_content()
+
+        self.assertIn("font-size:1.15rem", rendered)
+        self.assertIn("color:#112233", rendered)
+
+    def test_custom_font_assets_render_font_face(self):
+        page = Page.objects.create(
+            title="Hero fonts",
+            slug="hero-fonts",
+            blocks=[
+                {
+                    "id": "hero",
+                    "type": "hero",
+                    "props": {
+                        "title": "Welcome",
+                        "style_targets": {
+                            "title": {
+                                "font_asset": {
+                                    "id": 999,
+                                    "title": "My Font",
+                                    "url": "https://cdn.example.com/fonts/myfont.woff2",
+                                    "mime_type": "font/woff2",
+                                }
+                            }
+                        },
+                    },
+                }
+            ],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        rendered = page.render_content()
+
+        self.assertIn("@font-face{font-family:'CMSFont-", rendered)
+        self.assertIn("https://cdn.example.com/fonts/myfont.woff2", rendered)
 
 
 class PreviewHtmlApiTests(TestCase):
@@ -107,6 +226,31 @@ class PreviewHtmlApiTests(TestCase):
 
         self.assertIn("Raw preview", data["content_html"])
         self.assertNotIn("page-block--richtext", data["content_html"])
+
+
+class FontUploadApiTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user("uploader", "font@example.com", "pass12345")
+        self.client.force_login(self.user)
+        self.url = reverse("pages_api_font_upload")
+
+    def test_requires_permission_to_upload_font(self):
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_uploads_font_into_fonts_collection(self):
+        permission = Permission.objects.get(codename="add_asset")
+        self.user.user_permissions.add(permission)
+        upload = SimpleUploadedFile("display.woff2", b"dummyfont", content_type="font/woff2")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with override_settings(MEDIA_ROOT=tmpdir):
+                response = self.client.post(self.url, {"file": upload, "title": "Display Font"})
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["asset"]["kind"], "font")
+        self.assertTrue(Collection.objects.filter(slug="fonts").exists())
+        self.assertEqual(Asset.objects.count(), 1)
 
 
 class FooterBlockDefaultsTests(TestCase):

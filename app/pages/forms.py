@@ -4,6 +4,7 @@ from django import forms
 from django.conf import settings
 from django.utils import translation
 from django.utils.text import slugify
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 from .models import Page
 
@@ -11,14 +12,11 @@ from .models import Page
 class PageForm(forms.ModelForm):
     body = forms.CharField(
         required=False,
-        widget=forms.Textarea(
-            attrs={
-                "rows": 18,
-                "spellcheck": "false",
-                "class": "code-input",
-            }
+        widget=CKEditor5Widget(config_name="advanced"),
+        help_text=(
+            "Rich text editor with font, color, and layout controls. When 'render body only' is enabled, "
+            "this replaces the block builder output."
         ),
-        help_text="When raw rendering is enabled this HTML replaces the block builder output.",
     )
     blocks = forms.CharField(
         required=False,

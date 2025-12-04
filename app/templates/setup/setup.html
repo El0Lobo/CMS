@@ -18,11 +18,11 @@
 {% endblock %}
 {% block content %}
 
-<div id="setup-root" data-mode="{{ current_mode|default:'venue' }}" class="stack-lg">
+<div id="setup-root" class="stack-lg">
 
   <div class="stack">
     <h1 class="mb-0">CMS Setup <span class="visibility-anchor">{% visibility_cog_inline 'cms.setup.page' 'CMS Setup Page' target='.visibility-anchor' %}</span></h1>
-    <p class="lead-muted">Configure global settings (mode, address, socials, membership, opening times, roles).</p>
+    <p class="lead-muted">Configure global settings (address, socials, membership, opening times, roles).</p>
   </div>
 
   <div id="setup-unsaved" class="alert alert-warning" role="status" hidden>
@@ -83,16 +83,13 @@
       <div class="card__body stack">
         {{ form.non_field_errors }}
         <div class="grid-2">
-          <div class="field">{{ form.mode.label_tag }} {{ form.mode }}</div>
-          <div class="field">{{ form.org_name.label_tag }} {{ form.org_name }}</div>
+          <div class="field field--full">{{ form.org_name.label_tag }} {{ form.org_name }}</div>
           <div class="field">
             {{ form.logo.label_tag }} {{ form.logo }}
             {% with current=form.logo.field.widget.attrs.data_current %}
               {% if current %}<p class="text-muted mb-0" aria-live="polite">Current: {{ current }}</p>{% endif %}
             {% endwith %}
-            {% if form.instance.logo and form.instance.logo.url %}
-              <p class="text-muted mb-0" aria-live="polite">Using: {{ form.instance.logo.name }}</p>
-            {% endif %}
+
           </div>
           <div class="field">
             {{ form.logo_secondary.label_tag }} {{ form.logo_secondary }}
@@ -103,15 +100,8 @@
           <div class="field">
             {{ form.icon_pack.label_tag }} {{ form.icon_pack }}
             {% if form.icon_pack.help_text %}
-              <p class="text-muted" style="margin:4px 0 0;">{{ form.icon_pack.help_text }}</p>
+              <p class="text-muted" style="margin:4px 0 0;">{{ form.icon_pack.help_text|safe }}</p>
             {% endif %}
-            <p class="text-muted" style="margin:4px 0 0;">
-              Generate these files via
-              <a href="https://realfavicongenerator.net/" target="_blank" rel="noopener">
-                RealFaviconGenerator
-              </a>
-              (download the favicon package ZIP) and upload it here.
-            </p>
             {% with current=form.icon_pack.field.widget.attrs.data_current %}
               {% if current %}
                 <p class="text-muted mb-0" aria-live="polite">Current: {{ current }}</p>

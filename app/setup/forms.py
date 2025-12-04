@@ -82,8 +82,10 @@ class SettingsForm(ModelForm):
         widget=SetupClearableFileInput,
         help_text=(
             "Upload favicon.ico, favicon.svg, apple-touch-icon.png, favicon-96x96.png, "
-            "web-app-manifest-192x192.png, web-app-manifest-512x512.png, and site.webmanifest "
-            "(e.g., from RealFaviconGenerator). Replaces previous icons."
+            "web-app-manifest-192x192.png, web-app-manifest-512x512.png, and site.webmanifest. "
+            'Generate these files via <a href="https://realfavicongenerator.net/" target="_blank" '
+            'rel="noopener">RealFaviconGenerator</a> (download the favicon package ZIP) and upload it here. '
+            "Replaces previous icons."
         ),
     )
 
@@ -91,7 +93,6 @@ class SettingsForm(ModelForm):
         model = SiteSettings
         fields = [
             # General
-            "mode",
             "org_name",
             "logo",
             "logo_secondary",
@@ -231,9 +232,6 @@ class SettingsForm(ModelForm):
             self.instance.default_currency or guess_default_currency()
         )
 
-        if not self.instance.mode:
-            self.initial.setdefault("mode", "venue")
-
         self.use_required_attribute = False
         for f in self.fields.values():
             f.required = False
@@ -242,6 +240,9 @@ class SettingsForm(ModelForm):
         def _update_widget_fields(name, **attrs):
             return _update_widget(self.fields[name], **attrs) if name in self.fields else None
 
+        if "org_name" in self.fields:
+            existing = dict(self.fields["org_name"].widget.attrs)
+            self.fields["org_name"].widget = forms.TextInput(attrs=existing)
         _update_widget_fields(
             "address_street", id="street-address", autocomplete="address-line1", enterkeyhint="next"
         )

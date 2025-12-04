@@ -262,6 +262,13 @@
   gap: 0.3rem;
 }
 
+.builder-field__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .builder-field label {
   font-weight: 600;
   font-size: 0.9rem;
@@ -279,6 +286,65 @@
   color: inherit;
   padding: 0.55rem 0.7rem;
   font-size: 0.95rem;
+}
+
+.builder-style-chip {
+  white-space: nowrap;
+}
+
+.builder-style-popover {
+  position: fixed;
+  z-index: 5000;
+  background: rgba(12, 17, 23, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.85rem 1rem 1rem;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.45);
+  width: min(360px, calc(100vw - 1.5rem));
+  max-height: min(460px, calc(100vh - 1.5rem));
+  overflow-y: auto;
+}
+
+.builder-style-popover.is-hidden {
+  display: none;
+}
+
+.builder-style-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.builder-style-popover__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.builder-style-popover__color {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.builder-style-popover__color input[type="color"] {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.builder-style-popover__color .btn {
+  flex: 0 0 auto;
+}
+
+.builder-style-popover__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
 }
 
 .builder-checkboxes {

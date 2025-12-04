@@ -224,6 +224,87 @@ CKEDITOR_5_CONFIGS = {
         },
         "mediaEmbed": {"previewsInData": True},
     },
+    "advanced": {
+        "language": "en",
+        "toolbar": [
+            "heading",
+            "|",
+            "style",
+            "fontSize",
+            "fontFamily",
+            "fontColor",
+            "fontBackgroundColor",
+            "|",
+            "bold",
+            "italic",
+            "underline",
+            "strikethrough",
+            "highlight",
+            "code",
+            "link",
+            "|",
+            "alignment",
+            "bulletedList",
+            "numberedList",
+            "todoList",
+            "outdent",
+            "indent",
+            "|",
+            "blockQuote",
+            "horizontalLine",
+            "insertTable",
+            "mediaEmbed",
+            "specialCharacters",
+            "htmlEmbed",
+            "undo",
+            "redo",
+        ],
+        "fontSize": {
+            "options": ["tiny", "small", "default", "big", "huge"],
+            "supportAllValues": True,
+        },
+        "fontFamily": {
+            "options": [
+                "default",
+                "Inter, Helvetica, Arial, sans-serif",
+                "Roboto, Helvetica, Arial, sans-serif",
+                "Georgia, serif",
+                "monospace",
+            ],
+            "supportAllValues": True,
+        },
+        "link": {
+            "decorators": {
+                "toggleTargetBlank": {
+                    "mode": "manual",
+                    "label": "Open in new tab",
+                    "attributes": {"target": "_blank", "rel": "noopener noreferrer"},
+                }
+            }
+        },
+        "style": {
+            "definitions": [
+                {
+                    "name": "Muted text",
+                    "element": "p",
+                    "classes": ["wysiwyg-muted"],
+                },
+                {
+                    "name": "Lead paragraph",
+                    "element": "p",
+                    "classes": ["wysiwyg-lead"],
+                },
+                {
+                    "name": "Button",
+                    "element": "a",
+                    "classes": ["btn", "btn-primary"],
+                },
+            ]
+        },
+        "table": {"contentToolbar": ["tableColumn", "tableRow", "mergeTableCells"]},
+        "mediaEmbed": {"previewsInData": True},
+        "htmlEmbed": {"showPreviews": True},
+    },
 }
 CKEDITOR_5_UPLOAD_FILE_TYPES = [
     "jpeg",

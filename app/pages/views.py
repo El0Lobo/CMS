@@ -116,6 +116,9 @@ def create(request):
         page = _save_page(form, request, language=language)
         return redirect("pages_edit", slug=page.slug)
     initial_preview = _render_preview_html(form.instance, request)
+    font_upload_url = (
+        reverse("pages_api_font_upload") if request.user.has_perm("assets.add_asset") else None
+    )
     context = {
         "mode": "create",
         "form": form,
@@ -137,6 +140,7 @@ def create(request):
                     "menu": reverse("pages_api_menu"),
                     "site": reverse("pages_api_site"),
                     "assets": reverse("pages_api_assets"),
+                    "font_upload": font_upload_url,
                     "detail": None,
                 },
                 "site_context": data_sources.get_site_context(),
@@ -158,6 +162,9 @@ def edit(request, slug):
         saved = _save_page(form, request, language=language)
         return redirect("pages_edit", slug=saved.slug)
     initial_preview = _render_preview_html(page, request)
+    font_upload_url = (
+        reverse("pages_api_font_upload") if request.user.has_perm("assets.add_asset") else None
+    )
     context = {
         "mode": "edit",
         "form": form,
@@ -180,6 +187,7 @@ def edit(request, slug):
                     "menu": reverse("pages_api_menu"),
                     "site": reverse("pages_api_site"),
                     "assets": reverse("pages_api_assets"),
+                    "font_upload": font_upload_url,
                     "detail": reverse("pages_api_detail", args=[page.slug]),
                 },
                 "site_context": data_sources.get_site_context(),

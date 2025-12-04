@@ -185,7 +185,6 @@ def setup_view(request):
             prefix="quickbuttons",
         )
 
-    current_mode = (form.instance.mode or "VENUE").lower()
     return render(
         request,
         "setup/setup.html",
@@ -195,7 +194,6 @@ def setup_view(request):
             "hours": hours,
             "roles": roles,
             "quickbuttons": quickbuttons,
-            "current_mode": current_mode,
             "tunnel_url": tunnel_manager.current_url(),
             "tunnel_running": tunnel_manager.is_running(),
         },

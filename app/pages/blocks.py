@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import os
 import re
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
@@ -17,6 +19,40 @@ from . import data_sources
 Block = dict[str, Any]
 Context = dict[str, Any]
 
+HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+STYLE_FONT_STACKS = {
+    "sans": '"Inter", "Helvetica Neue", Arial, sans-serif',
+    "serif": 'Georgia, "Times New Roman", serif',
+    "mono": 'ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace',
+    "display": '"Oswald", "Archivo Black", "Arial Narrow", sans-serif',
+}
+
+STYLE_FONT_SIZES = {
+    "xs": "0.85rem",
+    "sm": "0.95rem",
+    "base": "1rem",
+    "lg": "1.15rem",
+    "xl": "1.35rem",
+    "xxl": "1.6rem",
+}
+
+STYLE_DEFAULTS = {
+    "font_family": "",
+    "font_size": "",
+    "text_color": "",
+    "background_color": "",
+    "font_asset": None,
+}
+
+FONT_MIME_FORMATS = {
+    "font/woff2": "woff2",
+    "font/woff": "woff",
+    "font/ttf": "truetype",
+    "font/otf": "opentype",
+    "application/font-woff": "woff",
+}
+
 
 def _resolve_media(request, url: str | None) -> str | None:
     if not url:
@@ -24,6 +60,145 @@ def _resolve_media(request, url: str | None) -> str | None:
     if request and url.startswith("/"):
         return request.build_absolute_uri(url)
     return url
+
+
+def _clean_hex_color(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    candidate = value.strip()
+    if not HEX_COLOR_RE.match(candidate):
+        return ""
+    if len(candidate) == 4:
+        candidate = "#" + "".join(char * 2 for char in candidate[1:])
+    return candidate.lower()
+
+
+def _guess_font_format(url: str, hint: str | None = None) -> str:
+    if hint:
+        label = hint.lower()
+        if label in FONT_MIME_FORMATS.values():
+            return label
+        mapped = FONT_MIME_FORMATS.get(label)
+        if mapped:
+            return mapped
+    root = url.split("?", 1)[0]
+    ext = os.path.splitext(root)[1].lower()
+    return {
+        ".woff2": "woff2",
+        ".woff": "woff",
+        ".otf": "opentype",
+        ".ttf": "truetype",
+    }.get(ext, "truetype")
+
+
+def _normalise_font_asset(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, dict):
+        return None
+    url = str(value.get("url") or "").strip()
+    if not url or not url.startswith(("/", "http://", "https://")):
+        return None
+    asset_id = value.get("id")
+    try:
+        asset_id = int(asset_id)
+    except (TypeError, ValueError):
+        asset_id = None
+    title = str(value.get("title") or "").strip()
+    mime = str(value.get("mime_type") or "").strip() or None
+    format_hint = str(value.get("format") or "").strip() or None
+    return {
+        "id": asset_id,
+        "title": title,
+        "url": url,
+        "format": _guess_font_format(url, format_hint or mime),
+    }
+
+
+def _normalise_style_dict(value: Any) -> dict[str, Any]:
+    clean = STYLE_DEFAULTS.copy()
+    if not isinstance(value, dict):
+        return clean
+    font_family = value.get("font_family")
+    if isinstance(font_family, str) and font_family in STYLE_FONT_STACKS:
+        clean["font_family"] = font_family
+    font_size = value.get("font_size")
+    if isinstance(font_size, str) and font_size in STYLE_FONT_SIZES:
+        clean["font_size"] = font_size
+    clean["text_color"] = _clean_hex_color(value.get("text_color"))
+    clean["background_color"] = _clean_hex_color(value.get("background_color"))
+    clean["font_asset"] = _normalise_font_asset(value.get("font_asset"))
+    return clean
+
+
+def _register_font_face(
+    asset: dict[str, Any] | None,
+    font_cache: dict[str, tuple[str, str]],
+) -> str:
+    if not asset:
+        return ""
+    url = asset.get("url")
+    if not url:
+        return ""
+    fmt = asset.get("format") or "truetype"
+    cache_key = f"{url}|{fmt}"
+    if cache_key not in font_cache:
+        digest = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()[:10]
+        family = f"CMSFont-{digest}"
+        safe_url = url.replace("'", "\\'")
+        css = (
+            f"@font-face{{font-family:'{family}';src:url('{safe_url}') format('{fmt}');"
+            "font-display:swap;}}"
+        )
+        font_cache[cache_key] = (family, css)
+    return font_cache[cache_key][0]
+
+
+def _build_inline_style(
+    style: dict[str, Any],
+    font_cache: dict[str, tuple[str, str]],
+) -> str:
+    inline_parts: list[str] = []
+    font_asset = style.get("font_asset")
+    font_family_value = ""
+    font_face_name = _register_font_face(font_asset, font_cache)
+    if font_face_name:
+        font_family_value = f"'{font_face_name}'"
+    else:
+        font_stack = STYLE_FONT_STACKS.get(style.get("font_family") or "")
+        if font_stack:
+            font_family_value = font_stack
+        else:
+            style["font_family"] = ""
+    if font_family_value:
+        inline_parts.append(f"font-family:{font_family_value}")
+    size_value = STYLE_FONT_SIZES.get(style.get("font_size") or "")
+    if size_value:
+        inline_parts.append(f"font-size:{size_value}")
+    else:
+        style["font_size"] = ""
+    if style.get("text_color"):
+        inline_parts.append(f"color:{style['text_color']}")
+    if style.get("background_color"):
+        inline_parts.append(f"background-color:{style['background_color']}")
+    return "; ".join(inline_parts)
+
+
+def _apply_style_overrides(props: dict[str, Any]) -> None:
+    font_cache: dict[str, tuple[str, str]] = {}
+    base_style = _normalise_style_dict(props.get("style"))
+    props["style"] = base_style
+    props["style_inline"] = _build_inline_style(base_style, font_cache)
+
+    inline_targets: dict[str, str] = {}
+    style_targets = props.get("style_targets")
+    if isinstance(style_targets, dict):
+        cleaned_targets = {}
+        for key, value in style_targets.items():
+            style_dict = _normalise_style_dict(value)
+            cleaned_targets[key] = style_dict
+            inline_targets[key] = _build_inline_style(style_dict, font_cache)
+        props["style_targets"] = cleaned_targets
+    props["style_inline_targets"] = inline_targets
+    props["style_font_faces"] = [mark_safe(css) for _, css in font_cache.values()]
 
 
 def render_blocks(
@@ -51,6 +226,7 @@ def render_block(
     if not renderer:
         return ""
     props = deepcopy(block.get("props", {}))
+    _apply_style_overrides(props)
     context = {
         "block": block,
         "props": props,

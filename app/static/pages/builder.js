@@ -65,6 +65,11 @@ const DEFAULT_BLOCK_LIBRARY = [
         ],
       },
     ],
+    styleTargets: [
+      { key: "kicker", label: "Kicker" },
+      { key: "title", label: "Headline" },
+      { key: "subtitle", label: "Subheadline" },
+    ],
   },
   {
     type: "navigation",
@@ -159,6 +164,10 @@ const DEFAULT_BLOCK_LIBRARY = [
       },
       { key: "show_actions", type: "toggle", label: "Show “Details” buttons" },
     ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
+    ],
   },
   {
     type: "menu",
@@ -180,6 +189,10 @@ const DEFAULT_BLOCK_LIBRARY = [
         help: "Optional. Enter category slugs separated by commas. Leave empty to show all top-level categories.",
       },
     ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
+    ],
   },
   {
     type: "opening_hours",
@@ -195,6 +208,10 @@ const DEFAULT_BLOCK_LIBRARY = [
       { key: "title", type: "text", label: "Section title" },
       { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
       { key: "show_contact", type: "toggle", label: "Show contact details" },
+    ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
     ],
   },
   {
@@ -246,6 +263,10 @@ const DEFAULT_BLOCK_LIBRARY = [
         help: "Optional comma-separated inventory category slugs. Leave empty to show all public items.",
       },
     ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
+    ],
   },
   {
     type: "gallery",
@@ -274,6 +295,10 @@ const DEFAULT_BLOCK_LIBRARY = [
           { key: "alt", type: "text", label: "Alt text" },
         ],
       },
+    ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
     ],
   },
   {
@@ -372,6 +397,32 @@ const DEFAULT_BLOCK_LIBRARY = [
       },
     ],
   },
+];
+
+const STYLE_DEFAULTS = Object.freeze({
+  font_family: "",
+  font_size: "",
+  text_color: "",
+  background_color: "",
+  font_asset: null,
+});
+
+const STYLE_FONT_OPTIONS = [
+  { value: "", label: "Match site theme" },
+  { value: "sans", label: "Sans serif" },
+  { value: "serif", label: "Serif" },
+  { value: "mono", label: "Monospace" },
+  { value: "display", label: "Display / All caps" },
+];
+
+const STYLE_FONT_SIZE_OPTIONS = [
+  { value: "", label: "Theme default" },
+  { value: "xs", label: "XS" },
+  { value: "sm", label: "Small" },
+  { value: "base", label: "Base" },
+  { value: "lg", label: "Large" },
+  { value: "xl", label: "Extra large" },
+  { value: "xxl", label: "Hero" },
 ];
 
 const CONTACT_FIELD_BLUEPRINT = [
@@ -504,6 +555,15 @@ const assetState = {
   onSelect: null,
 };
 
+const stylePopoverState = {
+  panel: null,
+  header: null,
+  title: null,
+  body: null,
+  current: null,
+  anchorRect: null,
+};
+
 function isAssetBrowserOpen() {
   return assetState.modal && !assetState.modal.classList.contains("is-hidden");
 }
@@ -592,6 +652,287 @@ async function loadAssets(kinds) {
     }
   }
   renderAssetCards(assetState.cache[key]);
+}
+
+function normaliseStyleValue(value) {
+  return {
+    font_family: typeof value?.font_family === "string" ? value.font_family : "",
+    font_size: typeof value?.font_size === "string" ? value.font_size : "",
+    text_color: typeof value?.text_color === "string" ? value.text_color : "",
+    background_color:
+      typeof value?.background_color === "string" ? value.background_color : "",
+    font_asset: value && typeof value.font_asset === "object" ? { ...value.font_asset } : null,
+  };
+}
+
+function ensureStyleTargets(block) {
+  if (!block.props) {
+    block.props = {};
+  }
+  if (!block.props.style_targets || typeof block.props.style_targets !== "object") {
+    block.props.style_targets = {};
+  }
+  return block.props.style_targets;
+}
+
+function getStyleTarget(block, key) {
+  const targets = ensureStyleTargets(block);
+  const current = normaliseStyleValue(targets[key]);
+  targets[key] = current;
+  return targets[key];
+}
+
+function updateStyleTarget(blockId, key, patch) {
+  const block = state.blocks.find((item) => item.id === blockId);
+  if (!block) {
+    return;
+  }
+  const targets = ensureStyleTargets(block);
+  const current = getStyleTarget(block, key);
+  targets[key] = normaliseStyleValue({ ...current, ...patch });
+  state.dirty = true;
+  persistBlocks();
+  schedulePreview();
+  refreshStylePopover();
+}
+
+function resetStyleTarget(blockId, key) {
+  updateStyleTarget(blockId, key, { ...STYLE_DEFAULTS });
+}
+
+function isStylePopoverOpen() {
+  return stylePopoverState.panel && !stylePopoverState.panel.classList.contains("is-hidden");
+}
+
+function closeStylePopover() {
+  if (!stylePopoverState.panel) {
+    return;
+  }
+  stylePopoverState.panel.classList.add("is-hidden");
+  stylePopoverState.panel.style.top = "";
+  stylePopoverState.panel.style.left = "";
+  stylePopoverState.current = null;
+  stylePopoverState.anchorRect = null;
+}
+
+function renderStylePopover(block, config) {
+  if (!stylePopoverState.body || !config) {
+    return;
+  }
+  const style = getStyleTarget(block, config.targetKey);
+  stylePopoverState.title.textContent = `${config.label || "Text"} style`;
+  stylePopoverState.body.innerHTML = "";
+
+  const fontField = document.createElement("div");
+  fontField.className = "builder-field";
+  const fontLabel = document.createElement("label");
+  fontLabel.textContent = "Font family";
+  const fontSelect = document.createElement("select");
+  STYLE_FONT_OPTIONS.forEach((option) => {
+    const opt = document.createElement("option");
+    opt.value = option.value;
+    opt.textContent = option.label;
+    fontSelect.appendChild(opt);
+  });
+  fontSelect.value = style.font_family || "";
+  fontSelect.addEventListener("change", (event) => {
+    updateStyleTarget(block.id, config.targetKey, { font_family: event.target.value });
+  });
+  fontField.appendChild(fontLabel);
+  fontField.appendChild(fontSelect);
+  stylePopoverState.body.appendChild(fontField);
+
+  const sizeField = document.createElement("div");
+  sizeField.className = "builder-field";
+  const sizeLabel = document.createElement("label");
+  sizeLabel.textContent = "Font size";
+  const sizeSelect = document.createElement("select");
+  STYLE_FONT_SIZE_OPTIONS.forEach((option) => {
+    const opt = document.createElement("option");
+    opt.value = option.value;
+    opt.textContent = option.label;
+    sizeSelect.appendChild(opt);
+  });
+  sizeSelect.value = style.font_size || "";
+  sizeSelect.addEventListener("change", (event) => {
+    updateStyleTarget(block.id, config.targetKey, { font_size: event.target.value });
+  });
+  sizeField.appendChild(sizeLabel);
+  sizeField.appendChild(sizeSelect);
+  stylePopoverState.body.appendChild(sizeField);
+
+  const colorField = document.createElement("div");
+  colorField.className = "builder-field";
+  const colorLabel = document.createElement("label");
+  colorLabel.textContent = "Text color";
+  const colorHint = document.createElement("small");
+  colorHint.className = "muted";
+  colorHint.textContent = style.text_color ? style.text_color.toUpperCase() : "Using theme default";
+  const colorControls = document.createElement("div");
+  colorControls.className = "builder-style-popover__color";
+  const colorInput = document.createElement("input");
+  colorInput.type = "color";
+  colorInput.value = style.text_color || "#ffffff";
+  colorInput.addEventListener("input", (event) => {
+    updateStyleTarget(block.id, config.targetKey, { text_color: event.target.value });
+  });
+  const clearColor = document.createElement("button");
+  clearColor.type = "button";
+  clearColor.className = "btn btn-xs btn-outline-secondary";
+  clearColor.textContent = "Clear";
+  clearColor.disabled = !style.text_color;
+  clearColor.addEventListener("click", () => {
+    updateStyleTarget(block.id, config.targetKey, { text_color: "" });
+  });
+  colorControls.appendChild(colorInput);
+  colorControls.appendChild(clearColor);
+  colorField.appendChild(colorLabel);
+  colorField.appendChild(colorHint);
+  colorField.appendChild(colorControls);
+  stylePopoverState.body.appendChild(colorField);
+
+  const actions = document.createElement("div");
+  actions.className = "builder-style-popover__actions";
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.className = "btn btn-xs btn-outline-secondary";
+  resetBtn.textContent = "Reset styles";
+  resetBtn.addEventListener("click", () => {
+    resetStyleTarget(block.id, config.targetKey);
+  });
+  actions.appendChild(resetBtn);
+  stylePopoverState.body.appendChild(actions);
+}
+
+function positionStylePopover(anchorRect) {
+  if (!stylePopoverState.panel) {
+    return;
+  }
+  const rect = anchorRect || stylePopoverState.anchorRect;
+  if (!rect) {
+    return;
+  }
+  const panel = stylePopoverState.panel;
+  panel.style.top = "0px";
+  panel.style.left = "0px";
+  const padding = 12;
+  const { width, height } = panel.getBoundingClientRect();
+  let top = rect.bottom + 8;
+  let left = rect.left;
+  if (top + height > window.innerHeight - padding) {
+    const above = rect.top - height - 8;
+    if (above >= padding) {
+      top = above;
+    } else {
+      top = Math.max(padding, window.innerHeight - height - padding);
+    }
+  }
+  if (top < padding) {
+    top = padding;
+  }
+  if (left + width > window.innerWidth - padding) {
+    const shiftLeft = rect.right - width;
+    if (shiftLeft >= padding) {
+      left = shiftLeft;
+    } else {
+      left = window.innerWidth - width - padding;
+    }
+  }
+  if (left < padding) {
+    left = padding;
+  }
+  panel.style.top = `${top}px`;
+  panel.style.left = `${left}px`;
+}
+
+function refreshStylePopover() {
+  if (!isStylePopoverOpen() || !stylePopoverState.current) {
+    return;
+  }
+  const block = state.blocks.find((item) => item.id === stylePopoverState.current.blockId);
+  if (!block) {
+    closeStylePopover();
+    return;
+  }
+  renderStylePopover(block, stylePopoverState.current);
+  positionStylePopover();
+}
+
+function openStylePopover(config) {
+  initStylePopover();
+  const block = state.blocks.find((item) => item.id === config.blockId);
+  if (!block || !stylePopoverState.panel) {
+    return;
+  }
+  stylePopoverState.current = {
+    blockId: block.id,
+    targetKey: config.targetKey,
+    label: config.label || "Text",
+  };
+  stylePopoverState.anchorRect = config.anchor
+    ? {
+        top: config.anchor.top,
+        left: config.anchor.left,
+        bottom: config.anchor.bottom,
+        width: config.anchor.width,
+        height: config.anchor.height,
+      }
+    : null;
+  stylePopoverState.panel.classList.remove("is-hidden");
+  renderStylePopover(block, stylePopoverState.current);
+  positionStylePopover(stylePopoverState.anchorRect);
+}
+
+function initStylePopover() {
+  if (stylePopoverState.panel) {
+    return;
+  }
+  const panel = document.createElement("div");
+  panel.id = "builder-style-popover";
+  panel.className = "builder-style-popover is-hidden";
+  const header = document.createElement("div");
+  header.className = "builder-style-popover__header";
+  const title = document.createElement("strong");
+  title.textContent = "Text style";
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "btn btn-xs btn-outline-secondary";
+  closeBtn.textContent = "Close";
+  closeBtn.addEventListener("click", closeStylePopover);
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  const body = document.createElement("div");
+  body.className = "builder-style-popover__body";
+  panel.appendChild(header);
+  panel.appendChild(body);
+  document.body.appendChild(panel);
+  stylePopoverState.panel = panel;
+  stylePopoverState.header = header;
+  stylePopoverState.title = title;
+  stylePopoverState.body = body;
+
+  document.addEventListener("click", (event) => {
+    if (!isStylePopoverOpen()) {
+      return;
+    }
+    if (stylePopoverState.panel.contains(event.target)) {
+      return;
+    }
+    if (event.target.closest(".builder-style-chip")) {
+      return;
+    }
+    closeStylePopover();
+  });
+  window.addEventListener("scroll", () => {
+    if (isStylePopoverOpen()) {
+      closeStylePopover();
+    }
+  });
+  window.addEventListener("resize", () => {
+    if (isStylePopoverOpen()) {
+      closeStylePopover();
+    }
+  });
 }
 
 function openAssetBrowser({ kinds = [], onSelect }) {
@@ -684,6 +1025,15 @@ function normaliseBlock(block) {
       default:
         break;
     }
+  });
+
+  props.style = normaliseStyleValue(block.props ? block.props.style : undefined);
+
+  const rawTargets =
+    block.props && typeof block.props.style_targets === "object" ? block.props.style_targets : {};
+  props.style_targets = {};
+  Object.entries(rawTargets || {}).forEach(([targetKey, targetValue]) => {
+    props.style_targets[targetKey] = normaliseStyleValue(targetValue);
   });
 
   return {
@@ -884,6 +1234,7 @@ function renderSettings() {
     return;
   }
   dom.settings.innerHTML = "";
+  closeStylePopover();
   const block = getSelectedBlock();
   if (!block) {
     const message = document.createElement("p");
@@ -902,19 +1253,45 @@ function renderSettings() {
   form.className = "builder-settings__panel";
 
   blueprint.fields.forEach((field) => {
-    form.appendChild(renderField(block, field));
+    form.appendChild(renderField(block, field, blueprint));
   });
 
   dom.settings.appendChild(form);
 }
 
-function renderField(block, field) {
+function renderField(block, field, blueprint = null) {
   const container = document.createElement("div");
   container.className = "builder-field";
 
   const label = document.createElement("label");
   label.textContent = field.label;
-  container.appendChild(label);
+  const styleTarget =
+    blueprint && Array.isArray(blueprint.styleTargets)
+      ? blueprint.styleTargets.find((target) => target.key === field.key)
+      : null;
+  if (styleTarget) {
+    const header = document.createElement("div");
+    header.className = "builder-field__header";
+    header.appendChild(label);
+    const styleBtn = document.createElement("button");
+    styleBtn.type = "button";
+    styleBtn.className = "builder-style-chip btn btn-xs btn-outline-secondary";
+    styleBtn.textContent = "Text style";
+    styleBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openStylePopover({
+        blockId: block.id,
+        targetKey: styleTarget.key,
+        label: styleTarget.label || field.label,
+        anchor: styleBtn.getBoundingClientRect(),
+      });
+    });
+    header.appendChild(styleBtn);
+    container.appendChild(header);
+  } else {
+    container.appendChild(label);
+  }
 
   if (field.help) {
     const hint = document.createElement("small");
@@ -1408,11 +1785,11 @@ function addBlock(type) {
   if (!blueprint) {
     return;
   }
-  const block = {
+  const block = normaliseBlock({
     id: uuid(),
     type,
     props: clone(blueprint.defaults),
-  };
+  });
   if (type === "navigation" && Array.isArray(config.nav_items)) {
     const defaultLinks = config.nav_items.filter((item) => item.checked).map((item) => item.slug);
     if (defaultLinks.length) {
@@ -1556,6 +1933,7 @@ function bootstrap() {
       assetState.overlay.addEventListener("click", closeAssetBrowser);
     }
   }
+  initStylePopover();
 
   const initialBlocks = normaliseBlocks((config.page && config.page.blocks) || []);
   if (!initialBlocks.length && config.page && config.page.body) {
@@ -1609,9 +1987,15 @@ function bootstrap() {
   }
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && isAssetBrowserOpen()) {
+    if (event.key !== "Escape") {
+      return;
+    }
+    if (isAssetBrowserOpen()) {
       event.preventDefault();
       closeAssetBrowser();
+    } else if (isStylePopoverOpen()) {
+      event.preventDefault();
+      closeStylePopover();
     }
   });
 

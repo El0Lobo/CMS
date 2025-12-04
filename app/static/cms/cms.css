@@ -44,6 +44,11 @@ body.cms.cms-logo-bg > * {
   z-index: 2;
 }
 
+body.cms.cms-logo-bg > .builder-style-popover {
+  position: fixed;
+  z-index: 5000;
+}
+
 /* links & buttons */
 a {
   color: var(--accent);
@@ -87,10 +92,12 @@ a {
 }
 .cms-nav nav a:hover {
   background: #0f1419;
+    width: 100%;
 }
 .cms-nav nav a.is-active {
   background: #0f1419;
   color: #fff;
+  width: 100%;
 }
 .cms-nav nav a.is-active .icon {
   color: var(--accent);
@@ -374,9 +381,9 @@ body.cms.nav-open .backdrop {
 }
 
 .nav-inline .cfg-cog {
-  margin-left: 0;
+  margin-left: auto;
   border: none !important; 
-} /* we control spacing via gap */
+} 
 
 .visibility-anchor {
   position: relative;
