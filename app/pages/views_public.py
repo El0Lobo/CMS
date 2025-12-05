@@ -59,6 +59,7 @@ def _render_page(request, page: Page) -> HttpResponse:
         "public_pages": nav_entries,
         "page_show_nav": bool(nav_entries),
         "navigation_html": nav_html,
+        "page_theme_css": page.get_theme_css(),
     }
     return render(request, "public/page_detail.html", context)
 
@@ -131,12 +132,14 @@ class CMSLoginView(LoginView):
             context["page_show_nav"] = bool(nav_payload)
             context["nav_label"] = page.title
             context["navigation_html"] = nav_html
+            context["page_theme_css"] = page.get_theme_css()
         else:
             context.setdefault("public_pages", [])
             context.setdefault("page_show_nav", False)
             context.setdefault("nav_label", "Login")
             context["page_rendered"] = ""
             context["page_footer"] = ""
+            context.setdefault("page_theme_css", "")
         try:
             context["password_reset_url"] = reverse("password_reset")
         except NoReverseMatch:

@@ -139,10 +139,11 @@ def _register_font_face(
     if not url:
         return ""
     fmt = asset.get("format") or "truetype"
-    cache_key = f"{url}|{fmt}"
+    family_hint = asset.get("family")
+    cache_key = f"{family_hint or url}|{fmt}"
     if cache_key not in font_cache:
         digest = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()[:10]
-        family = f"CMSFont-{digest}"
+        family = family_hint or f"CMSFont-{digest}"
         safe_url = url.replace("'", "\\'")
         css = (
             f"@font-face{{font-family:'{family}';src:url('{safe_url}') format('{fmt}');"
@@ -198,7 +199,46 @@ def _apply_style_overrides(props: dict[str, Any]) -> None:
             inline_targets[key] = _build_inline_style(style_dict, font_cache)
         props["style_targets"] = cleaned_targets
     props["style_inline_targets"] = inline_targets
+    inline_fonts = props.get("inline_fonts")
+    if isinstance(inline_fonts, list):
+        for item in inline_fonts:
+            _register_font_face(item, font_cache)
     props["style_font_faces"] = [mark_safe(css) for _, css in font_cache.values()]
+
+
+def normalise_theme(value: Any) -> dict[str, dict[str, Any]]:
+    """
+    Normalise a user-supplied theme payload into style dictionaries.
+    """
+
+    payload = value if isinstance(value, dict) else {}
+    return {
+        "body": _normalise_style_dict(payload.get("body")),
+        "sections": _normalise_style_dict(payload.get("sections")),
+    }
+
+
+def build_theme_css(value: Any) -> tuple[str, dict[str, dict[str, Any]]]:
+    """
+    Build inline CSS (including @font-face declarations) for a theme payload.
+    """
+
+    theme = normalise_theme(value)
+    font_cache: dict[str, tuple[str, str]] = {}
+    css_rules: list[str] = []
+
+    body_inline = _build_inline_style(theme["body"], font_cache)
+    if body_inline:
+        css_rules.append(f"body {{{body_inline}}}")
+        css_rules.append(f".site-shell {{{body_inline}}}")
+    section_inline = _build_inline_style(theme["sections"], font_cache)
+    if section_inline:
+        css_rules.append(f".page-block {{{section_inline}}}")
+        css_rules.append(f".page-block__container {{{section_inline}}}")
+
+    font_faces = [css for _, css in font_cache.values()]
+    css = "\n".join(font_faces + css_rules).strip()
+    return css, theme
 
 
 def render_blocks(
@@ -544,6 +584,70 @@ def _inventory_renderer(*, context: Context, request=None) -> str:
     return _render_template("pages/blocks/inventory.html", context, request=request)
 
 
+def _map_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    auto_location = props.get("auto_location", True)
+    latitude = props.get("latitude")
+    longitude = props.get("longitude")
+    lat_value: float | None
+    lon_value: float | None
+    try:
+        lat_value = float(latitude) if latitude not in (None, "") else None
+    except (TypeError, ValueError):
+        lat_value = None
+    try:
+        lon_value = float(longitude) if longitude not in (None, "") else None
+    except (TypeError, ValueError):
+        lon_value = None
+    try:
+        zoom = int(props.get("zoom") or 15)
+    except (TypeError, ValueError):
+        zoom = 15
+    block = context.get("block") or {}
+    map_id = f"page-map-{block.get('id', 'map')}"
+    site = data_sources.get_site_context()
+    address_override = (props.get("address_override") or "").strip()
+    if address_override:
+        search_address = address_override
+    else:
+        addr = site.get("address") or {}
+        parts = []
+        line1 = " ".join(filter(None, [addr.get("street"), addr.get("number")])).strip()
+        if line1:
+            parts.append(line1)
+        line2 = " ".join(filter(None, [addr.get("postal_code"), addr.get("city")])).strip()
+        if line2:
+            parts.append(line2)
+        if addr.get("country"):
+            parts.append(addr.get("country"))
+        search_address = ", ".join(parts)
+
+    def _clean_items(values):
+        cleaned: list[dict[str, str]] = []
+        for item in values or []:
+            if not isinstance(item, dict):
+                continue
+            label = str(item.get("label") or "").strip()
+            details = str(item.get("details") or "").strip()
+            if not label and not details:
+                continue
+            cleaned.append({"label": label, "details": details})
+        return cleaned
+
+    context = {
+        **context,
+        "map_id": map_id,
+        "latitude": lat_value,
+        "longitude": lon_value,
+        "zoom": zoom,
+        "transport_items": _clean_items(props.get("transport_items")),
+        "parking_items": _clean_items(props.get("parking_items")),
+        "auto_location": bool(auto_location),
+        "address_search": search_address,
+    }
+    return _render_template("pages/blocks/map.html", context, request=request)
+
+
 def _navigation_renderer(*, context: Context, request=None) -> str:
     props = context["props"]
     from .navigation import build_nav_payload, get_navigation_entries, serialize_nav_entries
@@ -551,7 +655,8 @@ def _navigation_renderer(*, context: Context, request=None) -> str:
     if props.get("enabled") is False:
         return ""
     site = data_sources.get_site_context()
-    logo = _resolve_media(request, site.get("logo"))
+    logo_source = props.get("logo_image") or site.get("logo")
+    logo = _resolve_media(request, logo_source)
     override_links = props.get("links") or context.get("nav_override") or []
     if override_links:
         nav_entries = build_nav_payload(override_links)
@@ -580,4 +685,5 @@ BLOCK_RENDERERS = {
     "gallery": _gallery_renderer,
     "inventory": _inventory_renderer,
     "navigation": _navigation_renderer,
+    "map": _map_renderer,
 }

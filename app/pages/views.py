@@ -89,6 +89,7 @@ def _render_preview_html(page: Page, request) -> str:
         "navigation_html": nav_html,
         "public_pages": [],
         "page_show_nav": False,
+        "page_theme_css": page.get_theme_css(),
     }
     return render_to_string("public/page_detail.html", context, request=request)
 
@@ -116,9 +117,9 @@ def create(request):
         page = _save_page(form, request, language=language)
         return redirect("pages_edit", slug=page.slug)
     initial_preview = _render_preview_html(form.instance, request)
-    font_upload_url = (
-        reverse("pages_api_font_upload") if request.user.has_perm("assets.add_asset") else None
-    )
+    can_upload_assets = request.user.has_perm("assets.add_asset")
+    font_upload_url = reverse("pages_api_font_upload") if can_upload_assets else None
+    asset_upload_url = reverse("pages_api_asset_upload") if can_upload_assets else None
     context = {
         "mode": "create",
         "form": form,
@@ -141,6 +142,7 @@ def create(request):
                     "site": reverse("pages_api_site"),
                     "assets": reverse("pages_api_assets"),
                     "font_upload": font_upload_url,
+                    "asset_upload": asset_upload_url,
                     "detail": None,
                 },
                 "site_context": data_sources.get_site_context(),
@@ -162,9 +164,9 @@ def edit(request, slug):
         saved = _save_page(form, request, language=language)
         return redirect("pages_edit", slug=saved.slug)
     initial_preview = _render_preview_html(page, request)
-    font_upload_url = (
-        reverse("pages_api_font_upload") if request.user.has_perm("assets.add_asset") else None
-    )
+    can_upload_assets = request.user.has_perm("assets.add_asset")
+    font_upload_url = reverse("pages_api_font_upload") if can_upload_assets else None
+    asset_upload_url = reverse("pages_api_asset_upload") if can_upload_assets else None
     context = {
         "mode": "edit",
         "form": form,
@@ -188,6 +190,7 @@ def edit(request, slug):
                     "site": reverse("pages_api_site"),
                     "assets": reverse("pages_api_assets"),
                     "font_upload": font_upload_url,
+                    "asset_upload": asset_upload_url,
                     "detail": reverse("pages_api_detail", args=[page.slug]),
                 },
                 "site_context": data_sources.get_site_context(),
@@ -287,5 +290,6 @@ def preview(request):
             "page_rendered": rendered_main,
             "page_footer": rendered_footer,
             "navigation_html": nav_html,
+            "page_theme_css": page.get_theme_css(),
         },
     )

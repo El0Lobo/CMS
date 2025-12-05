@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/menu/", api_views.menu_snapshot, name="pages_api_menu"),
     path("api/site/", api_views.site_context, name="pages_api_site"),
     path("api/assets/", api_views.assets_library, name="pages_api_assets"),
+    path("api/assets/upload/", api_views.upload_inline_asset, name="pages_api_asset_upload"),
     path("api/assets/fonts/upload/", api_views.upload_font_asset, name="pages_api_font_upload"),
     path("api/pages/", api_views.page_create, name="pages_api_create"),
     path("api/pages/<slug:slug>/", api_views.page_detail, name="pages_api_detail"),

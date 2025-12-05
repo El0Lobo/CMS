@@ -1,5 +1,6 @@
 {% load static %}
 {% load i18n %}
+{% load inline_edit %}
 {% if props.style_font_faces %}
   {% for css in props.style_font_faces %}
     <style>{{ css|safe }}</style>
@@ -10,15 +11,27 @@
     <header class="page-nav page-nav--{{ props.layout|default:'center' }}">
       <div class="page-nav__brand">
         {% if props.show_logo and logo %}
-          <img src="{{ logo }}" alt="{{ site.name }}">
+          <img src="{{ logo }}" alt="{{ site.name }}" {% inline_image_attrs block 'logo_width' %} data-inline-image-min="40" data-inline-image-max="600"{% if props.logo_width %} style="width:{{ props.logo_width }}px"{% endif %}>
         {% endif %}
-        <span>{{ props.logo_text|default:site.name }}</span>
+        {% with brand_style=props.style_inline_targets.logo_text %}
+          {% if props.logo_text_auto %}
+            <span {% inline_attrs block 'logo_text' %}{% if brand_style %} style="{{ brand_style }}"{% endif %}>
+              {% with text=props.logo_text|default:site.name %}
+                {{ text|inline_richtext }}
+              {% endwith %}
+            </span>
+          {% elif props.logo_text %}
+            <span {% inline_attrs block 'logo_text' %}{% if brand_style %} style="{{ brand_style }}"{% endif %}>{{ props.logo_text|inline_richtext }}</span>
+          {% endif %}
+        {% endwith %}
       </div>
       {% if nav_items %}
         <nav class="page-nav__links">
-          {% for item in nav_items %}
-            <a href="{{ item.pretty_url|default:item.url }}">{{ item.title }}</a>
-          {% endfor %}
+          {% with link_style=props.style_inline_targets.links %}
+            {% for item in nav_items %}
+              <a href="{{ item.pretty_url|default:item.url }}"{% if link_style %} style="{{ link_style }}"{% endif %}>{{ item.title }}</a>
+            {% endfor %}
+          {% endwith %}
         </nav>
       {% endif %}
       {% if props.show_language_switcher and enabled_languages|length > 1 %}

@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 
 from app.assets.models import Asset, Collection
 from . import data_sources
+from .blocks import normalise_theme
 from .models import Page
 from .navigation import build_nav_payload
 from .serializers import serialize_page
@@ -75,6 +76,19 @@ def _get_or_create_font_collection() -> Collection:
     return collection
 
 
+def _get_or_create_builder_collection() -> Collection:
+    collection, created = Collection.objects.get_or_create(
+        slug="page-builder",
+        defaults={"title": "Page Builder uploads", "visibility_mode": "public"},
+    )
+    if created:
+        return collection
+    if collection.visibility_mode != "public":
+        collection.visibility_mode = "public"
+        collection.save(update_fields=["visibility_mode"])
+    return collection
+
+
 @login_required
 @require_POST
 def upload_font_asset(request):
@@ -102,6 +116,34 @@ def upload_font_asset(request):
         "slug": asset.slug,
         "kind": asset.kind,
         "url": asset.file.url if asset.file else asset.url,
+        "mime_type": asset.mime_type,
+    }
+    return JsonResponse({"asset": data}, status=201)
+
+
+@login_required
+@require_POST
+def upload_inline_asset(request):
+    if not request.user.has_perm("assets.add_asset"):
+        return HttpResponseForbidden("Not allowed to upload assets.")
+    upload = request.FILES.get("file")
+    if not upload:
+        return HttpResponseBadRequest("Missing file.")
+    collection = _get_or_create_builder_collection()
+    asset = Asset(
+        collection=collection,
+        title=request.POST.get("title") or upload.name or "Upload",
+        visibility="public",
+        appears_on="page-builder-inline",
+    )
+    asset.file = upload
+    asset.save()
+    data = {
+        "id": asset.pk,
+        "title": asset.title,
+        "slug": asset.slug,
+        "kind": asset.kind,
+        "url": _absolute_media(request, asset.file.url if asset.file else asset.url),
         "mime_type": asset.mime_type,
     }
     return JsonResponse({"asset": data}, status=201)
@@ -151,6 +193,9 @@ def _apply_page_payload(page: Page, data: dict[str, Any], *, user) -> None:
 
     if "blocks" in data:
         page.blocks = _normalise_blocks(data["blocks"])
+
+    if "theme" in data:
+        page.theme = normalise_theme(data["theme"])
 
     if "navigation_order" in data:
         try:
@@ -247,6 +292,7 @@ def preview_html(request):
         slug=slugify(payload.get("slug") or payload.get("page", {}).get("slug") or "preview"),
         body=payload.get("body") or "",
         blocks=blocks,
+        theme=normalise_theme(payload.get("theme") or payload.get("page", {}).get("theme") or {}),
         status=payload.get("status") or Page.Status.DRAFT,
         is_visible=True,
         show_navigation_bar=payload.get("show_navigation_bar", True),
@@ -271,6 +317,7 @@ def preview_html(request):
         "is_preview": True,
         "public_pages": nav_payload,
         "page_show_nav": bool(nav_payload),
+        "page_theme_css": preview_page.get_theme_css(),
     }
 
     html = render_to_string("public/page_detail.html", context, request=request)

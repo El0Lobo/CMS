@@ -8,7 +8,7 @@ from django.utils.text import slugify
 from django_ckeditor_5.fields import CKEditor5Field
 from modeltranslation.utils import build_localized_fieldname
 
-from .blocks import render_blocks
+from .blocks import build_theme_css, normalise_theme, render_blocks
 
 
 class PageQuerySet(models.QuerySet):
@@ -33,6 +33,11 @@ class Page(models.Model):
         default=list,
         blank=True,
         help_text="Structured block data used by the visual page builder.",
+    )
+    theme = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Global styling tokens (fonts/colors) applied to this page.",
     )
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.DRAFT)
     is_visible = models.BooleanField(
@@ -88,6 +93,7 @@ class Page(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        self.theme = normalise_theme(self.theme or {})
         # Normalise blocks to always be a list
         if isinstance(self.blocks, tuple):
             self.blocks = list(self.blocks)
@@ -203,9 +209,27 @@ class Page(models.Model):
             request=request, extra_context=extra_context
         )
         return mark_safe(f"{nav_html}{main_html}{footer_html}")
+
+    def get_theme_tokens(self) -> dict:
+        """
+        Return the normalised theme payload for this page.
+        """
+
+        return normalise_theme(self.theme or {})
+
+    def get_theme_css(self) -> str:
+        """
+        Build inline CSS for the current theme.
+        """
+
+        css, _ = build_theme_css(self.theme or {})
+        return css
 DEFAULT_NAV_PROPS = {
     "show_logo": True,
     "logo_text": "",
+    "logo_text_auto": True,
+    "logo_image": "",
+    "logo_width": None,
     "show_language_switcher": True,
     "layout": "center",
     "links": [],

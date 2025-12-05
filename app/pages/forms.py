@@ -6,6 +6,7 @@ from django.utils import translation
 from django.utils.text import slugify
 from django_ckeditor_5.widgets import CKEditor5Widget
 
+from .blocks import normalise_theme
 from .models import Page
 
 
@@ -21,6 +22,10 @@ class PageForm(forms.ModelForm):
     blocks = forms.CharField(
         required=False,
         widget=forms.HiddenInput(attrs={"data-page-blocks": "json"}),
+    )
+    theme = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(attrs={"data-page-theme": "json"}),
     )
     custom_nav_items = forms.CharField(
         required=False,
@@ -46,6 +51,7 @@ class PageForm(forms.ModelForm):
             "hero_image",
             "body",
             "blocks",
+            "theme",
         ]
         widgets = {
             "summary": forms.Textarea(attrs={"rows": 3}),
@@ -106,6 +112,16 @@ class PageForm(forms.ModelForm):
         overrides = set(self.instance.layout_overrides or []) if self.instance else set()
         self.fields["layout_override"].initial = self.language in overrides
 
+        theme_initial = {}
+        if self.instance and self.instance.theme:
+            theme_initial = self.instance.theme
+        try:
+            theme_json = json.dumps(theme_initial)
+        except TypeError:
+            theme_json = "{}"
+        self.fields["theme"].initial = theme_json
+        self.initial["theme"] = theme_json
+
     def clean_custom_nav_items(self):
         raw = self.cleaned_data.get("custom_nav_items") or "[]"
         if isinstance(raw, list):
@@ -133,8 +149,22 @@ class PageForm(forms.ModelForm):
         data = super().clean()
         return data
 
+    def clean_theme(self):
+        raw = self.cleaned_data.get("theme") or "{}"
+        if isinstance(raw, dict):
+            value = raw
+        else:
+            try:
+                value = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise forms.ValidationError("Theme payload must be JSON.") from exc
+        if value is None:
+            value = {}
+        return normalise_theme(value)
+
     def save(self, commit=True):
         page = super().save(commit=False)
+        page.theme = self.cleaned_data.get("theme") or {}
         blocks_data = self.cleaned_data.get("blocks") or []
         override = bool(self.cleaned_data.get("layout_override"))
         page.set_blocks_for_language(self.language, blocks_data, override)

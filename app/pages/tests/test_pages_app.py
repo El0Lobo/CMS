@@ -170,6 +170,36 @@ class PageRenderContentTests(TestCase):
         self.assertIn("@font-face{font-family:'CMSFont-", rendered)
         self.assertIn("https://cdn.example.com/fonts/myfont.woff2", rendered)
 
+    def test_inline_fonts_emit_font_face(self):
+        page = Page.objects.create(
+            title="Inline font hero",
+            slug="hero-inline-font",
+            blocks=[
+                {
+                    "id": "hero-inline",
+                    "type": "hero",
+                    "props": {
+                        "title": "<span style=\"font-family: CMSInlineFont-demo\">Hey</span>",
+                        "inline_fonts": [
+                            {
+                                "family": "CMSInlineFont-demo",
+                                "url": "https://cdn.example.com/fonts/demo.woff2",
+                                "format": "woff2",
+                            }
+                        ],
+                    },
+                }
+            ],
+            status=Page.Status.PUBLISHED,
+            is_visible=True,
+        )
+
+        rendered = page.render_content()
+
+        self.assertIn("@font-face{font-family:'CMSInlineFont-demo'", rendered)
+        self.assertIn("https://cdn.example.com/fonts/demo.woff2", rendered)
+        self.assertIn("font-family:CMSInlineFont-demo", rendered)
+
 
 class PreviewHtmlApiTests(TestCase):
     def setUp(self):
@@ -227,6 +257,13 @@ class PreviewHtmlApiTests(TestCase):
         self.assertIn("Raw preview", data["content_html"])
         self.assertNotIn("page-block--richtext", data["content_html"])
 
+    def test_preview_html_applies_theme_styles(self):
+        theme = {"body": {"background_color": "#112233", "text_color": "#ffffff"}}
+        data = self.post_preview(theme=theme)
+
+        self.assertIn("#112233", data["html"])
+        self.assertIn("#ffffff", data["html"])
+
 
 class FontUploadApiTests(TestCase):
     def setUp(self):
@@ -250,6 +287,31 @@ class FontUploadApiTests(TestCase):
         data = response.json()
         self.assertEqual(data["asset"]["kind"], "font")
         self.assertTrue(Collection.objects.filter(slug="fonts").exists())
+        self.assertEqual(Asset.objects.count(), 1)
+
+
+class InlineAssetUploadApiTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user("builder", "builder@example.com", "pass12345")
+        self.client.force_login(self.user)
+        self.url = reverse("pages_api_asset_upload")
+
+    def test_requires_permission(self):
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_uploads_image_asset(self):
+        permission = Permission.objects.get(codename="add_asset")
+        self.user.user_permissions.add(permission)
+        upload = SimpleUploadedFile("logo.png", b"fakeimg", content_type="image/png")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with override_settings(MEDIA_ROOT=tmpdir):
+                response = self.client.post(self.url, {"file": upload, "title": "Logo"})
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["asset"]["kind"], "image")
+        self.assertTrue(Collection.objects.filter(slug="page-builder").exists())
         self.assertEqual(Asset.objects.count(), 1)
 
 

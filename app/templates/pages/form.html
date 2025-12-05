@@ -151,6 +151,7 @@
       </div>
     {% endif %}
     {{ form.blocks }}
+    {{ form.theme }}
     {{ form.custom_nav_items }}
     {{ form.show_navigation_bar.as_hidden }}
 
@@ -235,6 +236,7 @@
                   <button type="button" class="preview-toggle__btn is-active" data-mode="desktop">Desktop</button>
                   <button type="button" class="preview-toggle__btn" data-mode="mobile">Mobile</button>
                 </div>
+                <button type="button" class="btn btn-sm" id="builder-inline-edit-btn" aria-pressed="false">Inline edit</button>
                 <button type="button" class="btn btn-sm" id="builder-refresh-preview">Refresh</button>
               </div>
             </header>

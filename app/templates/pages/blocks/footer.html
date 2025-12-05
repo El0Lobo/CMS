@@ -1,4 +1,5 @@
 {% load static i18n %}
+{% load inline_edit %}
 {% if props.style_font_faces %}
   {% for css in props.style_font_faces %}
     <style>{{ css|safe }}</style>
@@ -11,14 +12,19 @@
         <div class="page-footer__brand">
           {% if props.brand_logo_resolved %}
             <div class="page-footer__logo">
-              <img src="{{ props.brand_logo_resolved }}" alt="{{ props.brand_name|default:'Logo' }}">
+              <img src="{{ props.brand_logo_resolved }}" alt="{{ props.brand_name|default:'Logo' }}" {% inline_image_attrs block 'brand_logo_width' %} data-inline-image-min="40" data-inline-image-max="800"{% if props.brand_logo_width %} style="width:{{ props.brand_logo_width }}px"{% endif %}>
             </div>
           {% endif %}
           <div class="page-footer__brand-text">
 
-            <h2 class="page-footer__name">{{ props.brand_name|default:site.name }}</h2>
+            {% with brand=props.brand_name|default:site.name %}
+              <h2 class="page-footer__name" {% inline_attrs block 'brand_name' %}>{{ brand|inline_richtext }}</h2>
+            {% endwith %}
+            {% if props.brand_tagline %}
+              <p class="page-footer__tagline" {% inline_attrs block 'brand_tagline' %}>{{ props.brand_tagline|inline_richtext }}</p>
+            {% endif %}
             {% if props.address_html %}
-              <div class="page-footer__address">{{ props.address_html|linebreaksbr }}</div>
+              <div class="page-footer__address" {% inline_attrs block 'address_html' %}>{{ props.address_html|inline_richtext }}</div>
             {% endif %}
           </div>
           {% with lang_count=enabled_languages|length %}
@@ -27,7 +33,7 @@
                 {% if social_links %}
                   <div class="page-footer__socials">
                     {% if props.social_heading %}
-                      <p class="page-footer__title">{{ props.social_heading }}</p>
+                      <p class="page-footer__title" {% inline_attrs block 'social_heading' %}>{{ props.social_heading|inline_richtext }}</p>
                     {% endif %}
                     <div class="page-footer__social-links">
                       {% for link in social_links %}
@@ -55,7 +61,7 @@
         {% if links %}
           <div class="page-footer__group">
             {% if props.links_heading %}
-              <p class="page-footer__title">{{ props.links_heading }}</p>
+              <p class="page-footer__title" {% inline_attrs block 'links_heading' %}>{{ props.links_heading|inline_richtext }}</p>
             {% endif %}
             <ul class="page-footer__list">
               {% for link in links %}
@@ -67,7 +73,7 @@
         {% if legal %}
           <div class="page-footer__group">
             {% if props.legal_heading %}
-              <p class="page-footer__title">{{ props.legal_heading }}</p>
+              <p class="page-footer__title" {% inline_attrs block 'legal_heading' %}>{{ props.legal_heading|inline_richtext }}</p>
             {% endif %}
             <ul class="page-footer__list page-footer__list--compact">
               {% for link in legal %}

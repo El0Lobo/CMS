@@ -11,6 +11,9 @@
       <link rel="{{ icon.rel|default:'icon' }}" href="{{ icon.href }}"{% if icon.type %} type="{{ icon.type }}"{% endif %}{% if icon.sizes %} sizes="{{ icon.sizes }}"{% endif %}>
     {% endfor %}
   {% endif %}
+  {% if page_theme_css %}
+    <style data-page-theme>{{ page_theme_css|safe }}</style>
+  {% endif %}
 </head>
 <body>
   <div class="site-shell">
