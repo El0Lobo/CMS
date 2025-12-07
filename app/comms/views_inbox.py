@@ -58,6 +58,8 @@ def _attach_display_fields(qs, me):
         name = None
         if last and last.sender_user_id and last.sender_user_id != me_id:
             name = getattr(getattr(last, "sender_user", None), "username", None)
+        if not name and last and getattr(last, "sender_display", None):
+            name = last.sender_display
         if not name:
             try:
                 for a in t.audiences.all():
@@ -153,10 +155,10 @@ def inbox(request):
     ).prefetch_related(*base_prefetch)
 
     # annotate basic booleans
-    live_internal = _with_read_annotations(live_internal, me)
-    live_email = _with_read_annotations(live_email, me)
-    arch_internal = _with_read_annotations(arch_internal, me)
-    arch_email = _with_read_annotations(arch_email, me)
+    live_internal = _with_read_annotations(live_internal, me).order_by("-last_activity_at")
+    live_email = _with_read_annotations(live_email, me).order_by("-last_activity_at")
+    arch_internal = _with_read_annotations(arch_internal, me).order_by("-last_activity_at")
+    arch_email = _with_read_annotations(arch_email, me).order_by("-last_activity_at")
 
     # attach display fields incl. last_out_read_by_names
     internal_threads = _attach_display_fields(live_internal, me)

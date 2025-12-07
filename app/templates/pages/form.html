@@ -211,20 +211,27 @@
     <section id="page-builder"
              class="page-builder"
              style="margin-bottom:1.5rem;">
-      <div class="page-builder__columns">
-        <aside class="page-builder__library" aria-label="Block library">
-          <h2>Blocks</h2>
-          <p class="muted">Drag or click to add sections.</p>
-          <div class="builder-library-list" id="builder-library"></div>
-        </aside>
-        <div class="page-builder__workspace">
-          <div class="builder-blocks">
-            <header class="builder-blocks__header">
-              <h2>Layout</h2>
-              <p class="muted">Reorder blocks to change the page flow.</p>
+      <div class="page-builder__layout">
+        <div class="builder-column builder-column--left" aria-label="Block library and layout">
+          <section class="builder-panel builder-panel--library">
+            <header class="builder-panel__header">
+              <div>
+                <h2>Blocks</h2>
+                <p class="muted">Click to add sections</p>
+              </div>
+            </header>
+            <div class="builder-library-list" id="builder-library"></div>
+          </section>
+          <section class="builder-panel builder-panel--structure">
+            <header class="builder-panel__header">
+              <div>
+                <h2>Layout</h2>
+              </div>
             </header>
             <ul class="builder-blocks__list" id="builder-block-list"></ul>
-          </div>
+          </section>
+        </div>
+        <div class="builder-column builder-column--center">
           <div class="builder-preview">
             <header class="builder-preview__header">
               <div>
@@ -246,13 +253,26 @@
               </div>
             </div>
           </div>
+          <section class="builder-panel builder-panel--theme">
+            <header class="builder-panel__header">
+              <div>
+                <h2>Page theme</h2>
+                <p class="muted">Base styles for background, fonts, and sections.</p>
+              </div>
+            </header>
+            <div id="builder-theme-panel"></div>
+          </section>
         </div>
-        <aside class="page-builder__settings" aria-label="Block settings">
-          <header>
-            <h2>Settings</h2>
-            <p class="muted">Select a block to edit its content.</p>
-          </header>
-          <div id="builder-settings"></div>
+        <aside class="builder-column builder-column--settings" aria-label="Block settings">
+          <section class="builder-panel builder-panel--settings">
+            <header class="builder-panel__header">
+              <div>
+                <h2>Block settings</h2>
+                <p class="muted">Select a block to edit its content.</p>
+              </div>
+            </header>
+            <div id="builder-settings"></div>
+          </section>
         </aside>
       </div>
       {% if not form.fields.layout_override.widget.is_hidden %}
@@ -335,9 +355,7 @@
 
 {% block extra_body %}
   {{ block.super }}
-  <script>
-    window.__PAGE_BUILDER__ = {{ builder_boot|safe }};
-  </script>
+  {{ builder_boot|json_script:"page-builder-config" }}
   <script type="module" src="{% static 'pages/builder.js' %}"></script>
   <script>
   (function(){

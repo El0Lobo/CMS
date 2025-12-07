@@ -1,5 +1,5 @@
 {% extends "cms/base_cms.html" %}
-{% load static setup_tags %}
+{% load static setup_tags i18n %}
 
 {% block title %}Shifts &middot; CMS{% endblock %}
 
@@ -57,8 +57,8 @@
 {% block content %}
 <section class="module-header">
   <div>
-    <h1>Shift planner</h1>
-    <p class="sub">Track staffing needs and assignments per event.</p>
+    <h1>{% trans "Shift planner" %}</h1>
+    <p class="sub">{% trans "Track staffing needs and assignments per event." %}</p>
   </div>
   {% if request.user|allow_for:'cms.shifts.templates' %}
 
@@ -70,28 +70,28 @@
     <input type="hidden" name="period_offset" value="{{ shift_period_offset }}">
     <div class="filter-nav">
       {% if shift_filter_nav_show %}
-        <a class="nav-arrow" href="{{ shift_filter_nav_prev_url }}" aria-label="Previous {{ shift_filter_timeframe_label|default:'period' }}">&#8592;</a>
+        <a class="nav-arrow" href="{{ shift_filter_nav_prev_url }}" aria-label="{% blocktrans with label=shift_filter_timeframe_label|default:_("period") %}Previous {{ label }}{% endblocktrans %}">&#8592;</a>
       {% endif %}
       <span class="range-label">{{ shift_filter_range_label }}</span>
       {% if shift_filter_nav_show %}
-        <a class="nav-arrow" href="{{ shift_filter_nav_next_url }}" aria-label="Next {{ shift_filter_timeframe_label|default:'period' }}">&#8594;</a>
+        <a class="nav-arrow" href="{{ shift_filter_nav_next_url }}" aria-label="{% blocktrans with label=shift_filter_timeframe_label|default:_("period") %}Next {{ label }}{% endblocktrans %}">&#8594;</a>
       {% endif %}
     </div>
 <div class="filter-grid" style="display:flex;align-items:center;gap:.5rem;">
   <label>
-    <span class="label">Timeframe</span>
+    <span class="label">{% trans "Timeframe" %}</span>
     {{ shift_filter_form.timeframe }}
   </label>
 
   <label class="checkbox">
     {{ shift_filter_form.include_past }}
-    <span>Include past shifts</span>
+    <span>{% trans "Include past shifts" %}</span>
   </label>
 
   <a class="btn btn-outline"
      href="{% url 'shifts:index' %}"
      style="margin-left:auto;">
-    Reset
+    {% trans "Reset" %}
   </a>
 </div>
 

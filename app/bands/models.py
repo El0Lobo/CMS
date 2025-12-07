@@ -93,7 +93,7 @@ class Band(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse("bands:public_detail", args=[self.slug])
+        return reverse("bands_pub:public_detail", args=[self.slug])
 
     @property
     def og_image_url(self):

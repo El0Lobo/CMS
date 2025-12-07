@@ -9,5 +9,4 @@ urlpatterns = [
     path("cms/bands/new/", views.edit, name="new"),
     path("cms/bands/<int:pk>/edit/", views.edit, name="edit"),
     path("cms/bands/<int:pk>/delete/", views.delete, name="delete"),
-    path("bands/<slug:slug>/", views.public_detail, name="public_detail"),
 ]

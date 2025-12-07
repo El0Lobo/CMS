@@ -1,3 +1,20 @@
+const BOOT_DATA = (() => {
+  const el = document.getElementById("page-builder-config");
+  if (!el) {
+    return {};
+  }
+  try {
+    return JSON.parse(el.textContent || "{}");
+  } catch (error) {
+    console.error("Failed to parse page builder config", error);
+    return {};
+  }
+})();
+
+if (!window.__PAGE_BUILDER__) {
+  window.__PAGE_BUILDER__ = BOOT_DATA;
+}
+
 const DEFAULT_BLOCK_LIBRARY = [
   {
     type: "hero",
@@ -732,17 +749,121 @@ function normaliseFontAsset(asset, index = 0) {
   if (!asset || !asset.url) {
     return null;
   }
-  const label = (asset.title || asset.slug || `Font ${index + 1}`).trim() || `Font ${index + 1}`;
+  const rawTitle =
+    (asset.title || asset.slug || `Font ${index + 1}`).trim() || `Font ${index + 1}`;
+  const label = rawTitle.replace(/;/g, ",");
   const idPart =
     asset.id != null ? String(asset.id) : `${label}-${index}-${asset.url.slice(-6)}`;
   const family = `CMSInlineFont-${hashString(`${idPart}`)}`;
   return {
     id: asset.id,
-    label: label.replace(/;/g, ","),
+    title: rawTitle,
+    label,
     url: asset.url,
     family,
     format: guessFontFormat(asset.url, asset.mime_type),
   };
+}
+
+function toStyleFontAsset(asset) {
+  if (!asset || !asset.url) {
+    return null;
+  }
+  return {
+    id: asset.id ?? null,
+    title: asset.title || asset.label || "Custom font",
+    url: asset.url,
+    format: asset.format,
+  };
+}
+
+function buildFontAssetControls(options = {}) {
+  const {
+    placeholder = "Use theme font",
+    currentAsset = null,
+    context = "popover",
+    onChange = () => {},
+  } = options;
+  const fonts = fontState.assets || [];
+  const controls = document.createElement("div");
+  controls.className =
+    context === "popover" ? "builder-style-popover__font-asset" : "builder-font-asset-controls";
+  const select = document.createElement("select");
+  const placeholderOption = document.createElement("option");
+  placeholderOption.value = "";
+  placeholderOption.textContent = fonts.length ? placeholder : "No fonts available";
+  select.appendChild(placeholderOption);
+  let selectedFamily = "";
+  fonts.forEach((asset) => {
+    const opt = document.createElement("option");
+    opt.value = asset.family;
+    opt.textContent = asset.label;
+    if (
+      currentAsset &&
+      (currentAsset.url === asset.url || (currentAsset.id != null && currentAsset.id === asset.id))
+    ) {
+      selectedFamily = asset.family;
+    }
+    select.appendChild(opt);
+  });
+  select.value = selectedFamily;
+  select.disabled = !fonts.length;
+  select.addEventListener("change", (event) => {
+    const family = event.target.value;
+    if (!family) {
+      onChange(null);
+      return;
+    }
+    const asset = fonts.find((item) => item.family === family);
+    if (asset) {
+      onChange(toStyleFontAsset(asset));
+    }
+  });
+  controls.appendChild(select);
+
+  const browseFonts = document.createElement("button");
+  browseFonts.type = "button";
+  browseFonts.className = "btn btn-xs btn-outline-secondary";
+  browseFonts.textContent = "Browse fonts";
+  browseFonts.addEventListener("click", () => {
+    openAssetBrowser({
+      kinds: ["font"],
+      onSelect(asset) {
+        const normalized = normaliseFontAsset(asset, fonts.length);
+        if (!normalized) {
+          alert("Could not use that font asset.");
+          return;
+        }
+        const payload = toStyleFontAsset(normalized);
+        onChange(payload);
+        fetchFontAssets(true).finally(() => {
+          if (context === "popover") {
+            if (isStylePopoverOpen()) {
+              refreshStylePopover();
+            }
+          } else if (dom.settings) {
+            renderSettings();
+          }
+        });
+      },
+    });
+  });
+  controls.appendChild(browseFonts);
+
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "btn btn-xs btn-outline-secondary";
+  clearBtn.textContent = "Clear";
+  clearBtn.disabled = !currentAsset;
+  clearBtn.addEventListener("click", () => {
+    onChange(null);
+    if (context !== "popover") {
+      clearBtn.disabled = true;
+      select.value = "";
+    }
+  });
+  controls.appendChild(clearBtn);
+  return controls;
 }
 
 function getDefaultBrandText() {
@@ -1104,6 +1225,7 @@ function updateThemeSection(sectionKey, patch) {
   state.dirty = true;
   persistTheme();
   schedulePreview();
+  renderThemeCard();
 }
 
 function getBlockBaseStyle(block) {
@@ -1205,6 +1327,28 @@ function renderStylePopover(block, config) {
   fontField.appendChild(fontLabel);
   fontField.appendChild(fontSelect);
   stylePopoverState.body.appendChild(fontField);
+
+  const assetField = document.createElement("div");
+  assetField.className = "builder-field";
+  const assetLabel = document.createElement("label");
+  assetLabel.textContent = "Uploaded font";
+  const assetHint = document.createElement("small");
+  assetHint.className = "muted";
+  assetHint.textContent = fontState.assets.length
+    ? "Fonts synced from Assets → Fonts."
+    : "Upload fonts in Assets → Fonts to use them here.";
+  const assetControls = buildFontAssetControls({
+    context: "popover",
+    currentAsset: style.font_asset,
+    placeholder: "Use theme font",
+    onChange(payload) {
+      updateStyleTarget(block.id, config.targetKey, { font_asset: payload, font_family: "" });
+    },
+  });
+  assetField.appendChild(assetLabel);
+  assetField.appendChild(assetHint);
+  assetField.appendChild(assetControls);
+  stylePopoverState.body.appendChild(assetField);
 
   const sizeField = document.createElement("div");
   sizeField.className = "builder-field";
@@ -1345,6 +1489,26 @@ function openStylePopover(config) {
   stylePopoverState.panel.classList.remove("is-hidden");
   renderStylePopover(block, stylePopoverState.current);
   positionStylePopover(stylePopoverState.anchorRect);
+  fetchFontAssets()
+    .catch(() => [])
+    .then(() => {
+      if (!isStylePopoverOpen()) {
+        return;
+      }
+      if (
+        !stylePopoverState.current ||
+        stylePopoverState.current.blockId !== block.id ||
+        stylePopoverState.current.targetKey !== config.targetKey
+      ) {
+        return;
+      }
+      const refreshedBlock = state.blocks.find((item) => item.id === block.id);
+      if (!refreshedBlock) {
+        return;
+      }
+      renderStylePopover(refreshedBlock, stylePopoverState.current);
+      positionStylePopover(stylePopoverState.anchorRect);
+    });
 }
 
 function initStylePopover() {
@@ -1994,6 +2158,27 @@ function bindInlineFrame(frame) {
   }
   frame._inlineBound = true;
   frame.addEventListener("load", () => {
+    const doc = frame.contentDocument;
+    if (doc && !doc._builderClickBound) {
+      doc.addEventListener(
+        "click",
+        (event) => {
+          if (!inlineState.enabled) {
+            return;
+          }
+          const target = event.target.closest("[data-inline-block]");
+          if (!target) {
+            return;
+          }
+          const blockId = target.getAttribute("data-inline-block");
+          if (blockId) {
+            selectBlock(blockId);
+          }
+        },
+        true
+      );
+      doc._builderClickBound = true;
+    }
     syncInlineForFrame(frame);
   });
 }
@@ -2347,6 +2532,13 @@ function renderSettings() {
     return;
   }
   dom.settings.innerHTML = "";
+  if (!fontState.assets.length) {
+    fetchFontAssets().then((fonts) => {
+      if (fonts && fonts.length && dom.settings) {
+        renderSettings();
+      }
+    });
+  }
   closeStylePopover();
   dom.settings.appendChild(renderThemePanel());
   const block = getSelectedBlock();
@@ -2373,6 +2565,7 @@ function renderSettings() {
   form.appendChild(renderAdvancedStyleSection(block));
 
   dom.settings.appendChild(form);
+  renderThemeCard();
 }
 
 function renderAdvancedStyleSection(block) {
@@ -2405,6 +2598,27 @@ function renderAdvancedStyleSection(block) {
   fontField.appendChild(fontLabel);
   fontField.appendChild(fontSelect);
   grid.appendChild(fontField);
+
+  const fontAssetField = document.createElement("div");
+  fontAssetField.className = "builder-field";
+  const fontAssetLabel = document.createElement("label");
+  fontAssetLabel.textContent = "Uploaded font";
+  const fontAssetHint = document.createElement("small");
+  fontAssetHint.className = "muted";
+  fontAssetHint.textContent = "Pick a custom font from Assets → Fonts.";
+  const fontAssetControls = buildFontAssetControls({
+    context: "panel",
+    currentAsset: style.font_asset,
+    placeholder: "Use theme font",
+    onChange(payload) {
+      updateBaseStyle(block.id, { font_asset: payload, font_family: "" });
+      renderSettings();
+    },
+  });
+  fontAssetField.appendChild(fontAssetLabel);
+  fontAssetField.appendChild(fontAssetHint);
+  fontAssetField.appendChild(fontAssetControls);
+  grid.appendChild(fontAssetField);
 
   // Font size
   const sizeField = document.createElement("div");
@@ -2499,16 +2713,8 @@ function renderAdvancedStyleSection(block) {
 }
 
 function renderThemePanel() {
-  const panel = document.createElement("section");
+  const panel = document.createElement("div");
   panel.className = "builder-theme-panel";
-  const title = document.createElement("h3");
-  title.textContent = "Page theme";
-  const intro = document.createElement("p");
-  intro.className = "muted";
-  intro.textContent =
-    "Control the default background colors and typography for the page body and every block.";
-  panel.appendChild(title);
-  panel.appendChild(intro);
   panel.appendChild(
     renderThemeSection(
       "body",
@@ -2547,6 +2753,9 @@ function renderThemeSection(sectionKey, label, hint) {
   grid.className = "builder-theme-grid";
   grid.appendChild(renderThemeSelectField(sectionKey, "font_family", "Font family", values));
   grid.appendChild(renderThemeSelectField(sectionKey, "font_size", "Font size", values, true));
+  grid.appendChild(
+    renderThemeFontAssetField(sectionKey, "font_asset", "Uploaded font", values.font_asset)
+  );
   grid.appendChild(renderThemeColorField(sectionKey, "text_color", "Text color", values));
   grid.appendChild(renderThemeColorField(sectionKey, "background_color", "Background", values));
   wrapper.appendChild(grid);
@@ -2658,6 +2867,37 @@ function renderThemeColorField(sectionKey, prop, label, values) {
   field.appendChild(fieldLabel);
   field.appendChild(controls);
   return field;
+}
+
+function renderThemeFontAssetField(sectionKey, prop, label, current) {
+  const field = document.createElement("div");
+  field.className = "builder-field";
+  const fieldLabel = document.createElement("label");
+  fieldLabel.textContent = label;
+  const hint = document.createElement("small");
+  hint.className = "muted";
+  hint.textContent = "Apply a custom font from Assets → Fonts.";
+  const controls = buildFontAssetControls({
+    context: "panel",
+    currentAsset: current,
+    placeholder: "Use theme font",
+    onChange(payload) {
+      updateThemeSection(sectionKey, { [prop]: payload });
+      renderSettings();
+    },
+  });
+  field.appendChild(fieldLabel);
+  field.appendChild(hint);
+  field.appendChild(controls);
+  return field;
+}
+
+function renderThemeCard() {
+  if (!dom.themePanel) {
+    return;
+  }
+  dom.themePanel.innerHTML = "";
+  dom.themePanel.appendChild(renderThemePanel());
 }
 
 function renderField(block, field, blueprint = null) {
@@ -3379,6 +3619,7 @@ function bootstrap() {
   dom.form = document.getElementById("page-form");
   dom.blocksInput = document.getElementById("id_blocks");
   dom.themeInput = document.getElementById("id_theme");
+  dom.themePanel = document.getElementById("builder-theme-panel");
   dom.library = document.getElementById("builder-library");
   dom.blockList = document.getElementById("builder-block-list");
   dom.settings = document.getElementById("builder-settings");
@@ -3430,6 +3671,7 @@ function bootstrap() {
   renderLibrary();
   renderBlockList();
   renderSettings();
+  renderThemeCard();
 
   if (dom.form) {
     dom.form.addEventListener("submit", handleFormSubmit);

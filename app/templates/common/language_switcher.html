@@ -1,0 +1,18 @@
+{% load i18n dictutils %}
+{% if enabled_languages and enabled_languages|length > 1 %}
+{% get_current_language as LANGUAGE_CODE %}
+<form action="{% url 'set_language' %}" method="post" class="lang-switcher {{ switcher_class }}">
+  {% if request %}{% csrf_token %}{% endif %}
+  <input type="hidden" name="next" value="{{ next_url|default:request.get_full_path|default:'/' }}">
+  <label class="sr-only" for="{{ switcher_id|default:'lang-switcher' }}">{% trans "Choose language" %}</label>
+  <select id="{{ switcher_id|default:'lang-switcher' }}"
+          name="language"
+          class="lang-switcher__select"
+          onchange="this.form.submit()">
+    {% for code, label in enabled_languages %}
+      {% lang_flag code as flag %}
+      <option value="{{ code }}" {% if code == LANGUAGE_CODE %}selected{% endif %}>{{ flag }} {{ label }}</option>
+    {% endfor %}
+  </select>
+</form>
+{% endif %}

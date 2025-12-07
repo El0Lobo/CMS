@@ -13,8 +13,9 @@ from django.db.models.functions import Coalesce
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import formats, timezone
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext as _
 
 from app.core.date_utils import add_months
 from app.events.forms import (
@@ -168,15 +169,15 @@ def index(request: HttpRequest) -> HttpResponse:
         )
 
     if timeframe == EventFilterForm.Timeframe.WEEK and start_local and end_local:
-        range_label = (
-            f"{start_local.strftime('%b %d')} – {(end_local - timedelta(days=1)).strftime('%b %d')}"
-        )
+        start_str = formats.date_format(start_local, "M j", use_l10n=True)
+        end_str = formats.date_format(end_local - timedelta(days=1), "M j", use_l10n=True)
+        range_label = _("%(start)s – %(end)s") % {"start": start_str, "end": end_str}
     elif timeframe == EventFilterForm.Timeframe.MONTH and start_local:
-        range_label = start_local.strftime("%B %Y")
+        range_label = formats.date_format(start_local, "F Y", use_l10n=True)
     elif timeframe == EventFilterForm.Timeframe.YEAR and start_local:
-        range_label = start_local.strftime("%Y")
+        range_label = formats.date_format(start_local, "Y", use_l10n=True)
     else:
-        range_label = "All events" if include_past else "Upcoming events"
+        range_label = _("All events") if include_past else _("Upcoming events")
 
     show_navigation = timeframe != EventFilterForm.Timeframe.ALL
     prev_url = next_url = None
@@ -310,7 +311,7 @@ def create(request: HttpRequest) -> HttpResponse:
     formset = EventPerformerFormSet(request.POST, request.FILES, prefix="performers")
 
     if not (form.is_valid() and formset.is_valid()):
-        messages.error(request, "Please correct the errors in the event form.")
+        messages.error(request, _("Please correct the errors in the event form."))
         return render(
             request,
             "events/partials/event_form_body.html",
@@ -324,7 +325,7 @@ def create(request: HttpRequest) -> HttpResponse:
     form.save_m2m()
     sync_event_standard_shifts(event, user=request.user, max_occurrences=4)
 
-    messages.success(request, "Event created.")
+    messages.success(request, _("Event created."))
 
     if request.htmx:
         response = HttpResponse(status=204)

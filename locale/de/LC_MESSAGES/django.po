@@ -6,734 +6,1421 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bar OS\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-18 00:00+0000\n"
-"PO-Revision-Date: 2025-01-18 00:00+0000\n"
-"Last-Translator: Bar OS Team\n"
+"POT-Creation-Date: 2025-12-07 01:06+0100\n"
+"PO-Revision-Date: 2025-12-06 17:07+0000\n"
+"Last-Translator:   <admin@example.com>\n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Translated-Using: django-rosetta 0.10.1\n"
 
-# Navigation & Pages
-msgid "Home"
-msgstr "Startseite"
+#: .\app\events\forms.py:115
+msgid "Managed by the recurring series."
+msgstr "Wird von der Serienplanung verwaltet."
 
-msgid "Menu"
-msgstr "Speisekarte"
+#: .\app\events\forms.py:179
+msgid "Leave blank to auto-generate from the title."
+msgstr "Leer lassen, um automatisch aus dem Titel zu erzeugen."
 
-msgid "About"
-msgstr "Über uns"
+#: .\app\events\forms.py:788
+msgid "End must be after the start."
+msgstr "Das Ende muss nach dem Beginn liegen."
 
-msgid "Contact"
-msgstr "Kontakt"
+#: .\app\events\forms.py:804
+msgid "This week"
+msgstr "Diese Woche"
 
-msgid "Events"
-msgstr "Veranstaltungen"
+#: .\app\events\forms.py:805
+msgid "This month"
+msgstr "Dieser Monat"
 
-msgid "Login"
-msgstr "Anmelden"
+#: .\app\events\forms.py:806
+msgid "This year"
+msgstr "Dieses Jahr"
 
-msgid "Logout"
-msgstr "Abmelden"
-
-msgid "Dashboard"
-msgstr "Übersicht"
-
-# Actions
-msgid "Save"
-msgstr "Speichern"
-
-msgid "Cancel"
-msgstr "Abbrechen"
-
-msgid "Delete"
-msgstr "Löschen"
-
-msgid "Edit"
-msgstr "Bearbeiten"
-
-msgid "Add"
-msgstr "Hinzufügen"
-
-msgid "Search"
-msgstr "Suchen"
-
-msgid "Filter"
-msgstr "Filtern"
-
-msgid "Back"
-msgstr "Zurück"
-
-msgid "View"
-msgstr "Ansehen"
-
-msgid "Update"
-msgstr "Aktualisieren"
-
-msgid "Create"
-msgstr "Erstellen"
-
-msgid "Remove"
-msgstr "Entfernen"
-
-msgid "Clear"
-msgstr "Löschen"
-
-msgid "Submit"
-msgstr "Absenden"
-
-msgid "Close"
-msgstr "Schließen"
-
-# Common UI
-msgid "Welcome"
-msgstr "Willkommen"
-
-msgid "Loading..."
-msgstr "Lädt..."
-
-msgid "Please wait"
-msgstr "Bitte warten"
-
-msgid "Yes"
-msgstr "Ja"
-
-msgid "No"
-msgstr "Nein"
-
-msgid "OK"
-msgstr "OK"
-
+#: .\app\events\forms.py:807
 msgid "All"
 msgstr "Alle"
 
-msgid "None"
-msgstr "Keine"
-
-msgid "Select"
-msgstr "Auswählen"
-
-msgid "Choose"
-msgstr "Wählen"
-
-msgid "Options"
-msgstr "Optionen"
-
-msgid "Settings"
-msgstr "Einstellungen"
-
-msgid "Help"
-msgstr "Hilfe"
-
-# Django Admin
-msgid "Site administration"
-msgstr "Website-Verwaltung"
-
-msgid "Change"
-msgstr "Ändern"
-
-msgid "Add another"
-msgstr "Weitere hinzufügen"
-
-msgid "Delete selected"
-msgstr "Ausgewählte löschen"
-
-msgid "Recent actions"
-msgstr "Letzte Aktionen"
-
-msgid "My actions"
-msgstr "Meine Aktionen"
-
-msgid "Change password"
-msgstr "Passwort ändern"
-
-msgid "Log out"
-msgstr "Abmelden"
-
-msgid "View site"
-msgstr "Website ansehen"
-
-# Status & Messages
-msgid "Success"
-msgstr "Erfolgreich"
-
-msgid "Error"
-msgstr "Fehler"
-
-msgid "Warning"
-msgstr "Warnung"
-
-msgid "Info"
-msgstr "Information"
-
-msgid "Saved successfully"
-msgstr "Erfolgreich gespeichert"
-
-msgid "Deleted successfully"
-msgstr "Erfolgreich gelöscht"
-
-msgid "Updated successfully"
-msgstr "Erfolgreich aktualisiert"
-
-msgid "Created successfully"
-msgstr "Erfolgreich erstellt"
-
-# Models - Pages
-msgid "Page"
-msgstr "Seite"
-
-msgid "Pages"
-msgstr "Seiten"
-
-msgid "Title"
-msgstr "Titel"
-
-msgid "Slug"
-msgstr "URL-Name"
-
-msgid "Summary"
-msgstr "Zusammenfassung"
-
-msgid "Body"
-msgstr "Inhalt"
-
-msgid "Content"
-msgstr "Inhalt"
-
-msgid "Status"
-msgstr "Status"
-
-msgid "Published"
-msgstr "Veröffentlicht"
-
-msgid "Draft"
-msgstr "Entwurf"
-
-msgid "Author"
-msgstr "Autor"
-
-msgid "Created"
-msgstr "Erstellt"
-
-msgid "Modified"
-msgstr "Geändert"
-
-msgid "Published at"
-msgstr "Veröffentlicht am"
-
-# Models - Events
-msgid "Event"
-msgstr "Veranstaltung"
-
-msgid "Event Category"
-msgstr "Veranstaltungskategorie"
-
-msgid "Event Categories"
-msgstr "Veranstaltungskategorien"
-
-msgid "Start date"
-msgstr "Startdatum"
-
-msgid "End date"
-msgstr "Enddatum"
-
-msgid "Start time"
-msgstr "Startzeit"
-
-msgid "End time"
-msgstr "Endzeit"
-
-msgid "Location"
-msgstr "Ort"
-
-msgid "Venue"
-msgstr "Veranstaltungsort"
-
-msgid "Description"
-msgstr "Beschreibung"
-
-msgid "Teaser"
-msgstr "Vorschau"
-
-msgid "Price"
-msgstr "Preis"
-
-msgid "Tickets"
-msgstr "Tickets"
-
-# Models - Menu
-msgid "Category"
-msgstr "Kategorie"
-
-msgid "Categories"
-msgstr "Kategorien"
-
-msgid "Item"
-msgstr "Artikel"
-
-msgid "Items"
-msgstr "Artikel"
-
-msgid "Name"
-msgstr "Name"
-
-msgid "Ingredients"
-msgstr "Zutaten"
-
-msgid "Allergens"
-msgstr "Allergene"
-
-msgid "Available"
-msgstr "Verfügbar"
-
-msgid "Out of stock"
-msgstr "Nicht vorrätig"
-
-msgid "Variant"
-msgstr "Variante"
-
-msgid "Variants"
-msgstr "Varianten"
-
-msgid "Size"
-msgstr "Größe"
-
-msgid "Volume"
-msgstr "Volumen"
-
-# Models - Merchandise
-msgid "Product"
-msgstr "Produkt"
-
-msgid "Products"
-msgstr "Produkte"
-
-msgid "Stock"
-msgstr "Lagerbestand"
-
-msgid "In stock"
-msgstr "Auf Lager"
-
-msgid "SKU"
-msgstr "Artikelnummer"
-
-msgid "Barcode"
-msgstr "Barcode"
-
-# Models - Bands
-msgid "Band"
-msgstr "Band"
-
-msgid "Bands"
-msgstr "Bands"
-
-msgid "Artist"
-msgstr "Künstler"
-
-msgid "Artists"
-msgstr "Künstler"
-
-msgid "Genre"
-msgstr "Genre"
-
-msgid "Genres"
-msgstr "Genres"
-
-msgid "Bio"
-msgstr "Biografie"
-
-msgid "Website"
-msgstr "Webseite"
-
-msgid "Social media"
-msgstr "Soziale Medien"
-
-# Common Fields
-msgid "Image"
-msgstr "Bild"
-
-msgid "Images"
-msgstr "Bilder"
-
-msgid "File"
-msgstr "Datei"
-
-msgid "Files"
-msgstr "Dateien"
-
-msgid "Date"
-msgstr "Datum"
-
-msgid "Time"
-msgstr "Uhrzeit"
-
-msgid "Email"
-msgstr "E-Mail"
-
-msgid "Phone"
-msgstr "Telefon"
-
-msgid "Address"
-msgstr "Adresse"
-
-msgid "City"
-msgstr "Stadt"
-
-msgid "Country"
-msgstr "Land"
-
-msgid "Postal code"
-msgstr "Postleitzahl"
-
-msgid "Notes"
-msgstr "Notizen"
-
-msgid "Comments"
-msgstr "Kommentare"
-
-msgid "Tags"
-msgstr "Tags"
-
-msgid "Visibility"
-msgstr "Sichtbarkeit"
-
-msgid "Public"
-msgstr "Öffentlich"
-
-msgid "Private"
-msgstr "Privat"
-
-msgid "Active"
-msgstr "Aktiv"
-
-msgid "Inactive"
-msgstr "Inaktiv"
-
-msgid "Enabled"
-msgstr "Aktiviert"
-
-msgid "Disabled"
-msgstr "Deaktiviert"
-
-# Users & Permissions
-msgid "User"
-msgstr "Benutzer"
-
-msgid "Users"
-msgstr "Benutzer"
-
-msgid "Username"
-msgstr "Benutzername"
-
-msgid "Password"
-msgstr "Passwort"
-
-msgid "First name"
-msgstr "Vorname"
-
-msgid "Last name"
-msgstr "Nachname"
-
-msgid "Staff"
-msgstr "Personal"
-
-msgid "Administrator"
-msgstr "Administrator"
-
-msgid "Permissions"
-msgstr "Berechtigungen"
-
-msgid "Groups"
-msgstr "Gruppen"
-
-msgid "Last login"
-msgstr "Letzte Anmeldung"
-
-msgid "Date joined"
-msgstr "Registriert seit"
-
-# Errors
-msgid "This field is required"
-msgstr "Dieses Feld ist erforderlich"
-
-msgid "Please correct the errors below"
-msgstr "Bitte korrigieren Sie die folgenden Fehler"
-
-msgid "Invalid value"
-msgstr "Ungültiger Wert"
-
-msgid "Not found"
-msgstr "Nicht gefunden"
-
-msgid "Access denied"
-msgstr "Zugriff verweigert"
-
-msgid "Permission denied"
-msgstr "Keine Berechtigung"
-
-# Misc
-msgid "Show"
-msgstr "Anzeigen"
-
-msgid "Hide"
-msgstr "Ausblenden"
-
-msgid "More"
-msgstr "Mehr"
-
-msgid "Less"
-msgstr "Weniger"
-
-msgid "Previous"
-msgstr "Vorherige"
-
-msgid "Next"
-msgstr "Nächste"
-
-msgid "First"
-msgstr "Erste"
-
-msgid "Last"
-msgstr "Letzte"
-
-msgid "Total"
-msgstr "Gesamt"
-
-msgid "of"
-msgstr "von"
-
-msgid "to"
-msgstr "bis"
-
-msgid "from"
-msgstr "von"
-
-msgid "until"
-msgstr "bis"
-
-msgid "Language"
-msgstr "Sprache"
-
-msgid "Impersonating"
-msgstr "Als Benutzer angemeldet"
-
-msgid "Stop"
-msgstr "Beenden"
-
+#: .\app\events\forms.py:809
+msgid "Search title"
+msgstr "Titel suchen"
+
+#: .\app\events\forms.py:811 .\app\templates\events\index.html:50
+msgid "Include past events"
+msgstr "Vergangene Events einbeziehen"
+
+#: .\app\events\forms.py:817
+msgid "Search title..."
+msgstr "Titel suchen ..."
+
+#: .\app\events\views.py:174
+#, python-format
+msgid "%(start)s – %(end)s"
+msgstr "%(start)s – %(end)s"
+
+#: .\app\events\views.py:180
+msgid "All events"
+msgstr "Alle Events"
+
+#: .\app\events\views.py:180
+msgid "Upcoming events"
+msgstr "Bevorstehende Events"
+
+#: .\app\events\views.py:314
+msgid "Please correct the errors in the event form."
+msgstr "Bitte korrigiere die Fehler im Eventformular."
+
+#: .\app\events\views.py:328
+msgid "Event created."
+msgstr "Event erstellt."
+
+#: .\app\setup\models.py:13
+msgid "Venue / Club"
+msgstr "Veranstaltungsort / Club"
+
+#: .\app\setup\models.py:14
+msgid "Band / Artist"
+msgstr "Band / Künstler"
+
+#: .\app\setup\models.py:15
+msgid "Person / Blog"
+msgstr "Person / Blog"
+
+#: .\app\setup\models.py:32
+#, fuzzy
+msgid "Enable address autocomplete (requires JS integration)."
+msgstr "Address Autocomplete aktivieren"
+
+#: .\app\setup\models.py:41
+msgid "X / Twitter URL"
+msgstr "X / Twitter URL"
+
+#: .\app\setup\models.py:49
+#, fuzzy
+msgid "schema.org sameAs: one URL per line"
+msgstr "schema.org sameAs: eine URL pro linie"
+
+#: .\app\setup\models.py:53
+msgid "Latitude"
+msgstr "Breitengrad"
+
+#: .\app\setup\models.py:56
+msgid "Longitude"
+msgstr "Längengrad"
+
+#: .\app\setup\models.py:58
+#, fuzzy
+msgid "e.g., $, $$, $$$"
+msgstr "z.B. €, €€, €€€"
+
+#: .\app\setup\models.py:60
+msgid "Currency code (suggested list + free text)"
+msgstr ""
+
+#: .\app\setup\models.py:66
+msgid "Short label shown next to money icon."
+msgstr ""
+
+#: .\app\setup\models.py:71
+msgid "Expose the public-facing site powered by the Pages app."
+msgstr ""
+
+#: .\app\setup\models.py:75
+msgid "Show the developer login shortcut when running in development/test."
+msgstr ""
+
+#: .\app\setup\models.py:79
+msgid "Show the Quick Discounts panel in the POS."
+msgstr ""
+
+#: .\app\setup\models.py:83
+msgid "Allow item/order discounts to modify POS totals."
+msgstr ""
+
+#: .\app\setup\models.py:87
+msgid "Show tax rows in the POS UI."
+msgstr ""
+
+#: .\app\setup\models.py:91
+msgid "Apply tax to POS carts when calculating totals."
+msgstr ""
+
+#: .\app\setup\models.py:97
+msgid "Default POS tax rate (%)"
+msgstr ""
+
+#: .\app\setup\models.py:105
+msgid ""
+"List of enabled language codes (e.g., ['en', 'es', 'de']). Leave empty to "
+"enable all languages."
+msgstr ""
+
+#: .\app\setup\models.py:112
+msgid "Legacy field for auto-created pages; no longer used by the UI."
+msgstr ""
+
+#: .\app\setup\models.py:152
+msgid "Phone, email, URL, or a short instruction (free text)."
+msgstr ""
+
+#: .\app\setup\models.py:163
+msgid ""
+"Users in these groups receive inventory reorder messages. Leave empty to "
+"notify superusers only."
+msgstr ""
+
+#: .\app\setup\models.py:169
+msgid ""
+"Users in these groups see inventory alerts on the dashboard. Leave empty to "
+"restrict to superusers."
+msgstr ""
+
+#: .\app\setup\models.py:205
+msgid "In minor units (e.g. cents/rappen)"
+msgstr ""
+
+#: .\app\setup\models.py:250
+msgid "Human-friendly name; editable."
+msgstr ""
+
+#: .\app\setup\templates\setup\widgets\clearable_file_input.html:23
+#: .\app\setup\templates\setup\widgets\clearable_file_input.html:26
+#, fuzzy
+#| msgid "Remove"
+msgid "Remove file"
+msgstr "Entfernen"
+
+#: .\app\setup\templates\setup\widgets\clearable_file_input.html:24
+msgid "Undo remove"
+msgstr ""
+
+#: .\app\templates\cms\base_cms.html:53
 msgid "Skip to content"
 msgstr "Zum Inhalt springen"
 
+#: .\app\templates\cms\base_cms.html:58
+msgid "Impersonating"
+msgstr "Als Benutzer angemeldet"
+
+#: .\app\templates\cms\base_cms.html:61
+msgid "Stop"
+msgstr "Beenden"
+
+#: .\app\templates\cms\base_cms.html:102
+msgid "Translations"
+msgstr ""
+
+#: .\app\templates\cms\base_cms.html:109
+msgid "Logout"
+msgstr "Abmelden"
+
+#: .\app\templates\cms\base_cms.html:112
+msgid "Login"
+msgstr "Anmelden"
+
+#: .\app\templates\cms\dashboard.html:3 .\app\templates\cms\dashboard.html:44
+#: .\app\templates\cms\nav.html:15
+msgid "Dashboard"
+msgstr "Übersicht"
+
+#: .\app\templates\cms\dashboard.html:48
+msgid "New messages"
+msgstr "Neue Nachrichten"
+
+#: .\app\templates\cms\dashboard.html:54
+#, fuzzy
+#| msgid "This week"
+msgid "Shifts this week"
+msgstr "Diese Woche"
+
+#: .\app\templates\cms\dashboard.html:56
+#, python-format
+msgid "%(shift_glance.open)s shift slots still need coverage."
+msgstr ""
+
+#: .\app\templates\cms\dashboard.html:57
+#, fuzzy
+#| msgid "View site"
+msgid "View shifts"
+msgstr "Website ansehen"
+
+#: .\app\templates\cms\dashboard.html:60
+msgid "All shifts are filled for this week. Great job!"
+msgstr ""
+
+#: .\app\templates\cms\nav.html:3
 msgid "Main"
 msgstr "Hauptmenü"
 
+#: .\app\templates\cms\nav.html:18
+#, fuzzy
 msgid "Content"
-msgstr "Inhalte"
+msgstr ""
+"#-#-#-#-#  django.po (Bar OS)  #-#-#-#-#\n"
+"Inhalt\n"
+"#-#-#-#-#  django.po (Bar OS)  #-#-#-#-#\n"
+"Inhalte"
 
+#: .\app\templates\cms\nav.html:26
+msgid "Pages"
+msgstr "Seiten"
+
+#: .\app\templates\cms\nav.html:34
 msgid "Blog"
 msgstr "Blog"
 
+#: .\app\templates\cms\nav.html:42 .\app\templates\events\index.html:17
+#: .\app\templates\events\index.html:85
+msgid "Events"
+msgstr "Veranstaltungen"
+
+#: .\app\templates\cms\nav.html:57
+msgid "Bands"
+msgstr "Bands"
+
+#: .\app\templates\cms\nav.html:63
 msgid "Ops"
 msgstr "Betrieb"
 
+#: .\app\templates\cms\nav.html:75
+msgid "Users"
+msgstr "Benutzer"
+
+#: .\app\templates\cms\nav.html:84
 msgid "Shifts"
 msgstr "Schichten"
 
+#: .\app\templates\cms\nav.html:97
 msgid "Door"
 msgstr "Einlass"
 
+#: .\app\templates\cms\nav.html:121
 msgid "Register (POS)"
 msgstr "Kasse"
 
+#: .\app\templates\cms\nav.html:139
 msgid "Digital Assets"
 msgstr "Digitale Assets"
 
+#: .\app\templates\cms\nav.html:177
 msgid "Inbox"
 msgstr "Posteingang"
 
+#: .\app\templates\cms\nav.html:186
 msgid "Commerce"
 msgstr "Handel"
 
-msgid "Inventory"
-msgstr "Inventar"
+#: .\app\templates\cms\nav.html:196
+msgid "Menu"
+msgstr "Speisekarte"
 
-msgid "Accounting"
-msgstr "Buchhaltung"
-
-msgid "Automation"
-msgstr "Automatisierung"
-
-msgid "Maps"
-msgstr "Karten"
-
-msgid "Site Settings"
-msgstr "Website-Einstellungen"
-
-msgid "Setup"
-msgstr "Einrichtung"
-
-msgid "Permissions"
-msgstr "Berechtigungen"
-
-msgid "Disabled items"
-msgstr "Deaktivierte Elemente"
-
-msgid "Social"
-msgstr "Soziale Medien"
-
+#: .\app\templates\cms\nav.html:214
 msgid "Merch"
 msgstr "Merchandise"
 
+#: .\app\templates\cms\nav.html:229
+msgid "Inventory"
+msgstr "Inventar"
+
+#: .\app\templates\cms\nav.html:238
+msgid "Accounting"
+msgstr "Buchhaltung"
+
+#: .\app\templates\cms\nav.html:241 .\app\templates\cms\nav.html:265
+msgid "Automation"
+msgstr "Automatisierung"
+
+#: .\app\templates\cms\nav.html:248
+msgid "Social"
+msgstr "Soziale Medien"
+
+#: .\app\templates\cms\nav.html:274
+msgid "Maps"
+msgstr "Karten"
+
+#: .\app\templates\cms\nav.html:277 .\app\templates\cms\nav.html:289
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: .\app\templates\cms\nav.html:298
+msgid "Site Settings"
+msgstr "Website-Einstellungen"
+
+#: .\app\templates\cms\nav.html:319 .\app\templates\setup\setup.html:24
+msgid "Setup"
+msgstr "Einrichtung"
+
+#: .\app\templates\cms\nav.html:335
+msgid "Permissions"
+msgstr "Berechtigungen"
+
+#: .\app\templates\cms\nav.html:350
+msgid "Disabled items"
+msgstr "Deaktivierte Elemente"
+
+#: .\app\templates\events\index.html:18
+msgid "Create public events, manage performers, and prepare staffing."
+msgstr "Erstelle öffentliche Events, verwalte Acts und plane das Personal."
+
+#: .\app\templates\events\index.html:21
+msgid "Manage categories"
+msgstr "Kategorien verwalten"
+
+#: .\app\templates\events\index.html:22
+msgid "Manage holidays"
+msgstr "Feiertage verwalten"
+
+#: .\app\templates\events\index.html:23
+msgid "+ New event"
+msgstr "+ Neues Event"
+
+#: .\app\templates\events\index.html:32 .\app\templates\events\index.html:36
+#: .\app\templates\shifts\index.html:73 .\app\templates\shifts\index.html:77
+msgid "period"
+msgstr "Zeitraum"
+
+#: .\app\templates\events\index.html:32 .\app\templates\shifts\index.html:73
+#, python-format
+msgid "Previous %(label)s"
+msgstr "Vorheriger %(label)s"
+
+#: .\app\templates\events\index.html:36 .\app\templates\shifts\index.html:77
+#, python-format
+msgid "Next %(label)s"
+msgstr "Nächster %(label)s"
+
+#: .\app\templates\events\index.html:41
 msgid "Title"
 msgstr "Titel"
 
-msgid "Status"
-msgstr "Status"
+#: .\app\templates\events\index.html:45 .\app\templates\shifts\index.html:82
+msgid "Timeframe"
+msgstr "Zeitrahmen"
 
-msgid "Published"
-msgstr "Veröffentlicht"
+#: .\app\templates\events\index.html:53 .\app\templates\shifts\index.html:94
+msgid "Reset"
+msgstr "Zurücksetzen"
 
-msgid "Draft"
-msgstr "Entwurf"
+#: .\app\templates\events\index.html:98
+#, python-format
+msgid "Doors %(label)s"
+msgstr "Einlass %(label)s"
 
-msgid "Archived"
-msgstr "Archiviert"
+#: .\app\templates\events\index.html:99
+msgid "Internal"
+msgstr "Intern"
 
-msgid "Author"
-msgstr "Autor"
+#: .\app\templates\events\index.html:101
+msgid "Shifts enabled"
+msgstr "Schichten aktiviert"
 
-msgid "Created"
-msgstr "Erstellt"
+#: .\app\templates\events\index.html:117 .\app\templates\events\index.html:160
+msgid "No categories"
+msgstr "Keine Kategorien"
 
-msgid "Modified"
-msgstr "Geändert"
+#: .\app\templates\events\index.html:122
+msgid "Edit"
+msgstr "Bearbeiten"
 
-msgid "Actions"
-msgstr "Aktionen"
+#: .\app\templates\events\index.html:123
+msgid "Delete this event?"
+msgstr "Diesen Termin löschen?"
 
-msgid "Preview"
-msgstr "Vorschau"
+#: .\app\templates\events\index.html:129 .\app\templates\setup\setup.html:219
+#: .\app\templates\setup\setup.html:236 .\app\templates\setup\setup.html:261
+#: .\app\templates\setup\setup.html:507
+msgid "Delete"
+msgstr "Löschen"
 
-msgid "Publish"
-msgstr "Veröffentlichen"
+#: .\app\templates\events\index.html:135
+msgid "No events match the current filters."
+msgstr "Keine Events entsprechen den aktuellen Filtern."
 
-msgid "Unpublish"
-msgstr "Veröffentlichung aufheben"
+#: .\app\templates\events\index.html:142 .\app\templates\events\index.html:151
+msgid "Unscheduled"
+msgstr "Ungeplant"
 
-msgid "Duplicate"
-msgstr "Duplizieren"
+#: .\app\templates\pages\blocks\navigation.html:43
+msgid "Choose language"
+msgstr "Sprache wählen"
 
-msgid "Name"
-msgstr "Name"
+#: .\app\templates\setup\setup.html:25
+msgid ""
+"Configure global settings (address, socials, membership, opening times, "
+"roles)."
+msgstr ""
+"Globale Einstellungen konfigurieren (Adresse, Social Media, Mitgliedschaft, "
+"Öffnungszeiten, Rollen)."
 
-msgid "Description"
-msgstr "Beschreibung"
+#: .\app\templates\setup\setup.html:29
+msgid "You have unsaved changes. Remember to save before leaving this page."
+msgstr "Es gibt ungespeicherte Änderungen. Bitte vor dem Verlassen speichern."
 
-msgid "Date"
-msgstr "Datum"
+#: .\app\templates\setup\setup.html:38
+msgid "General"
+msgstr "Allgemein"
 
-msgid "Time"
-msgstr "Zeit"
+#: .\app\templates\setup\setup.html:74
+msgid "Seeding tools"
+msgstr "Seed-Werkzeuge"
 
-msgid "Location"
-msgstr "Ort"
+#: .\app\templates\setup\setup.html:74
+msgid "Backup or reset demo content"
+msgstr "Demo-Inhalte sichern oder zurücksetzen."
 
-msgid "Price"
-msgstr "Preis"
+#: .\app\templates\setup\setup.html:78
+#, python-format
+msgid ""
+"Dump the current database into %(filename)s. Ideal after curating demo "
+"content."
+msgstr ""
+"Aktuelle Datenbank in %(filename)s exportieren. Ideal nach dem Kuratieren "
+"von Demo-Inhalten."
 
-msgid "Category"
-msgstr "Kategorie"
+#: .\app\templates\setup\setup.html:79
+msgid "Generate seed_full.json"
+msgstr "seed_full.json erstellen"
 
-msgid "Tags"
-msgstr "Tags"
+#: .\app\templates\setup\setup.html:82 .\app\templates\setup\setup.html:86
+msgid "Danger"
+msgstr "Achtung"
 
-msgid "Image"
-msgstr "Bild"
+#: .\app\templates\setup\setup.html:82
+#, python-format
+msgid ""
+"This clears the database (including users) and reloads %(filename)s. Use "
+"only in development."
+msgstr ""
+"Leert die Datenbank (inklusive Benutzer) und lädt %(filename)s neu. Nur in "
+"der Entwicklung verwenden."
 
-msgid "Upload"
-msgstr "Hochladen"
+#: .\app\templates\setup\setup.html:83
+msgid ""
+"This will flush the database, re-run migrations, and load seed_full.json. "
+"Continue?"
+msgstr ""
+"Dadurch wird die Datenbank geleert, Migrationen erneut ausgeführt und "
+"seed_full.json geladen. Fortfahren?"
 
-msgid "Required"
-msgstr "Erforderlich"
+#: .\app\templates\setup\setup.html:83
+msgid "Reset database from seed"
+msgstr "Datenbank aus Seed zurücksetzen"
 
-msgid "Optional"
-msgstr "Optional"
+#: .\app\templates\setup\setup.html:86
+msgid ""
+"Flush everything and leave the schema empty (except the auto-created dev "
+"admin)."
+msgstr ""
+"Alles löschen und das Schema leer lassen (außer dem automatisch angelegten "
+"Dev-Admin)."
 
-msgid "Enabled"
-msgstr "Aktiviert"
+#: .\app\templates\setup\setup.html:87
+msgid ""
+"This will flush the database and run fresh migrations WITHOUT loading seed "
+"data. Continue?"
+msgstr ""
+"Dadurch wird die Datenbank geleert und Migrationen ohne Seed-Daten "
+"ausgeführt. Fortfahren?"
 
-msgid "Disabled"
-msgstr "Deaktiviert"
+#: .\app\templates\setup\setup.html:87
+msgid "Clear database only"
+msgstr "Nur Datenbank leeren"
 
+#: .\app\templates\setup\setup.html:95
+msgid "Cloudflare tunnel"
+msgstr "Cloudflare-Tunnel"
+
+#: .\app\templates\setup\setup.html:95
+msgid "Share this site temporarily"
+msgstr "Diese Site temporär teilen"
+
+#: .\app\templates\setup\setup.html:99
+msgid ""
+"Spins up cloudflared with a random trycloudflare.com URL and disables the "
+"dev login shortcut automatically."
+msgstr ""
+"Startet cloudflared mit einer zufälligen trycloudflare.com-URL und "
+"deaktiviert automatisch die Dev-Login-Abkürzung."
+
+#: .\app\templates\setup\setup.html:102
+msgid "Active tunnel"
+msgstr "Aktiver Tunnel"
+
+#: .\app\templates\setup\setup.html:104
+msgid "No tunnel is running."
+msgstr "Kein Tunnel aktiv."
+
+#: .\app\templates\setup\setup.html:107
+msgid "Start tunnel"
+msgstr "Tunnel starten"
+
+#: .\app\templates\setup\setup.html:108
+msgid "Stop tunnel"
+msgstr "Tunnel stoppen"
+
+#: .\app\templates\setup\setup.html:110
+msgid "Requires the cloudflared CLI in PATH."
+msgstr "Erfordert die cloudflared-CLI im PATH."
+
+#: .\app\templates\setup\setup.html:117
+msgid "Languages"
+msgstr "Sprachen"
+
+#: .\app\templates\setup\setup.html:120
+msgid ""
+"Choose which languages appear in both the public navigation and the CMS "
+"selector. Leaving everything unchecked keeps all configured languages "
+"available."
+msgstr ""
+"Wählen Sie aus, welche Sprachen sowohl in der öffentlichen Navigation als "
+"auch im CMS-Auswahlfeld erscheinen. Bleibt alles abgewählt, sind alle "
+"konfigurierten Sprachen verfügbar."
+
+#: .\app\templates\setup\setup.html:137
+msgid "Inventory alerts"
+msgstr "Inventarwarnungen"
+
+#: .\app\templates\setup\setup.html:140
+msgid ""
+"Choose which groups get reorder emails and who sees inventory warnings on "
+"the dashboard."
+msgstr ""
+"Bestimmen Sie, welche Gruppen Nachbestell-E-Mails erhalten und wer "
+"Inventarwarnungen im Dashboard sieht."
+
+#: .\app\templates\setup\setup.html:157
+msgid "POS settings"
+msgstr "POS-Einstellungen"
+
+#: .\app\templates\setup\setup.html:160
+msgid ""
+"Control whether discounts/tax are shown in the register UI and whether they "
+"affect totals."
+msgstr ""
+"Steuern Sie, ob Rabatte/Steuern in der Kassenoberfläche angezeigt werden und "
+"ob sie die Summen beeinflussen."
+
+#: .\app\templates\setup\setup.html:204
+msgid "Quick discount buttons"
+msgstr "Schnellrabatt-Schaltflächen"
+
+#: .\app\templates\setup\setup.html:205
+msgid "Add button"
+msgstr "Button hinzufügen"
+
+#: .\app\templates\setup\setup.html:207
+msgid "Each button can target the whole order or the selected cart line."
+msgstr ""
+"Jede Schaltfläche kann den gesamten Auftrag oder die ausgewählte Position "
+"beeinflussen."
+
+#: .\app\templates\setup\setup.html:212
+msgid "Label"
+msgstr "Bezeichnung"
+
+#: .\app\templates\setup\setup.html:213
+msgid "Type"
+msgstr "Typ"
+
+#: .\app\templates\setup\setup.html:214
+msgid "Value"
+msgstr "Wert"
+
+#: .\app\templates\setup\setup.html:215
+msgid "Scope"
+msgstr "Bereich"
+
+#: .\app\templates\setup\setup.html:216
+msgid "Reason"
+msgstr "Grund"
+
+#: .\app\templates\setup\setup.html:217
+msgid "Sort"
+msgstr "Sortierung"
+
+#: .\app\templates\setup\setup.html:218 .\app\templates\setup\setup.html:497
 msgid "Active"
 msgstr "Aktiv"
 
-msgid "Inactive"
-msgstr "Inaktiv"
+#: .\app\templates\setup\setup.html:244
+msgid "No quick discounts configured yet."
+msgstr "Noch keine Schnellrabatte konfiguriert."
 
-msgid "Visible"
-msgstr "Sichtbar"
+#: .\app\templates\setup\setup.html:274
+msgid "Address"
+msgstr "Adresse"
 
-msgid "Hidden"
-msgstr "Verborgen"
+#: .\app\templates\setup\setup.html:279
+msgid "Search & autofill"
+msgstr "Suchen & automatisch ausfüllen"
 
-msgid "Public"
+#: .\app\templates\setup\setup.html:280
+msgid "Start typing an address"
+msgstr "Adresse eingeben …"
+
+#: .\app\templates\setup\setup.html:281
+msgid ""
+"Powered by OpenStreetMap Nominatim. Select a result to fill the address and "
+"coordinates."
+msgstr ""
+"Bereitgestellt von OpenStreetMap Nominatim. Wählen Sie ein Ergebnis, um "
+"Adresse und Koordinaten zu übernehmen."
+
+#: .\app\templates\setup\setup.html:290
+msgid "Country or region"
+msgstr "Land oder Region"
+
+#: .\app\templates\setup\setup.html:304
+msgid "Save address"
+msgstr "Adresse speichern"
+
+#: .\app\templates\setup\setup.html:306
+msgid "Save just the address section without scrolling to the bottom."
+msgstr "Nur den Adressbereich speichern, ohne bis zum Seitenende zu scrollen."
+
+#: .\app\templates\setup\setup.html:315
+msgid "Socials & Contact"
+msgstr "Soziale Profile & Kontakt"
+
+#: .\app\templates\setup\setup.html:343
+msgid "Standards"
+msgstr "Standards"
+
+#: .\app\templates\setup\setup.html:349
+msgid "Currency"
+msgstr "Währung"
+
+#: .\app\templates\setup\setup.html:359
+msgid ""
+"Pick a common currency or type your own. Defaults from timezone, fallback "
+"EUR."
+msgstr ""
+"Wählen Sie eine gängige Währung oder geben Sie eine eigene ein. Standardwert "
+"aus der Zeitzone, ansonsten EUR."
+
+#: .\app\templates\setup\setup.html:367
+msgid "Max attendee capacity"
+msgstr "Maximale Teilnehmerzahl"
+
+#: .\app\templates\setup\setup.html:369
+msgid ""
+"Schema: <code>Event.maximumAttendeeCapacity</code> (or "
+"<code>Place.maximumAttendeeCapacity</code> for the venue overall)."
+msgstr ""
+"Schema: <code>Event.maximumAttendeeCapacity</code> (oder "
+"<code>Place.maximumAttendeeCapacity</code> für den Veranstaltungsort "
+"insgesamt)."
+
+#: .\app\templates\setup\setup.html:378
+msgid "Policies & Accessibility"
+msgstr "Richtlinien & Barrierefreiheit"
+
+#: .\app\templates\setup\setup.html:383
+msgid "Smoking allowed?"
+msgstr "Rauchen erlaubt?"
+
+#: .\app\templates\setup\setup.html:385
+msgid "Schema: <code>Place.smokingAllowed</code>"
+msgstr "Schema: <code>Place.smokingAllowed</code>"
+
+#: .\app\templates\setup\setup.html:388
+msgid "Pets"
+msgstr "Haustiere"
+
+#: .\app\templates\setup\setup.html:390
+msgid "Examples: “dogs only”, “no pets”, blank = unspecified."
+msgstr "Beispiele: „nur Hunde“, „keine Haustiere“, leer = keine Angabe."
+
+#: .\app\templates\setup\setup.html:393
+msgid "Typical age range"
+msgstr "Typische Altersgruppe"
+
+#: .\app\templates\setup\setup.html:395
+msgid "Examples: “0-12”, “13+”, leave empty if not applicable."
+msgstr "Beispiele: „0-12“, „13+“, leer lassen, falls nicht zutreffend."
+
+#: .\app\templates\setup\setup.html:400
+msgid "Kids / Minors note"
+msgstr "Hinweis für Kinder/Minderjährige"
+
+#: .\app\templates\setup\setup.html:402
+msgid "Example: People under 16 only in company of an adult."
+msgstr "Beispiel: Personen unter 16 nur in Begleitung eines Erwachsenen."
+
+#: .\app\templates\setup\setup.html:406
+msgid "Accessibility & inclusivity"
+msgstr "Barrierefreiheit & Inklusivität"
+
+#: .\app\templates\setup\setup.html:408
+msgid "Step-free entrance"
+msgstr "Stufenloser Eingang"
+
+#: .\app\templates\setup\setup.html:409
+msgid "Wheelchair accessible"
+msgstr "Rollstuhlgerecht"
+
+#: .\app\templates\setup\setup.html:410
+msgid "Accessible restroom"
+msgstr "Barrierefreie Toilette"
+
+#: .\app\templates\setup\setup.html:411
+msgid "Visual assistance available"
+msgstr "Visuelle Unterstützung verfügbar"
+
+#: .\app\templates\setup\setup.html:412
+msgid "Service animals welcome"
+msgstr "Assistenztiere willkommen"
+
+#: .\app\templates\setup\setup.html:413
+msgid "LGBTQIA+ friendly"
+msgstr "LGBTQIA+-freundlich"
+
+#: .\app\templates\setup\setup.html:416
+msgid "Accessibility notes (optional)"
+msgstr "Hinweise zur Barrierefreiheit (optional)"
+
+#: .\app\templates\setup\setup.html:419
+msgid ""
+"Stored as <code>Place.amenityFeature</code> (LocationFeatureSpecification) "
+"and/or Event notes."
+msgstr ""
+"Gespeichert als <code>Place.amenityFeature</code> "
+"(LocationFeatureSpecification) und/oder Event-Notizen."
+
+#: .\app\templates\setup\setup.html:426
+msgid "Awareness team available"
+msgstr "Awareness-Team verfügbar"
+
+#: .\app\templates\setup\setup.html:428
+msgid "Awareness contact"
+msgstr "Awareness-Kontakt"
+
+#: .\app\templates\setup\setup.html:430
+msgid "Phone, email, URL, or instruction. Leave empty to hide."
+msgstr ""
+"Telefon, E-Mail, URL oder Hinweis. Leer lassen, um die Angabe auszublenden."
+
+#: .\app\templates\setup\setup.html:432
+msgid ""
+"Published via <code>Organization.contactPoint</code> with <code>contactType: "
+"\"safety\"</code> (only if provided)."
+msgstr ""
+"Veröffentlicht über <code>Organization.contactPoint</code> mit "
+"<code>contactType: \"safety\"</code> (nur falls angegeben)."
+
+#: .\app\templates\setup\setup.html:446
+msgid "Public Pages"
+msgstr "Öffentliche Seiten"
+
+#: .\app\templates\setup\setup.html:455
+msgid ""
+"Enable the customer-facing site. Content and navigation now come entirely "
+"from the Pages app."
+msgstr ""
+"Aktiviert die kundenseitige Website. Inhalt und Navigation stammen dann "
+"vollständig aus der Pages-App."
+
+#: .\app\templates\setup\setup.html:459
+msgid "Enable public pages"
+msgstr "Öffentliche Seiten aktivieren"
+
+#: .\app\templates\setup\setup.html:463
+msgid "Show dev login shortcut (dev/test only)"
+msgstr "Dev-Login-Abkürzung anzeigen (nur Dev/Test)"
+
+#: .\app\templates\setup\setup.html:465
+msgid "Disable before sharing preview links."
+msgstr "Vor dem Teilen von Vorschau-Links deaktivieren."
+
+#: .\app\templates\setup\setup.html:470
+msgid "Manage pages"
+msgstr "Seiten verwalten"
+
+#: .\app\templates\setup\setup.html:483
+msgid "Membership"
+msgstr "Mitgliedschaft"
+
+#: .\app\templates\setup\setup.html:494
+msgid "Tiers"
+msgstr "Stufen"
+
+#: .\app\templates\setup\setup.html:497
+msgid "Name"
+msgstr "Name"
+
+#: .\app\templates\setup\setup.html:497
+msgid "Months"
+msgstr "Monate"
+
+#: .\app\templates\setup\setup.html:497
+msgid "Price (minor)"
+msgstr "Preis (kleine Einheit)"
+
+#: .\app\templates\setup\setup.html:497
+msgid "Actions"
+msgstr "Aktionen"
+
+#: .\app\templates\setup\setup.html:512
+msgid "Add Tier"
+msgstr "Stufe hinzufügen"
+
+#: .\app\templates\shifts\index.html:60
+msgid "Shift planner"
+msgstr ""
+
+#: .\app\templates\shifts\index.html:61
+msgid "Track staffing needs and assignments per event."
+msgstr ""
+
+#: .\app\templates\shifts\index.html:88
+msgid "Include past shifts"
+msgstr ""
+
+#: .\app\users\models.py:21
+msgid "Optional short emoji label (e.g. '🍺')"
+msgstr ""
+
+#: .\app\users\models.py:34
+msgid "Admins only"
+msgstr ""
+
+#: .\app\users\models.py:35
+#, fuzzy
+#| msgid "Staff"
+msgid "Staff users"
+msgstr "Personal"
+
+#: .\app\users\models.py:36
+msgid "All logged-in users"
+msgstr ""
+
+#: .\app\users\models.py:37
+#, fuzzy
+#| msgid "Public"
+msgid "Public/Anyone"
 msgstr "Öffentlich"
 
-msgid "Private"
-msgstr "Privat"
+#: .\app\users\models.py:42
+msgid "e.g. 'phone', 'address', 'birth_date', 'email', 'role_title'"
+msgstr ""
 
-msgid "Are you sure?"
-msgstr "Sind Sie sicher?"
+#: .\app\users\models.py:63
+msgid "Lower = higher priority"
+msgstr ""
 
-msgid "Confirm"
-msgstr "Bestätigen"
+#: .\app\users\models.py:79
+msgid "e.g. she/her, he/him, they/them"
+msgstr ""
 
-msgid "Are you sure you want to delete this?"
-msgstr "Möchten Sie dies wirklich löschen?"
+#: .\app\users\models.py:90
+msgid "Free-text role label, e.g. 'Bar lead'"
+msgstr ""
 
-msgid "This action cannot be undone"
-msgstr "Diese Aktion kann nicht rückgängig gemacht werden"
+# Navigation & Pages
+#~ msgid "Home"
+#~ msgstr "Startseite"
 
-msgid "New"
-msgstr "Neu"
+#~ msgid "About"
+#~ msgstr "Über uns"
 
-msgid "Import"
-msgstr "Importieren"
+#~ msgid "Contact"
+#~ msgstr "Kontakt"
 
-msgid "Export"
-msgstr "Exportieren"
+# Actions
+#~ msgid "Save"
+#~ msgstr "Speichern"
 
-msgid "Sort"
-msgstr "Sortieren"
+#~ msgid "Cancel"
+#~ msgstr "Abbrechen"
 
-msgid "Order"
-msgstr "Reihenfolge"
+#~ msgid "Add"
+#~ msgstr "Hinzufügen"
 
-msgid "Ascending"
-msgstr "Aufsteigend"
+#~ msgid "Search"
+#~ msgstr "Suchen"
 
-msgid "Descending"
-msgstr "Absteigend"
+#~ msgid "Filter"
+#~ msgstr "Filtern"
 
-msgid "No results found"
-msgstr "Keine Ergebnisse gefunden"
+#~ msgid "Back"
+#~ msgstr "Zurück"
 
-msgid "Page"
-msgstr "Seite"
+#~ msgid "View"
+#~ msgstr "Ansehen"
 
-msgid "Next"
-msgstr "Weiter"
+#~ msgid "Update"
+#~ msgstr "Aktualisieren"
 
-msgid "Previous"
-msgstr "Zurück"
+#~ msgid "Create"
+#~ msgstr "Erstellen"
 
-msgid "Showing"
-msgstr "Zeige"
+#~ msgid "Clear"
+#~ msgstr "Löschen"
 
-msgid "results"
-msgstr "Ergebnisse"
+#~ msgid "Submit"
+#~ msgstr "Absenden"
 
-msgid "Choose language"
-msgstr "Sprache wählen"
+#~ msgid "Close"
+#~ msgstr "Schließen"
+
+# Common UI
+#~ msgid "Welcome"
+#~ msgstr "Willkommen"
+
+#~ msgid "Loading..."
+#~ msgstr "Lädt..."
+
+#~ msgid "Please wait"
+#~ msgstr "Bitte warten"
+
+#~ msgid "Yes"
+#~ msgstr "Ja"
+
+#~ msgid "No"
+#~ msgstr "Nein"
+
+#~ msgid "OK"
+#~ msgstr "OK"
+
+#~ msgid "None"
+#~ msgstr "Keine"
+
+#~ msgid "Select"
+#~ msgstr "Auswählen"
+
+#~ msgid "Choose"
+#~ msgstr "Wählen"
+
+#~ msgid "Options"
+#~ msgstr "Optionen"
+
+#~ msgid "Help"
+#~ msgstr "Hilfe"
+
+# Django Admin
+#~ msgid "Site administration"
+#~ msgstr "Website-Verwaltung"
+
+#~ msgid "Delete selected"
+#~ msgstr "Ausgewählte löschen"
+
+#~ msgid "Recent actions"
+#~ msgstr "Letzte Aktionen"
+
+#~ msgid "My actions"
+#~ msgstr "Meine Aktionen"
+
+#~ msgid "Change password"
+#~ msgstr "Passwort ändern"
+
+#~ msgid "Log out"
+#~ msgstr "Abmelden"
+
+# Status & Messages
+#~ msgid "Success"
+#~ msgstr "Erfolgreich"
+
+#~ msgid "Error"
+#~ msgstr "Fehler"
+
+#~ msgid "Warning"
+#~ msgstr "Warnung"
+
+#~ msgid "Info"
+#~ msgstr "Information"
+
+#~ msgid "Saved successfully"
+#~ msgstr "Erfolgreich gespeichert"
+
+#~ msgid "Deleted successfully"
+#~ msgstr "Erfolgreich gelöscht"
+
+#~ msgid "Updated successfully"
+#~ msgstr "Erfolgreich aktualisiert"
+
+#~ msgid "Created successfully"
+#~ msgstr "Erfolgreich erstellt"
+
+# #-#-#-#-#  django.po (Bar OS)  #-#-#-#-#
+# Models - Pages
+#~ msgid "Page"
+#~ msgstr "Seite"
+
+#~ msgid "Slug"
+#~ msgstr "URL-Name"
+
+#~ msgid "Summary"
+#~ msgstr "Zusammenfassung"
+
+#~ msgid "Body"
+#~ msgstr "Inhalt"
+
+#~ msgid "Status"
+#~ msgstr "Status"
+
+#~ msgid "Published"
+#~ msgstr "Veröffentlicht"
+
+#~ msgid "Draft"
+#~ msgstr "Entwurf"
+
+#~ msgid "Author"
+#~ msgstr "Autor"
+
+#~ msgid "Created"
+#~ msgstr "Erstellt"
+
+#~ msgid "Modified"
+#~ msgstr "Geändert"
+
+#~ msgid "Published at"
+#~ msgstr "Veröffentlicht am"
+
+# Models - Events
+#~ msgid "Event"
+#~ msgstr "Veranstaltung"
+
+#~ msgid "Event Category"
+#~ msgstr "Veranstaltungskategorie"
+
+#~ msgid "Start date"
+#~ msgstr "Startdatum"
+
+#~ msgid "End date"
+#~ msgstr "Enddatum"
+
+#~ msgid "End time"
+#~ msgstr "Endzeit"
+
+#~ msgid "Location"
+#~ msgstr "Ort"
+
+#~ msgid "Venue"
+#~ msgstr "Veranstaltungsort"
+
+#~ msgid "Description"
+#~ msgstr "Beschreibung"
+
+#~ msgid "Teaser"
+#~ msgstr "Vorschau"
+
+#~ msgid "Price"
+#~ msgstr "Preis"
+
+#~ msgid "Tickets"
+#~ msgstr "Tickets"
+
+# #-#-#-#-#  django.po (Bar OS)  #-#-#-#-#
+# Models - Menu
+#~ msgid "Category"
+#~ msgstr "Kategorie"
+
+#~ msgid "Item"
+#~ msgstr "Artikel"
+
+#~ msgid "Items"
+#~ msgstr "Artikel"
+
+#~ msgid "Ingredients"
+#~ msgstr "Zutaten"
+
+#~ msgid "Allergens"
+#~ msgstr "Allergene"
+
+#~ msgid "Available"
+#~ msgstr "Verfügbar"
+
+#~ msgid "Out of stock"
+#~ msgstr "Nicht vorrätig"
+
+#~ msgid "Variant"
+#~ msgstr "Variante"
+
+#~ msgid "Variants"
+#~ msgstr "Varianten"
+
+#~ msgid "Size"
+#~ msgstr "Größe"
+
+#~ msgid "Volume"
+#~ msgstr "Volumen"
+
+# Models - Merchandise
+#~ msgid "Product"
+#~ msgstr "Produkt"
+
+#~ msgid "Products"
+#~ msgstr "Produkte"
+
+#~ msgid "Stock"
+#~ msgstr "Lagerbestand"
+
+#~ msgid "In stock"
+#~ msgstr "Auf Lager"
+
+#~ msgid "SKU"
+#~ msgstr "Artikelnummer"
+
+#~ msgid "Barcode"
+#~ msgstr "Barcode"
+
+# Models - Bands
+#~ msgid "Band"
+#~ msgstr "Band"
+
+#~ msgid "Artists"
+#~ msgstr "Künstler"
+
+#~ msgid "Genre"
+#~ msgstr "Genre"
+
+#~ msgid "Genres"
+#~ msgstr "Genres"
+
+#~ msgid "Bio"
+#~ msgstr "Biografie"
+
+#~ msgid "Website"
+#~ msgstr "Webseite"
+
+#~ msgid "Social media"
+#~ msgstr "Soziale Medien"
+
+# #-#-#-#-#  django.po (Bar OS)  #-#-#-#-#
+# Common Fields
+#~ msgid "Image"
+#~ msgstr "Bild"
+
+#~ msgid "Images"
+#~ msgstr "Bilder"
+
+#~ msgid "File"
+#~ msgstr "Datei"
+
+#~ msgid "Files"
+#~ msgstr "Dateien"
+
+#~ msgid "Date"
+#~ msgstr "Datum"
+
+#~ msgid "Email"
+#~ msgstr "E-Mail"
+
+#~ msgid "Phone"
+#~ msgstr "Telefon"
+
+#~ msgid "City"
+#~ msgstr "Stadt"
+
+#~ msgid "Country"
+#~ msgstr "Land"
+
+#~ msgid "Postal code"
+#~ msgstr "Postleitzahl"
+
+#~ msgid "Notes"
+#~ msgstr "Notizen"
+
+#~ msgid "Comments"
+#~ msgstr "Kommentare"
+
+#~ msgid "Tags"
+#~ msgstr "Tags"
+
+#~ msgid "Visibility"
+#~ msgstr "Sichtbarkeit"
+
+#~ msgid "Private"
+#~ msgstr "Privat"
+
+#~ msgid "Inactive"
+#~ msgstr "Inaktiv"
+
+#~ msgid "Enabled"
+#~ msgstr "Aktiviert"
+
+#~ msgid "Disabled"
+#~ msgstr "Deaktiviert"
+
+# Users & Permissions
+#~ msgid "User"
+#~ msgstr "Benutzer"
+
+#~ msgid "Username"
+#~ msgstr "Benutzername"
+
+#~ msgid "Password"
+#~ msgstr "Passwort"
+
+#~ msgid "First name"
+#~ msgstr "Vorname"
+
+#~ msgid "Last name"
+#~ msgstr "Nachname"
+
+#~ msgid "Administrator"
+#~ msgstr "Administrator"
+
+#~ msgid "Groups"
+#~ msgstr "Gruppen"
+
+#~ msgid "Last login"
+#~ msgstr "Letzte Anmeldung"
+
+#~ msgid "Date joined"
+#~ msgstr "Registriert seit"
+
+# Errors
+#~ msgid "This field is required"
+#~ msgstr "Dieses Feld ist erforderlich"
+
+#~ msgid "Please correct the errors below"
+#~ msgstr "Bitte korrigieren Sie die folgenden Fehler"
+
+#~ msgid "Invalid value"
+#~ msgstr "Ungültiger Wert"
+
+#~ msgid "Not found"
+#~ msgstr "Nicht gefunden"
+
+#~ msgid "Access denied"
+#~ msgstr "Zugriff verweigert"
+
+#~ msgid "Permission denied"
+#~ msgstr "Keine Berechtigung"
+
+# Misc
+#~ msgid "Show"
+#~ msgstr "Anzeigen"
+
+#~ msgid "Hide"
+#~ msgstr "Ausblenden"
+
+#~ msgid "More"
+#~ msgstr "Mehr"
+
+#~ msgid "Less"
+#~ msgstr "Weniger"
+
+#, fuzzy
+#~ msgid "Next"
+#~ msgstr ""
+#~ "#-#-#-#-#  django.po (Bar OS)  #-#-#-#-#\n"
+#~ "Nächste\n"
+#~ "#-#-#-#-#  django.po (Bar OS)  #-#-#-#-#\n"
+#~ "Weiter"
+
+#~ msgid "First"
+#~ msgstr "Erste"
+
+#~ msgid "Last"
+#~ msgstr "Letzte"
+
+#~ msgid "Total"
+#~ msgstr "Gesamt"
+
+#~ msgid "of"
+#~ msgstr "von"
+
+#~ msgid "to"
+#~ msgstr "bis"
+
+#~ msgid "from"
+#~ msgstr "von"
+
+#~ msgid "until"
+#~ msgstr "bis"
+
+#~ msgid "Archived"
+#~ msgstr "Archiviert"
+
+#~ msgid "Preview"
+#~ msgstr "Vorschau"
+
+#~ msgid "Unpublish"
+#~ msgstr "Veröffentlichung aufheben"
+
+#~ msgid "Duplicate"
+#~ msgstr "Duplizieren"
+
+#~ msgid "Upload"
+#~ msgstr "Hochladen"
+
+#~ msgid "Required"
+#~ msgstr "Erforderlich"
+
+#~ msgid "Optional"
+#~ msgstr "Optional"
+
+#~ msgid "Visible"
+#~ msgstr "Sichtbar"
+
+#~ msgid "Hidden"
+#~ msgstr "Verborgen"
+
+#~ msgid "Are you sure?"
+#~ msgstr "Sind Sie sicher?"
+
+#~ msgid "Confirm"
+#~ msgstr "Bestätigen"
+
+#~ msgid "Are you sure you want to delete this?"
+#~ msgstr "Möchten Sie dies wirklich löschen?"
+
+#~ msgid "This action cannot be undone"
+#~ msgstr "Diese Aktion kann nicht rückgängig gemacht werden"
+
+#~ msgid "New"
+#~ msgstr "Neu"
+
+#~ msgid "Import"
+#~ msgstr "Importieren"
+
+#~ msgid "Export"
+#~ msgstr "Exportieren"
+
+#~ msgid "Order"
+#~ msgstr "Reihenfolge"
+
+#~ msgid "Ascending"
+#~ msgstr "Aufsteigend"
+
+#~ msgid "Descending"
+#~ msgstr "Absteigend"
+
+#~ msgid "No results found"
+#~ msgstr "Keine Ergebnisse gefunden"
+
+#~ msgid "Showing"
+#~ msgstr "Zeige"
+
+#~ msgid "results"
+#~ msgstr "Ergebnisse"
+
+#: app/templates/cms/dashboard.html
+msgid "Filled"
+msgstr "Besetzt"
+
+#: app/templates/cms/dashboard.html
+msgid "Open"
+msgstr "Offen"
+
+#: app/templates/cms/dashboard.html
+msgid "slots"
+msgstr "Plätze"
+
+#: app/templates/cms/dashboard.html
+msgid "Recently added events"
+msgstr "Kürzlich hinzugefügte Events"
+
+#: app/templates/cms/dashboard.html
+msgid "View"
+msgstr "Ansehen"
+
+#: app/templates/cms/dashboard.html
+msgid "Overview of what's happening this week."
+msgstr "Überblick über diese Woche."

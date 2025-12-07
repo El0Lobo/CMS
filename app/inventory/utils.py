@@ -35,9 +35,16 @@ def notify_reorder(author, item, note: str = ""):
         targets["users"] = list(
             User.objects.filter(is_superuser=True).values_list("id", flat=True)
         )
-    subject = f"Inventory reorder needed: {item.name}"
-    body = f"{item.name} is flagged for reorder.\n\nCurrent stock: {item.current_stock}\nDesired stock: {item.desired_stock}\n\n{note or ''}".strip()
-    send_internal.post_internal(author, subject=subject, body_text=body, targets=targets)
+    subject = "System inventory alerts"
+    body = (
+        f"{item.name} is flagged for reorder.\n\n"
+        f"Current stock: {item.current_stock}\n"
+        f"Desired stock: {item.desired_stock}\n\n"
+        f"{note or ''}"
+    ).strip()
+    send_internal.post_internal(
+        author, subject=subject, body_text=body, targets=targets, system_sender=True
+    )
 
 
 def ensure_inventory_for_menu_item(menu_item):

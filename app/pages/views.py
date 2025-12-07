@@ -126,31 +126,29 @@ def create(request):
         "page": None,
         "preview_url": reverse("pages_preview"),
         "default_language": settings.MODELTRANSLATION_DEFAULT_LANGUAGE,
-        "builder_boot": json.dumps(
-            {
-                "mode": "create",
-                "page": {
-                    **serialize_page(form.instance, request),
-                    "blocks": form.instance.get_blocks_for_language(language),
-                },
-                "preview_html": initial_preview or "",
-                "urls": {
-                    "save": reverse("pages_api_create"),
-                    "preview": reverse("pages_api_preview_html"),
-                    "events": reverse("pages_api_events"),
-                    "menu": reverse("pages_api_menu"),
-                    "site": reverse("pages_api_site"),
-                    "assets": reverse("pages_api_assets"),
-                    "font_upload": font_upload_url,
-                    "asset_upload": asset_upload_url,
-                    "detail": None,
-                },
-                "site_context": data_sources.get_site_context(),
-                "nav_items": _nav_builder_items(form),
-                "current_language": language,
-                "default_language": settings.MODELTRANSLATION_DEFAULT_LANGUAGE,
-            }
-        ),
+        "builder_boot": {
+            "mode": "create",
+            "page": {
+                **serialize_page(form.instance, request),
+                "blocks": form.instance.get_blocks_for_language(language),
+            },
+            "preview_html": initial_preview or "",
+            "urls": {
+                "save": reverse("pages_api_create"),
+                "preview": reverse("pages_api_preview_html"),
+                "events": reverse("pages_api_events"),
+                "menu": reverse("pages_api_menu"),
+                "site": reverse("pages_api_site"),
+                "assets": reverse("pages_api_assets"),
+                "font_upload": font_upload_url,
+                "asset_upload": asset_upload_url,
+                "detail": None,
+            },
+            "site_context": data_sources.get_site_context(),
+            "nav_items": _nav_builder_items(form),
+            "current_language": language,
+            "default_language": settings.MODELTRANSLATION_DEFAULT_LANGUAGE,
+        },
     }
     return render(request, "pages/form.html", context)
 
@@ -174,31 +172,29 @@ def edit(request, slug):
         "preview_url": reverse("pages_preview"),
         "page_rendered": initial_preview,
         "default_language": settings.MODELTRANSLATION_DEFAULT_LANGUAGE,
-        "builder_boot": json.dumps(
-            {
-                "mode": "edit",
-                "page": {
-                    **serialize_page(page, request),
-                    "blocks": page.get_blocks_for_language(language),
-                },
-                "preview_html": initial_preview or "",
-                "urls": {
-                    "save": reverse("pages_api_detail", args=[page.slug]),
-                    "preview": reverse("pages_api_preview_html"),
-                    "events": reverse("pages_api_events"),
-                    "menu": reverse("pages_api_menu"),
-                    "site": reverse("pages_api_site"),
-                    "assets": reverse("pages_api_assets"),
-                    "font_upload": font_upload_url,
-                    "asset_upload": asset_upload_url,
-                    "detail": reverse("pages_api_detail", args=[page.slug]),
-                },
-                "site_context": data_sources.get_site_context(),
-                "nav_items": _nav_builder_items(form),
-                "current_language": language,
-                "default_language": settings.MODELTRANSLATION_DEFAULT_LANGUAGE,
-            }
-        ),
+        "builder_boot": {
+            "mode": "edit",
+            "page": {
+                **serialize_page(page, request),
+                "blocks": page.get_blocks_for_language(language),
+            },
+            "preview_html": initial_preview or "",
+            "urls": {
+                "save": reverse("pages_api_detail", args=[page.slug]),
+                "preview": reverse("pages_api_preview_html"),
+                "events": reverse("pages_api_events"),
+                "menu": reverse("pages_api_menu"),
+                "site": reverse("pages_api_site"),
+                "assets": reverse("pages_api_assets"),
+                "font_upload": font_upload_url,
+                "asset_upload": asset_upload_url,
+                "detail": reverse("pages_api_detail", args=[page.slug]),
+            },
+            "site_context": data_sources.get_site_context(),
+            "nav_items": _nav_builder_items(form),
+            "current_language": language,
+            "default_language": settings.MODELTRANSLATION_DEFAULT_LANGUAGE,
+        },
     }
     return render(request, "pages/form.html", context)
 

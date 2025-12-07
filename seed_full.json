@@ -45,14 +45,21 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "guardian",
-    "model": "groupobjectpermission"
+    "model": "userobjectpermission"
   }
 },
 {
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "guardian",
-    "model": "userobjectpermission"
+    "model": "groupobjectpermission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "axes",
+    "model": "accessfailurelog"
   }
 },
 {
@@ -67,13 +74,6 @@
   "fields": {
     "app_label": "axes",
     "model": "accesslog"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "axes",
-    "model": "accessfailurelog"
   }
 },
 {
@@ -108,6 +108,13 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "events",
+    "model": "event"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "events",
     "model": "eventperformer"
   }
 },
@@ -128,8 +135,8 @@
 {
   "model": "contenttypes.contenttype",
   "fields": {
-    "app_label": "events",
-    "model": "event"
+    "app_label": "shifts",
+    "model": "shifttemplate"
   }
 },
 {
@@ -137,13 +144,6 @@
   "fields": {
     "app_label": "shifts",
     "model": "shiftpreset"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "shifts",
-    "model": "shifttemplate"
   }
 },
 {
@@ -192,14 +192,14 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "pos",
-    "model": "payment"
+    "model": "saleitem"
   }
 },
 {
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "pos",
-    "model": "saleitem"
+    "model": "payment"
   }
 },
 {
@@ -241,7 +241,7 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "setup",
-    "model": "visibilityrule"
+    "model": "membershiptier"
   }
 },
 {
@@ -255,7 +255,7 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "setup",
-    "model": "membershiptier"
+    "model": "visibilityrule"
   }
 },
 {
@@ -297,6 +297,13 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "menu",
+    "model": "unitgroup"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "menu",
     "model": "category"
   }
 },
@@ -312,13 +319,6 @@
   "fields": {
     "app_label": "menu",
     "model": "itemvariant"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "menu",
-    "model": "unitgroup"
   }
 },
 {
@@ -353,49 +353,7 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "comms",
-    "model": "attachment"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "comms",
-    "model": "audiencelink"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "comms",
-    "model": "draft"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "comms",
-    "model": "internaltarget"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "comms",
-    "model": "label"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "comms",
     "model": "mailaccount"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "fields": {
-    "app_label": "comms",
-    "model": "message"
   }
 },
 {
@@ -409,6 +367,20 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "comms",
+    "model": "message"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "comms",
+    "model": "attachment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "comms",
     "model": "readreceipt"
   }
 },
@@ -416,7 +388,78 @@
   "model": "contenttypes.contenttype",
   "fields": {
     "app_label": "comms",
+    "model": "label"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "comms",
     "model": "userthreadstate"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "comms",
+    "model": "audiencelink"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "comms",
+    "model": "internaltarget"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "comms",
+    "model": "draft"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "inventory",
+    "model": "inventorycategory"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "inventory",
+    "model": "inventoryitem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "inventory",
+    "model": "inventorylog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "inventory",
+    "model": "inventoryconsumption"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "inventory",
+    "model": "inventorypackage"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "e4umqbbe35m2dtopli0ciaoe350qatp9",
+  "fields": {
+    "session_data": ".eJxdjstqwzAQRf9FayMUO5YiL7PPF5QiRjNy7EZIQQ8oBP975ZJCk-Xcc-bOPJiBWhZTs0tmJTaxnnX_Mwt4c2EH9AXhGjnGUNJq-a7wJ838Esn589N9KVggL_v2ILVyhxG1Ro1OgRtJqh6FtoM42R7nWYpGj1KRhaM-ETg7g9CHgUYlsZXeYzYIqbDpwfwaXGbTx2fHYqJ2htaMsYYGQ_W-YyUW8HlXc7W_Q3tCcCFa0Z9r3vIC3-_RNUGg13Dbth9dKGWK:1vRtN6:Koe1vrJ0X766zNLbRCZ79kgZ3FDQMJ17PhoTjnTQiMU",
+    "expire_date": "2025-12-20T14:34:52.941Z"
   }
 },
 {
@@ -532,6 +575,136 @@
   }
 },
 {
+  "model": "axes.accesslog",
+  "pk": 9,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-11-26T19:56:57.002Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 10,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-11-27T13:02:10.521Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 11,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/en/login/",
+    "attempt_time": "2025-12-02T11:25:28.469Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 12,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-12-02T12:09:25.954Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 13,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-12-03T14:12:00.926Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 14,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-12-03T15:57:41.441Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 15,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-12-03T21:45:59.643Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 16,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-12-04T09:10:02.742Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 17,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-12-05T14:00:50.956Z",
+    "logout_time": null
+  }
+},
+{
+  "model": "axes.accesslog",
+  "pk": 18,
+  "fields": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "ip_address": "127.0.0.1",
+    "username": "admin",
+    "http_accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "path_info": "/accounts/dev-login/",
+    "attempt_time": "2025-12-06T14:34:52.933Z",
+    "logout_time": null
+  }
+},
+{
   "model": "events.eventcategory",
   "pk": 1,
   "fields": {
@@ -643,6 +816,138 @@
     "description_de": null,
     "description_fr": null,
     "color": "",
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 1,
+  "fields": {
+    "name": "Bar Shift",
+    "slug": "bar-shift",
+    "description": "Standard Bar-shift",
+    "order": 0,
+    "start_reference": "doors",
+    "start_offset_minutes": -30,
+    "end_offset_minutes": 30,
+    "duration_minutes": 0,
+    "segment_count": 1,
+    "capacity": 2,
+    "allow_signup": true,
+    "visibility_key": "",
+    "created_at": "2025-12-03T12:06:46.339Z",
+    "updated_at": "2025-12-03T12:06:46.339Z"
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 2,
+  "fields": {
+    "name": "Bar Double-Shift",
+    "slug": "bar-double-shift",
+    "description": "Separates the shift in two equal shifts for the designated amount of people",
+    "order": 1,
+    "start_reference": "doors",
+    "start_offset_minutes": -30,
+    "end_offset_minutes": 30,
+    "duration_minutes": 0,
+    "segment_count": 2,
+    "capacity": 2,
+    "allow_signup": true,
+    "visibility_key": "",
+    "created_at": "2025-12-03T12:08:31.635Z",
+    "updated_at": "2025-12-03T12:08:48.661Z"
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 3,
+  "fields": {
+    "name": "Door Shift",
+    "slug": "door-shift",
+    "description": "A Standard Door Shift",
+    "order": 0,
+    "start_reference": "doors",
+    "start_offset_minutes": 0,
+    "end_offset_minutes": 0,
+    "duration_minutes": 0,
+    "segment_count": 1,
+    "capacity": 2,
+    "allow_signup": true,
+    "visibility_key": "",
+    "created_at": "2025-12-03T12:09:17.949Z",
+    "updated_at": "2025-12-03T12:09:17.949Z"
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 4,
+  "fields": {
+    "name": "Door Double-Shift",
+    "slug": "door-double-shift",
+    "description": "A Door Double Shift",
+    "order": 1,
+    "start_reference": "doors",
+    "start_offset_minutes": 0,
+    "end_offset_minutes": 0,
+    "duration_minutes": 0,
+    "segment_count": 2,
+    "capacity": 2,
+    "allow_signup": true,
+    "visibility_key": "",
+    "created_at": "2025-12-03T12:09:53.789Z",
+    "updated_at": "2025-12-03T12:10:12.744Z"
+  }
+},
+{
+  "model": "pos.posquickbutton",
+  "pk": 1,
+  "fields": {
+    "label": "Staff Items",
+    "discount_type": "FREE",
+    "value": "0.00",
+    "scope": "ITEM",
+    "reason": null,
+    "sort_order": 0,
+    "is_active": true
+  }
+},
+{
+  "model": "pos.posquickbutton",
+  "pk": 2,
+  "fields": {
+    "label": "Staff Order",
+    "discount_type": "FREE",
+    "value": "0.00",
+    "scope": "ORDER",
+    "reason": null,
+    "sort_order": 0,
+    "is_active": true
+  }
+},
+{
+  "model": "pos.posquickbutton",
+  "pk": 3,
+  "fields": {
+    "label": "30% OFF Item",
+    "discount_type": "PERCENT",
+    "value": "30.00",
+    "scope": "ITEM",
+    "reason": null,
+    "sort_order": 1,
+    "is_active": true
+  }
+},
+{
+  "model": "pos.posquickbutton",
+  "pk": 4,
+  "fields": {
+    "label": "30% OFF Order",
+    "discount_type": "PERCENT",
+    "value": "30.00",
+    "scope": "ORDER",
+    "reason": null,
+    "sort_order": 1,
     "is_active": true
   }
 },
@@ -764,60 +1069,73 @@
   }
 },
 {
-  "model": "setup.sitesettings",
+  "model": "inventory.inventorycategory",
   "pk": 1,
   "fields": {
-    "mode": "VENUE",
-    "org_name": "Bar OS - Local Dev",
-    "logo": "logos/ACME_KtJ11VZ.svg",
-    "logo_secondary": "logos/CME_with_Text2.png",
-    "icon_pack_filename": "favicon(5).zip",
-    "address_street": "Joseph-Belli-Weg",
-    "address_number": "11",
-    "address_postal_code": "78467",
-    "address_city": "Constance",
-    "address_country": "Germany",
-    "address_autocomplete": false,
-    "contact_email": "test@web.de",
-    "contact_phone": "07531 64984134",
-    "website_url": "https://www.zeit.de/index",
-    "social_facebook": "https://www.zeit.de/index",
-    "social_instagram": "https://www.zeit.de/index",
-    "social_twitter": "https://www.zeit.de/index",
-    "social_tiktok": "https://www.zeit.de/index",
-    "social_youtube": "https://www.zeit.de/index",
-    "social_spotify": "https://www.zeit.de/index",
-    "social_soundcloud": "https://www.zeit.de/index",
-    "social_bandcamp": "https://www.zeit.de/index",
-    "social_linkedin": "https://www.zeit.de/index",
-    "social_mastodon": "https://www.zeit.de/index",
-    "same_as": "",
-    "geo_lat": "47.679120",
-    "geo_lng": "9.163437",
-    "price_range": "$$",
-    "default_currency": "€",
-    "membership_enabled": false,
-    "membership_hint": "",
-    "public_pages_enabled": true,
-    "enabled_languages": [],
-    "required_pages": "",
-    "created_at": "2025-11-20T14:58:27.955Z",
-    "updated_at": "2025-11-26T10:58:36.392Z",
-    "smoking_allowed": null,
-    "pets_allowed_text": "",
-    "typical_age_range": "",
-    "acc_step_free": false,
-    "acc_wheelchair": false,
-    "acc_accessible_wc": false,
-    "acc_visual_aid": false,
-    "acc_service_animals": false,
-    "accessibility_summary": "",
-    "lgbtq_friendly": false,
-    "minors_policy_note": "",
-    "maximum_attendee_capacity": null,
-    "awareness_team_available": false,
-    "awareness_contact": "",
-    "publish_opening_times": false
+    "name": "Drinks",
+    "slug": "menu-drinks",
+    "parent": null,
+    "sort_order": 0
+  }
+},
+{
+  "model": "inventory.inventorycategory",
+  "pk": 2,
+  "fields": {
+    "name": "Beer",
+    "slug": "menu-beer",
+    "parent": 1,
+    "sort_order": 0
+  }
+},
+{
+  "model": "inventory.inventorycategory",
+  "pk": 3,
+  "fields": {
+    "name": "Cocktails",
+    "slug": "menu-cocktails",
+    "parent": 1,
+    "sort_order": 0
+  }
+},
+{
+  "model": "inventory.inventorycategory",
+  "pk": 4,
+  "fields": {
+    "name": "Food",
+    "slug": "menu-food",
+    "parent": null,
+    "sort_order": 0
+  }
+},
+{
+  "model": "inventory.inventorycategory",
+  "pk": 5,
+  "fields": {
+    "name": "Snacks",
+    "slug": "menu-snacks",
+    "parent": 4,
+    "sort_order": 0
+  }
+},
+{
+  "model": "inventory.inventorycategory",
+  "pk": 6,
+  "fields": {
+    "name": "Apparel",
+    "slug": "merch-apparel",
+    "parent": null,
+    "sort_order": 0
+  }
+},
+{
+  "model": "inventory.inventorycategory",
+  "pk": 7,
+  "fields": {
+    "name": "Accessories",
+    "slug": "merch-accessories",
+    "parent": null,
+    "sort_order": 0
   }
 },
 {
@@ -951,7 +1269,7 @@
     "slug_de": "getranke",
     "slug_fr": "boissons",
     "parent": null,
-    "kind": "",
+    "kind": "drink",
     "unit_group": null
   }
 },
@@ -970,7 +1288,7 @@
     "slug_de": "essen",
     "slug_fr": "nourriture",
     "parent": null,
-    "kind": "",
+    "kind": "food",
     "unit_group": null
   }
 },
@@ -989,7 +1307,7 @@
     "slug_de": "bier",
     "slug_fr": "biere",
     "parent": 1,
-    "kind": "",
+    "kind": "drink",
     "unit_group": null
   }
 },
@@ -1008,7 +1326,7 @@
     "slug_de": "cocktails",
     "slug_fr": "cocktails",
     "parent": 1,
-    "kind": "",
+    "kind": "drink",
     "unit_group": null
   }
 },
@@ -1027,7 +1345,7 @@
     "slug_de": "snacks",
     "slug_fr": "snacks",
     "parent": 2,
-    "kind": "",
+    "kind": "food",
     "unit_group": null
   }
 },
@@ -1282,7 +1600,7 @@
     "label_de": "Small",
     "label_fr": "Small",
     "quantity": "0.330",
-    "unit": 1,
+    "unit": 2,
     "price": "6.50",
     "abv": null
   }
@@ -1403,6 +1721,7 @@
     "description_es": "Rock band from the neighborhood",
     "description_de": "Rock band from the neighborhood",
     "description_fr": "Rock band from the neighborhood",
+    "genre": "",
     "photo": "",
     "contact_type": "email",
     "contact_value": "bookings@localheroes.com",
@@ -1464,6 +1783,7 @@
     "description_es": "Smooth jazz ensemble",
     "description_de": "Smooth jazz ensemble",
     "description_fr": "Smooth jazz ensemble",
+    "genre": "",
     "photo": "",
     "contact_type": "email",
     "contact_value": "info@jazzcollective.com",
@@ -1525,6 +1845,7 @@
     "description_es": "Electronic music DJ",
     "description_de": "Electronic music DJ",
     "description_fr": "Electronic music DJ",
+    "genre": "",
     "photo": "",
     "contact_type": "phone",
     "contact_value": "+45 98 76 54 32",
@@ -1750,7 +2071,7 @@
     "slug": "logo-secondary",
     "visibility": "public",
     "description": "Uploaded via Setup",
-    "file": "assets/site-branding/CME_with_Text2_HF83Xgz.png",
+    "file": "assets/site-branding/CME_with_Text2_UIZprlG.png",
     "url": null,
     "text_content": "",
     "appears_on": "",
@@ -1762,7 +2083,7 @@
     "duration_seconds": null,
     "pages": null,
     "created_at": "2025-11-20T15:50:29.758Z",
-    "updated_at": "2025-11-26T10:58:36.476Z",
+    "updated_at": "2025-12-06T15:17:27.659Z",
     "tags": []
   }
 },
@@ -1775,7 +2096,7 @@
     "slug": "logo-primary",
     "visibility": "public",
     "description": "Uploaded via Setup",
-    "file": "assets/site-branding/ACME_KtJ11VZ_aiyth1Y.svg",
+    "file": "assets/site-branding/ACME_KtJ11VZ_8LeQo2T.svg",
     "url": null,
     "text_content": "",
     "appears_on": "",
@@ -1787,8 +2108,97 @@
     "duration_seconds": null,
     "pages": null,
     "created_at": "2025-11-20T15:56:29.515Z",
-    "updated_at": "2025-11-26T10:58:36.465Z",
+    "updated_at": "2025-12-06T15:17:27.656Z",
     "tags": []
+  }
+},
+{
+  "model": "assets.asset",
+  "pk": 17,
+  "fields": {
+    "collection": 4,
+    "title": "Digita",
+    "slug": "digita",
+    "visibility": "inherit",
+    "description": "",
+    "file": "assets/fonts/Digita.ttf",
+    "url": null,
+    "text_content": "",
+    "appears_on": "",
+    "mime_type": "font/ttf",
+    "kind": "font",
+    "size_bytes": 63796,
+    "width": null,
+    "height": null,
+    "duration_seconds": null,
+    "pages": null,
+    "created_at": "2025-12-04T18:56:08.409Z",
+    "updated_at": "2025-12-04T18:56:08.409Z",
+    "tags": []
+  }
+},
+{
+  "model": "assets.asset",
+  "pk": 18,
+  "fields": {
+    "collection": 4,
+    "title": "grunge",
+    "slug": "grunge",
+    "visibility": "inherit",
+    "description": "",
+    "file": "assets/fonts/grunge.otf",
+    "url": null,
+    "text_content": "",
+    "appears_on": "",
+    "mime_type": "font/otf",
+    "kind": "font",
+    "size_bytes": 1113888,
+    "width": null,
+    "height": null,
+    "duration_seconds": null,
+    "pages": null,
+    "created_at": "2025-12-04T18:56:40.114Z",
+    "updated_at": "2025-12-04T18:56:40.114Z",
+    "tags": []
+  }
+},
+{
+  "model": "comms.messagethread",
+  "pk": 3,
+  "fields": {
+    "type": "internal",
+    "account": null,
+    "subject": "Inventory reorder needed: Sticker Pack",
+    "created_at": "2025-12-04T22:09:03.369Z",
+    "last_activity_at": "2025-12-04T22:09:03.369Z",
+    "has_attachments": false,
+    "is_closed": false
+  }
+},
+{
+  "model": "comms.messagethread",
+  "pk": 4,
+  "fields": {
+    "type": "internal",
+    "account": null,
+    "subject": "Inventory reorder needed: Sticker Pack",
+    "created_at": "2025-12-04T22:53:50.920Z",
+    "last_activity_at": "2025-12-04T22:53:50.920Z",
+    "has_attachments": false,
+    "is_closed": false
+  }
+},
+{
+  "model": "comms.messagethread",
+  "pk": 5,
+  "fields": {
+    "type": "internal",
+    "account": null,
+    "subject": "Inventory reorder needed: Sticker Pack",
+    "created_at": "2025-12-05T20:58:59.490Z",
+    "last_activity_at": "2025-12-05T20:58:59.490Z",
+    "has_attachments": false,
+    "is_closed": false
   }
 },
 {
@@ -2058,6 +2468,50 @@
 {
   "model": "auth.permission",
   "fields": {
+    "name": "Can add user object permission",
+    "content_type": [
+      "guardian",
+      "userobjectpermission"
+    ],
+    "codename": "add_userobjectpermission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change user object permission",
+    "content_type": [
+      "guardian",
+      "userobjectpermission"
+    ],
+    "codename": "change_userobjectpermission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete user object permission",
+    "content_type": [
+      "guardian",
+      "userobjectpermission"
+    ],
+    "codename": "delete_userobjectpermission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view user object permission",
+    "content_type": [
+      "guardian",
+      "userobjectpermission"
+    ],
+    "codename": "view_userobjectpermission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
     "name": "Can add group object permission",
     "content_type": [
       "guardian",
@@ -2102,45 +2556,45 @@
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can add user object permission",
+    "name": "Can add access failure",
     "content_type": [
-      "guardian",
-      "userobjectpermission"
+      "axes",
+      "accessfailurelog"
     ],
-    "codename": "add_userobjectpermission"
+    "codename": "add_accessfailurelog"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can change user object permission",
+    "name": "Can change access failure",
     "content_type": [
-      "guardian",
-      "userobjectpermission"
+      "axes",
+      "accessfailurelog"
     ],
-    "codename": "change_userobjectpermission"
+    "codename": "change_accessfailurelog"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can delete user object permission",
+    "name": "Can delete access failure",
     "content_type": [
-      "guardian",
-      "userobjectpermission"
+      "axes",
+      "accessfailurelog"
     ],
-    "codename": "delete_userobjectpermission"
+    "codename": "delete_accessfailurelog"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can view user object permission",
+    "name": "Can view access failure",
     "content_type": [
-      "guardian",
-      "userobjectpermission"
+      "axes",
+      "accessfailurelog"
     ],
-    "codename": "view_userobjectpermission"
+    "codename": "view_accessfailurelog"
   }
 },
 {
@@ -2229,50 +2683,6 @@
       "accesslog"
     ],
     "codename": "view_accesslog"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add access failure",
-    "content_type": [
-      "axes",
-      "accessfailurelog"
-    ],
-    "codename": "add_accessfailurelog"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change access failure",
-    "content_type": [
-      "axes",
-      "accessfailurelog"
-    ],
-    "codename": "change_accessfailurelog"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete access failure",
-    "content_type": [
-      "axes",
-      "accessfailurelog"
-    ],
-    "codename": "delete_accessfailurelog"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view access failure",
-    "content_type": [
-      "axes",
-      "accessfailurelog"
-    ],
-    "codename": "view_accessfailurelog"
   }
 },
 {
@@ -2454,6 +2864,50 @@
 {
   "model": "auth.permission",
   "fields": {
+    "name": "Can add event",
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "codename": "add_event"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change event",
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "codename": "change_event"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete event",
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "codename": "delete_event"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view event",
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "codename": "view_event"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
     "name": "Can add event performer",
     "content_type": [
       "events",
@@ -2586,45 +3040,45 @@
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can add event",
+    "name": "Can add shift template",
     "content_type": [
-      "events",
-      "event"
+      "shifts",
+      "shifttemplate"
     ],
-    "codename": "add_event"
+    "codename": "add_shifttemplate"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can change event",
+    "name": "Can change shift template",
     "content_type": [
-      "events",
-      "event"
+      "shifts",
+      "shifttemplate"
     ],
-    "codename": "change_event"
+    "codename": "change_shifttemplate"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can delete event",
+    "name": "Can delete shift template",
     "content_type": [
-      "events",
-      "event"
+      "shifts",
+      "shifttemplate"
     ],
-    "codename": "delete_event"
+    "codename": "delete_shifttemplate"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can view event",
+    "name": "Can view shift template",
     "content_type": [
-      "events",
-      "event"
+      "shifts",
+      "shifttemplate"
     ],
-    "codename": "view_event"
+    "codename": "view_shifttemplate"
   }
 },
 {
@@ -2669,50 +3123,6 @@
       "shiftpreset"
     ],
     "codename": "view_shiftpreset"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add shift template",
-    "content_type": [
-      "shifts",
-      "shifttemplate"
-    ],
-    "codename": "add_shifttemplate"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change shift template",
-    "content_type": [
-      "shifts",
-      "shifttemplate"
-    ],
-    "codename": "change_shifttemplate"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete shift template",
-    "content_type": [
-      "shifts",
-      "shifttemplate"
-    ],
-    "codename": "delete_shifttemplate"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view shift template",
-    "content_type": [
-      "shifts",
-      "shifttemplate"
-    ],
-    "codename": "view_shifttemplate"
   }
 },
 {
@@ -2982,50 +3392,6 @@
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can add payment",
-    "content_type": [
-      "pos",
-      "payment"
-    ],
-    "codename": "add_payment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change payment",
-    "content_type": [
-      "pos",
-      "payment"
-    ],
-    "codename": "change_payment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete payment",
-    "content_type": [
-      "pos",
-      "payment"
-    ],
-    "codename": "delete_payment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view payment",
-    "content_type": [
-      "pos",
-      "payment"
-    ],
-    "codename": "view_payment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
     "name": "Can add sale item",
     "content_type": [
       "pos",
@@ -3065,6 +3431,50 @@
       "saleitem"
     ],
     "codename": "view_saleitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add payment",
+    "content_type": [
+      "pos",
+      "payment"
+    ],
+    "codename": "add_payment"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change payment",
+    "content_type": [
+      "pos",
+      "payment"
+    ],
+    "codename": "change_payment"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete payment",
+    "content_type": [
+      "pos",
+      "payment"
+    ],
+    "codename": "delete_payment"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view payment",
+    "content_type": [
+      "pos",
+      "payment"
+    ],
+    "codename": "view_payment"
   }
 },
 {
@@ -3290,45 +3700,45 @@
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can add visibility rule",
+    "name": "Can add membership tier",
     "content_type": [
       "setup",
-      "visibilityrule"
+      "membershiptier"
     ],
-    "codename": "add_visibilityrule"
+    "codename": "add_membershiptier"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can change visibility rule",
+    "name": "Can change membership tier",
     "content_type": [
       "setup",
-      "visibilityrule"
+      "membershiptier"
     ],
-    "codename": "change_visibilityrule"
+    "codename": "change_membershiptier"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can delete visibility rule",
+    "name": "Can delete membership tier",
     "content_type": [
       "setup",
-      "visibilityrule"
+      "membershiptier"
     ],
-    "codename": "delete_visibilityrule"
+    "codename": "delete_membershiptier"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can view visibility rule",
+    "name": "Can view membership tier",
     "content_type": [
       "setup",
-      "visibilityrule"
+      "membershiptier"
     ],
-    "codename": "view_visibilityrule"
+    "codename": "view_membershiptier"
   }
 },
 {
@@ -3378,45 +3788,45 @@
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can add membership tier",
+    "name": "Can add visibility rule",
     "content_type": [
       "setup",
-      "membershiptier"
+      "visibilityrule"
     ],
-    "codename": "add_membershiptier"
+    "codename": "add_visibilityrule"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can change membership tier",
+    "name": "Can change visibility rule",
     "content_type": [
       "setup",
-      "membershiptier"
+      "visibilityrule"
     ],
-    "codename": "change_membershiptier"
+    "codename": "change_visibilityrule"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can delete membership tier",
+    "name": "Can delete visibility rule",
     "content_type": [
       "setup",
-      "membershiptier"
+      "visibilityrule"
     ],
-    "codename": "delete_membershiptier"
+    "codename": "delete_visibilityrule"
   }
 },
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can view membership tier",
+    "name": "Can view visibility rule",
     "content_type": [
       "setup",
-      "membershiptier"
+      "visibilityrule"
     ],
-    "codename": "view_membershiptier"
+    "codename": "view_visibilityrule"
   }
 },
 {
@@ -3653,6 +4063,50 @@
 {
   "model": "auth.permission",
   "fields": {
+    "name": "Can add unit group",
+    "content_type": [
+      "menu",
+      "unitgroup"
+    ],
+    "codename": "add_unitgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change unit group",
+    "content_type": [
+      "menu",
+      "unitgroup"
+    ],
+    "codename": "change_unitgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete unit group",
+    "content_type": [
+      "menu",
+      "unitgroup"
+    ],
+    "codename": "delete_unitgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view unit group",
+    "content_type": [
+      "menu",
+      "unitgroup"
+    ],
+    "codename": "view_unitgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
     "name": "Can add category",
     "content_type": [
       "menu",
@@ -3780,50 +4234,6 @@
       "itemvariant"
     ],
     "codename": "view_itemvariant"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add unit group",
-    "content_type": [
-      "menu",
-      "unitgroup"
-    ],
-    "codename": "add_unitgroup"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change unit group",
-    "content_type": [
-      "menu",
-      "unitgroup"
-    ],
-    "codename": "change_unitgroup"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete unit group",
-    "content_type": [
-      "menu",
-      "unitgroup"
-    ],
-    "codename": "delete_unitgroup"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view unit group",
-    "content_type": [
-      "menu",
-      "unitgroup"
-    ],
-    "codename": "view_unitgroup"
   }
 },
 {
@@ -4005,226 +4415,6 @@
 {
   "model": "auth.permission",
   "fields": {
-    "name": "Can add attachment",
-    "content_type": [
-      "comms",
-      "attachment"
-    ],
-    "codename": "add_attachment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change attachment",
-    "content_type": [
-      "comms",
-      "attachment"
-    ],
-    "codename": "change_attachment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete attachment",
-    "content_type": [
-      "comms",
-      "attachment"
-    ],
-    "codename": "delete_attachment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view attachment",
-    "content_type": [
-      "comms",
-      "attachment"
-    ],
-    "codename": "view_attachment"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add audience link",
-    "content_type": [
-      "comms",
-      "audiencelink"
-    ],
-    "codename": "add_audiencelink"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change audience link",
-    "content_type": [
-      "comms",
-      "audiencelink"
-    ],
-    "codename": "change_audiencelink"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete audience link",
-    "content_type": [
-      "comms",
-      "audiencelink"
-    ],
-    "codename": "delete_audiencelink"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view audience link",
-    "content_type": [
-      "comms",
-      "audiencelink"
-    ],
-    "codename": "view_audiencelink"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add draft",
-    "content_type": [
-      "comms",
-      "draft"
-    ],
-    "codename": "add_draft"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change draft",
-    "content_type": [
-      "comms",
-      "draft"
-    ],
-    "codename": "change_draft"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete draft",
-    "content_type": [
-      "comms",
-      "draft"
-    ],
-    "codename": "delete_draft"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view draft",
-    "content_type": [
-      "comms",
-      "draft"
-    ],
-    "codename": "view_draft"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add internal target",
-    "content_type": [
-      "comms",
-      "internaltarget"
-    ],
-    "codename": "add_internaltarget"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change internal target",
-    "content_type": [
-      "comms",
-      "internaltarget"
-    ],
-    "codename": "change_internaltarget"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete internal target",
-    "content_type": [
-      "comms",
-      "internaltarget"
-    ],
-    "codename": "delete_internaltarget"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view internal target",
-    "content_type": [
-      "comms",
-      "internaltarget"
-    ],
-    "codename": "view_internaltarget"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add label",
-    "content_type": [
-      "comms",
-      "label"
-    ],
-    "codename": "add_label"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change label",
-    "content_type": [
-      "comms",
-      "label"
-    ],
-    "codename": "change_label"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete label",
-    "content_type": [
-      "comms",
-      "label"
-    ],
-    "codename": "delete_label"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view label",
-    "content_type": [
-      "comms",
-      "label"
-    ],
-    "codename": "view_label"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
     "name": "Can add mail account",
     "content_type": [
       "comms",
@@ -4264,50 +4454,6 @@
       "mailaccount"
     ],
     "codename": "view_mailaccount"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can add message",
-    "content_type": [
-      "comms",
-      "message"
-    ],
-    "codename": "add_message"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can change message",
-    "content_type": [
-      "comms",
-      "message"
-    ],
-    "codename": "change_message"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can delete message",
-    "content_type": [
-      "comms",
-      "message"
-    ],
-    "codename": "delete_message"
-  }
-},
-{
-  "model": "auth.permission",
-  "fields": {
-    "name": "Can view message",
-    "content_type": [
-      "comms",
-      "message"
-    ],
-    "codename": "view_message"
   }
 },
 {
@@ -4357,6 +4503,94 @@
 {
   "model": "auth.permission",
   "fields": {
+    "name": "Can add message",
+    "content_type": [
+      "comms",
+      "message"
+    ],
+    "codename": "add_message"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change message",
+    "content_type": [
+      "comms",
+      "message"
+    ],
+    "codename": "change_message"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete message",
+    "content_type": [
+      "comms",
+      "message"
+    ],
+    "codename": "delete_message"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view message",
+    "content_type": [
+      "comms",
+      "message"
+    ],
+    "codename": "view_message"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add attachment",
+    "content_type": [
+      "comms",
+      "attachment"
+    ],
+    "codename": "add_attachment"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change attachment",
+    "content_type": [
+      "comms",
+      "attachment"
+    ],
+    "codename": "change_attachment"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete attachment",
+    "content_type": [
+      "comms",
+      "attachment"
+    ],
+    "codename": "delete_attachment"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view attachment",
+    "content_type": [
+      "comms",
+      "attachment"
+    ],
+    "codename": "view_attachment"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
     "name": "Can add read receipt",
     "content_type": [
       "comms",
@@ -4396,6 +4630,50 @@
       "readreceipt"
     ],
     "codename": "view_readreceipt"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add label",
+    "content_type": [
+      "comms",
+      "label"
+    ],
+    "codename": "add_label"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change label",
+    "content_type": [
+      "comms",
+      "label"
+    ],
+    "codename": "change_label"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete label",
+    "content_type": [
+      "comms",
+      "label"
+    ],
+    "codename": "delete_label"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view label",
+    "content_type": [
+      "comms",
+      "label"
+    ],
+    "codename": "view_label"
   }
 },
 {
@@ -4443,6 +4721,358 @@
   }
 },
 {
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add audience link",
+    "content_type": [
+      "comms",
+      "audiencelink"
+    ],
+    "codename": "add_audiencelink"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change audience link",
+    "content_type": [
+      "comms",
+      "audiencelink"
+    ],
+    "codename": "change_audiencelink"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete audience link",
+    "content_type": [
+      "comms",
+      "audiencelink"
+    ],
+    "codename": "delete_audiencelink"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view audience link",
+    "content_type": [
+      "comms",
+      "audiencelink"
+    ],
+    "codename": "view_audiencelink"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add internal target",
+    "content_type": [
+      "comms",
+      "internaltarget"
+    ],
+    "codename": "add_internaltarget"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change internal target",
+    "content_type": [
+      "comms",
+      "internaltarget"
+    ],
+    "codename": "change_internaltarget"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete internal target",
+    "content_type": [
+      "comms",
+      "internaltarget"
+    ],
+    "codename": "delete_internaltarget"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view internal target",
+    "content_type": [
+      "comms",
+      "internaltarget"
+    ],
+    "codename": "view_internaltarget"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add draft",
+    "content_type": [
+      "comms",
+      "draft"
+    ],
+    "codename": "add_draft"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change draft",
+    "content_type": [
+      "comms",
+      "draft"
+    ],
+    "codename": "change_draft"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete draft",
+    "content_type": [
+      "comms",
+      "draft"
+    ],
+    "codename": "delete_draft"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view draft",
+    "content_type": [
+      "comms",
+      "draft"
+    ],
+    "codename": "view_draft"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add inventory category",
+    "content_type": [
+      "inventory",
+      "inventorycategory"
+    ],
+    "codename": "add_inventorycategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change inventory category",
+    "content_type": [
+      "inventory",
+      "inventorycategory"
+    ],
+    "codename": "change_inventorycategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete inventory category",
+    "content_type": [
+      "inventory",
+      "inventorycategory"
+    ],
+    "codename": "delete_inventorycategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view inventory category",
+    "content_type": [
+      "inventory",
+      "inventorycategory"
+    ],
+    "codename": "view_inventorycategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add inventory item",
+    "content_type": [
+      "inventory",
+      "inventoryitem"
+    ],
+    "codename": "add_inventoryitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change inventory item",
+    "content_type": [
+      "inventory",
+      "inventoryitem"
+    ],
+    "codename": "change_inventoryitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete inventory item",
+    "content_type": [
+      "inventory",
+      "inventoryitem"
+    ],
+    "codename": "delete_inventoryitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view inventory item",
+    "content_type": [
+      "inventory",
+      "inventoryitem"
+    ],
+    "codename": "view_inventoryitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add inventory log",
+    "content_type": [
+      "inventory",
+      "inventorylog"
+    ],
+    "codename": "add_inventorylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change inventory log",
+    "content_type": [
+      "inventory",
+      "inventorylog"
+    ],
+    "codename": "change_inventorylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete inventory log",
+    "content_type": [
+      "inventory",
+      "inventorylog"
+    ],
+    "codename": "delete_inventorylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view inventory log",
+    "content_type": [
+      "inventory",
+      "inventorylog"
+    ],
+    "codename": "view_inventorylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add inventory consumption",
+    "content_type": [
+      "inventory",
+      "inventoryconsumption"
+    ],
+    "codename": "add_inventoryconsumption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change inventory consumption",
+    "content_type": [
+      "inventory",
+      "inventoryconsumption"
+    ],
+    "codename": "change_inventoryconsumption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete inventory consumption",
+    "content_type": [
+      "inventory",
+      "inventoryconsumption"
+    ],
+    "codename": "delete_inventoryconsumption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view inventory consumption",
+    "content_type": [
+      "inventory",
+      "inventoryconsumption"
+    ],
+    "codename": "view_inventoryconsumption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add inventory package",
+    "content_type": [
+      "inventory",
+      "inventorypackage"
+    ],
+    "codename": "add_inventorypackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change inventory package",
+    "content_type": [
+      "inventory",
+      "inventorypackage"
+    ],
+    "codename": "change_inventorypackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete inventory package",
+    "content_type": [
+      "inventory",
+      "inventorypackage"
+    ],
+    "codename": "delete_inventorypackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view inventory package",
+    "content_type": [
+      "inventory",
+      "inventorypackage"
+    ],
+    "codename": "view_inventorypackage"
+  }
+},
+{
   "model": "auth.user",
   "fields": {
     "password": "!dv6qT8MY2ZseyDVoqfXastvekOwIMcv1bcYAdd7x",
@@ -4463,7 +5093,7 @@
   "model": "auth.user",
   "fields": {
     "password": "pbkdf2_sha256$1000000$a9cLvm5BjCaW36Dk5lSPtM$DhaXS8IzJOCeWsnq1GHqNS7Ldwps8nfQTkEqJ1j1HS8=",
-    "last_login": "2025-11-26T17:45:25.200Z",
+    "last_login": "2025-12-06T14:34:52.921Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -10482,6 +11112,2312 @@
   }
 },
 {
+  "model": "auditlog.logentry",
+  "pk": 97,
+  "fields": {
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Friday Night Jazz",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "shifts": [
+        "None",
+        "shifts.Shift.None"
+      ],
+      "performers": [
+        "None",
+        "events.EventPerformer.None"
+      ],
+      "teaser_es": [
+        "None",
+        "Noche de jazz suave con artistas locales"
+      ],
+      "description_public_fr": [
+        "None",
+        "Rejoignez-nous pour une soirée de jazz en douceur avec des artistes locaux."
+      ],
+      "recurrence_overrides": [
+        "None",
+        "events.Event.None"
+      ],
+      "slug_en": [
+        "None",
+        "friday-night-jazz"
+      ],
+      "teaser_en": [
+        "None",
+        "Smooth jazz evening with local artists"
+      ],
+      "slug_de": [
+        "None",
+        "freitag-abend-jazz"
+      ],
+      "teaser_de": [
+        "None",
+        "Sanfter Jazzabend mit lokalen Künstlern"
+      ],
+      "title": [
+        "None",
+        "Friday Night Jazz"
+      ],
+      "slug": [
+        "None",
+        "friday-night-jazz"
+      ],
+      "status": [
+        "None",
+        "published"
+      ],
+      "event_type": [
+        "None",
+        "public"
+      ],
+      "hero_image": [
+        "None",
+        ""
+      ],
+      "teaser": [
+        "None",
+        "Smooth jazz evening with local artists"
+      ],
+      "description_public": [
+        "None",
+        "Join us for an evening of smooth jazz featuring local artists."
+      ],
+      "description_internal": [
+        "None",
+        ""
+      ],
+      "doors_at": [
+        "None",
+        "2025-11-26 10:28:27.927000"
+      ],
+      "starts_at": [
+        "None",
+        "2025-11-26 10:58:27.927000"
+      ],
+      "ends_at": [
+        "None",
+        "2025-11-26 13:58:27.927000"
+      ],
+      "recurrence_frequency": [
+        "None",
+        "none"
+      ],
+      "ticket_url": [
+        "None",
+        ""
+      ],
+      "is_free": [
+        "None",
+        "False"
+      ],
+      "requires_shifts": [
+        "None",
+        "False"
+      ],
+      "venue_name": [
+        "None",
+        ""
+      ],
+      "venue_address": [
+        "None",
+        ""
+      ],
+      "venue_postal_code": [
+        "None",
+        ""
+      ],
+      "venue_city": [
+        "None",
+        ""
+      ],
+      "title_fr": [
+        "None",
+        "Jazz du Vendredi Soir"
+      ],
+      "venue_country": [
+        "None",
+        ""
+      ],
+      "seo_title": [
+        "None",
+        ""
+      ],
+      "visibility_key": [
+        "None",
+        ""
+      ],
+      "seo_description": [
+        "None",
+        ""
+      ],
+      "published_at": [
+        "None",
+        "2025-11-20 14:58:27.929000"
+      ],
+      "created_at": [
+        "None",
+        "2025-11-20 14:58:27.929000"
+      ],
+      "updated_at": [
+        "None",
+        "2025-11-20 14:58:27.929000"
+      ],
+      "featured": [
+        "None",
+        "False"
+      ],
+      "slug_es": [
+        "None",
+        "jazz-viernes-noche"
+      ],
+      "recurrence_exceptions": [
+        "None",
+        "events.EventRecurrenceException.None"
+      ],
+      "description_public_en": [
+        "None",
+        "Join us for an evening of smooth jazz featuring local artists."
+      ],
+      "description_public_de": [
+        "None",
+        "Begleiten Sie uns zu einem Abend mit sanftem Jazz mit lokalen Künstlern."
+      ],
+      "title_es": [
+        "None",
+        "Jazz del Viernes por la Noche"
+      ],
+      "slug_fr": [
+        "None",
+        "jazz-vendredi-soir"
+      ],
+      "teaser_fr": [
+        "None",
+        "Soirée jazz en douceur avec des artistes locaux"
+      ],
+      "title_en": [
+        "None",
+        "Friday Night Jazz"
+      ],
+      "description_public_es": [
+        "None",
+        "Únete a nosotros para una noche de jazz suave con artistas locales."
+      ],
+      "id": [
+        "None",
+        "1"
+      ],
+      "title_de": [
+        "None",
+        "Freitag Abend Jazz"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-11-26T19:56:55.213Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 98,
+  "fields": {
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "object_pk": "2",
+    "object_id": 2,
+    "object_repr": "Weekend DJ Bash",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "shifts": [
+        "None",
+        "shifts.Shift.None"
+      ],
+      "performers": [
+        "None",
+        "events.EventPerformer.None"
+      ],
+      "teaser_es": [
+        "None",
+        "Fiesta de baile del fin de semana con DJs residentes"
+      ],
+      "description_public_fr": [
+        "None",
+        "Dansez toute la nuit avec nos DJs résidents!"
+      ],
+      "recurrence_overrides": [
+        "None",
+        "events.Event.None"
+      ],
+      "slug_en": [
+        "None",
+        "weekend-dj-bash"
+      ],
+      "teaser_en": [
+        "None",
+        "Weekend dance party with resident DJs"
+      ],
+      "slug_de": [
+        "None",
+        "wochenende-dj-party"
+      ],
+      "teaser_de": [
+        "None",
+        "Wochenend-Tanzparty mit Resident-DJs"
+      ],
+      "title": [
+        "None",
+        "Weekend DJ Bash"
+      ],
+      "slug": [
+        "None",
+        "weekend-dj-bash"
+      ],
+      "status": [
+        "None",
+        "published"
+      ],
+      "event_type": [
+        "None",
+        "public"
+      ],
+      "hero_image": [
+        "None",
+        ""
+      ],
+      "teaser": [
+        "None",
+        "Weekend dance party with resident DJs"
+      ],
+      "description_public": [
+        "None",
+        "Dance the night away with our resident DJs!"
+      ],
+      "description_internal": [
+        "None",
+        ""
+      ],
+      "doors_at": [
+        "None",
+        "2025-11-28 12:28:27.927000"
+      ],
+      "starts_at": [
+        "None",
+        "2025-11-28 12:58:27.927000"
+      ],
+      "ends_at": [
+        "None",
+        "2025-11-28 16:58:27.927000"
+      ],
+      "recurrence_frequency": [
+        "None",
+        "none"
+      ],
+      "ticket_url": [
+        "None",
+        ""
+      ],
+      "is_free": [
+        "None",
+        "False"
+      ],
+      "requires_shifts": [
+        "None",
+        "False"
+      ],
+      "venue_name": [
+        "None",
+        ""
+      ],
+      "venue_address": [
+        "None",
+        ""
+      ],
+      "venue_postal_code": [
+        "None",
+        ""
+      ],
+      "venue_city": [
+        "None",
+        ""
+      ],
+      "title_fr": [
+        "None",
+        "Soirée DJ du Week-end"
+      ],
+      "venue_country": [
+        "None",
+        ""
+      ],
+      "seo_title": [
+        "None",
+        ""
+      ],
+      "visibility_key": [
+        "None",
+        ""
+      ],
+      "seo_description": [
+        "None",
+        ""
+      ],
+      "published_at": [
+        "None",
+        "2025-11-20 14:58:27.933000"
+      ],
+      "created_at": [
+        "None",
+        "2025-11-20 14:58:27.933000"
+      ],
+      "updated_at": [
+        "None",
+        "2025-11-20 14:58:27.933000"
+      ],
+      "featured": [
+        "None",
+        "False"
+      ],
+      "slug_es": [
+        "None",
+        "fiesta-dj-fin-de-semana"
+      ],
+      "recurrence_exceptions": [
+        "None",
+        "events.EventRecurrenceException.None"
+      ],
+      "description_public_en": [
+        "None",
+        "Dance the night away with our resident DJs!"
+      ],
+      "description_public_de": [
+        "None",
+        "Tanzen Sie die ganze Nacht mit unseren Resident-DJs!"
+      ],
+      "title_es": [
+        "None",
+        "Fiesta DJ del Fin de Semana"
+      ],
+      "slug_fr": [
+        "None",
+        "soiree-dj-weekend"
+      ],
+      "teaser_fr": [
+        "None",
+        "Soirée dansante du week-end avec DJs résidents"
+      ],
+      "title_en": [
+        "None",
+        "Weekend DJ Bash"
+      ],
+      "description_public_es": [
+        "None",
+        "¡Baila toda la noche con nuestros DJs residentes!"
+      ],
+      "id": [
+        "None",
+        "2"
+      ],
+      "title_de": [
+        "None",
+        "Wochenende DJ Party"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-11-26T19:56:55.217Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 99,
+  "fields": {
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "object_pk": "3",
+    "object_id": 3,
+    "object_repr": "Comedy Open Mic",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "shifts": [
+        "None",
+        "shifts.Shift.None"
+      ],
+      "performers": [
+        "None",
+        "events.EventPerformer.None"
+      ],
+      "teaser_es": [
+        "None",
+        "Espectáculo de comedia semanal"
+      ],
+      "description_public_fr": [
+        "None",
+        "Riez aux éclats lors de notre soirée micro ouvert comédie hebdomadaire."
+      ],
+      "recurrence_overrides": [
+        "None",
+        "events.Event.None"
+      ],
+      "slug_en": [
+        "None",
+        "comedy-open-mic"
+      ],
+      "teaser_en": [
+        "None",
+        "Weekly comedy showcase"
+      ],
+      "slug_de": [
+        "None",
+        "comedy-open-mic"
+      ],
+      "teaser_de": [
+        "None",
+        "Wöchentliche Comedy-Show"
+      ],
+      "title": [
+        "None",
+        "Comedy Open Mic"
+      ],
+      "slug": [
+        "None",
+        "comedy-open-mic"
+      ],
+      "status": [
+        "None",
+        "published"
+      ],
+      "event_type": [
+        "None",
+        "public"
+      ],
+      "hero_image": [
+        "None",
+        ""
+      ],
+      "teaser": [
+        "None",
+        "Weekly comedy showcase"
+      ],
+      "description_public": [
+        "None",
+        "Laugh out loud at our weekly comedy open mic night."
+      ],
+      "description_internal": [
+        "None",
+        ""
+      ],
+      "doors_at": [
+        "None",
+        "2025-11-24 09:28:27.927000"
+      ],
+      "starts_at": [
+        "None",
+        "2025-11-24 09:58:27.927000"
+      ],
+      "ends_at": [
+        "None",
+        "2025-11-24 12:58:27.927000"
+      ],
+      "recurrence_frequency": [
+        "None",
+        "none"
+      ],
+      "ticket_url": [
+        "None",
+        ""
+      ],
+      "is_free": [
+        "None",
+        "False"
+      ],
+      "requires_shifts": [
+        "None",
+        "False"
+      ],
+      "venue_name": [
+        "None",
+        ""
+      ],
+      "venue_address": [
+        "None",
+        ""
+      ],
+      "venue_postal_code": [
+        "None",
+        ""
+      ],
+      "venue_city": [
+        "None",
+        ""
+      ],
+      "title_fr": [
+        "None",
+        "Micro Ouvert Comédie"
+      ],
+      "venue_country": [
+        "None",
+        ""
+      ],
+      "seo_title": [
+        "None",
+        ""
+      ],
+      "visibility_key": [
+        "None",
+        ""
+      ],
+      "seo_description": [
+        "None",
+        ""
+      ],
+      "published_at": [
+        "None",
+        "2025-11-20 14:58:27.935000"
+      ],
+      "created_at": [
+        "None",
+        "2025-11-20 14:58:27.935000"
+      ],
+      "updated_at": [
+        "None",
+        "2025-11-20 14:58:27.935000"
+      ],
+      "featured": [
+        "None",
+        "False"
+      ],
+      "slug_es": [
+        "None",
+        "microfono-abierto-comedia"
+      ],
+      "recurrence_exceptions": [
+        "None",
+        "events.EventRecurrenceException.None"
+      ],
+      "description_public_en": [
+        "None",
+        "Laugh out loud at our weekly comedy open mic night."
+      ],
+      "description_public_de": [
+        "None",
+        "Lachen Sie laut bei unserer wöchentlichen Comedy-Open-Mic-Nacht."
+      ],
+      "title_es": [
+        "None",
+        "Micrófono Abierto de Comedia"
+      ],
+      "slug_fr": [
+        "None",
+        "micro-ouvert-comedie"
+      ],
+      "teaser_fr": [
+        "None",
+        "Spectacle de comédie hebdomadaire"
+      ],
+      "title_en": [
+        "None",
+        "Comedy Open Mic"
+      ],
+      "description_public_es": [
+        "None",
+        "Ríete a carcajadas en nuestra noche semanal de micrófono abierto de comedia."
+      ],
+      "id": [
+        "None",
+        "3"
+      ],
+      "title_de": [
+        "None",
+        "Comedy Open Mic"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-11-26T19:56:55.220Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 100,
+  "fields": {
+    "content_type": [
+      "assets",
+      "collection"
+    ],
+    "object_pk": "2",
+    "object_id": 2,
+    "object_repr": "Site Icons",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "children": [
+        "None",
+        "assets.Collection.None"
+      ],
+      "assets": [
+        "None",
+        "assets.Asset.None"
+      ],
+      "id": [
+        "None",
+        "2"
+      ],
+      "title": [
+        "None",
+        "Site Icons"
+      ],
+      "slug": [
+        "None",
+        "site-icons"
+      ],
+      "visibility_mode": [
+        "None",
+        "public"
+      ],
+      "description": [
+        "None",
+        "Uploaded icon pack (favicons/web manifest)."
+      ],
+      "sort_order": [
+        "None",
+        "0"
+      ],
+      "created_at": [
+        "None",
+        "2025-11-20 15:22:46.934000"
+      ],
+      "updated_at": [
+        "None",
+        "2025-11-20 15:22:46.934000"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-11-26T19:56:55.234Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 101,
+  "fields": {
+    "content_type": [
+      "assets",
+      "collection"
+    ],
+    "object_pk": "3",
+    "object_id": 3,
+    "object_repr": "Site Branding",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "children": [
+        "None",
+        "assets.Collection.None"
+      ],
+      "assets": [
+        "None",
+        "assets.Asset.None"
+      ],
+      "id": [
+        "None",
+        "3"
+      ],
+      "title": [
+        "None",
+        "Site Branding"
+      ],
+      "slug": [
+        "None",
+        "site-branding"
+      ],
+      "visibility_mode": [
+        "None",
+        "public"
+      ],
+      "description": [
+        "None",
+        "Logos uploaded via Setup."
+      ],
+      "sort_order": [
+        "None",
+        "0"
+      ],
+      "created_at": [
+        "None",
+        "2025-11-20 15:48:06.729000"
+      ],
+      "updated_at": [
+        "None",
+        "2025-11-20 15:48:06.729000"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-11-26T19:56:55.236Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 102,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ],
+      "maximum_attendee_capacity": [
+        "None",
+        "180"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-11-27T02:08:13.219Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 103,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_aiyth1Y.svg",
+        "assets/site-branding/ACME_KtJ11VZ_ViuF4pM.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-11-27T02:08:13.242Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 104,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_HF83Xgz.png",
+        "assets/site-branding/CME_with_Text2_7FOF38n.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-11-27T02:08:13.246Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 105,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "dev_login_enabled": [
+        "True",
+        "False"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-11-27T13:02:26.372Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 106,
+  "fields": {
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Friday Night Jazz",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "doors_at": [
+        "2025-11-26 10:28:27.927000",
+        "2025-12-08 07:19:29.099842"
+      ],
+      "starts_at": [
+        "2025-11-26 10:58:27.927000",
+        "2025-12-08 07:49:29.099842"
+      ],
+      "ends_at": [
+        "2025-11-26 13:58:27.927000",
+        "2025-12-08 10:49:29.099842"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-12-02T11:49:29.102Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 107,
+  "fields": {
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "object_pk": "2",
+    "object_id": 2,
+    "object_repr": "Weekend DJ Bash",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "doors_at": [
+        "2025-11-28 12:28:27.927000",
+        "2025-12-10 09:19:29.099842"
+      ],
+      "starts_at": [
+        "2025-11-28 12:58:27.927000",
+        "2025-12-10 09:49:29.099842"
+      ],
+      "ends_at": [
+        "2025-11-28 16:58:27.927000",
+        "2025-12-10 13:49:29.099842"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-12-02T11:49:29.105Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 108,
+  "fields": {
+    "content_type": [
+      "events",
+      "event"
+    ],
+    "object_pk": "3",
+    "object_id": 3,
+    "object_repr": "Comedy Open Mic",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "doors_at": [
+        "2025-11-24 09:28:27.927000",
+        "2025-12-06 06:19:29.099842"
+      ],
+      "starts_at": [
+        "2025-11-24 09:58:27.927000",
+        "2025-12-06 06:49:29.099842"
+      ],
+      "ends_at": [
+        "2025-11-24 12:58:27.927000",
+        "2025-12-06 09:49:29.099842"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-12-02T11:49:29.107Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 109,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "dev_login_enabled": [
+        "False",
+        "True"
+      ]
+    },
+    "actor": null,
+    "cid": null,
+    "remote_addr": null,
+    "timestamp": "2025-12-02T12:09:11.575Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 110,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "pos_show_tax": [
+        "True",
+        "False"
+      ],
+      "pos_apply_tax": [
+        "True",
+        "False"
+      ],
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T12:56:15.030Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 111,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_ViuF4pM.svg",
+        "assets/site-branding/ACME_KtJ11VZ_3g7nwli.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T12:56:15.045Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 112,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_7FOF38n.png",
+        "assets/site-branding/CME_with_Text2_C7ww2X2.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T12:56:15.055Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 113,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:01:07.340Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 114,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_3g7nwli.svg",
+        "assets/site-branding/ACME_KtJ11VZ_i3IkTQ8.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:01:07.353Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 115,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_C7ww2X2.png",
+        "assets/site-branding/CME_with_Text2_IHyJyTG.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:01:07.361Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 116,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:04:37.962Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 117,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_i3IkTQ8.svg",
+        "assets/site-branding/ACME_KtJ11VZ_LqaAYgF.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:04:37.968Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 118,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_IHyJyTG.png",
+        "assets/site-branding/CME_with_Text2_M7mKpqQ.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:04:37.971Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 119,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:05:20.897Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 120,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_LqaAYgF.svg",
+        "assets/site-branding/ACME_KtJ11VZ_QQJJk17.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:05:20.907Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 121,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_M7mKpqQ.png",
+        "assets/site-branding/CME_with_Text2_TvemKPB.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:05:20.913Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 122,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:07:45.382Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 123,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_QQJJk17.svg",
+        "assets/site-branding/ACME_KtJ11VZ_RMqVy2w.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:07:45.392Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 124,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_TvemKPB.png",
+        "assets/site-branding/CME_with_Text2_utdip6A.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:07:45.398Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 125,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:11:01.477Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 126,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_RMqVy2w.svg",
+        "assets/site-branding/ACME_KtJ11VZ_Z3CqixM.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:11:01.488Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 127,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_utdip6A.png",
+        "assets/site-branding/CME_with_Text2_BFHf8Cb.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T13:11:01.495Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 128,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:00:34.565Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 129,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_Z3CqixM.svg",
+        "assets/site-branding/ACME_KtJ11VZ_hAEYWoS.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:00:34.576Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 130,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_BFHf8Cb.png",
+        "assets/site-branding/CME_with_Text2_RYf8LFX.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:00:34.584Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 131,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:01:23.915Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 132,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_hAEYWoS.svg",
+        "assets/site-branding/ACME_KtJ11VZ_JSLQc9J.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:01:23.923Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 133,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_RYf8LFX.png",
+        "assets/site-branding/CME_with_Text2_CRptzlw.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:01:23.929Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 134,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:05:19.623Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 135,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_JSLQc9J.svg",
+        "assets/site-branding/ACME_KtJ11VZ_TI9aceN.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:05:19.631Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 136,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_CRptzlw.png",
+        "assets/site-branding/CME_with_Text2_zQzafo5.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:05:19.634Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 137,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:17:08.907Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 138,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_TI9aceN.svg",
+        "assets/site-branding/ACME_KtJ11VZ_hhlXj5H.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:17:08.918Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 139,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_zQzafo5.png",
+        "assets/site-branding/CME_with_Text2_WsB4eZf.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-02T14:17:08.927Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 140,
+  "fields": {
+    "content_type": [
+      "assets",
+      "collection"
+    ],
+    "object_pk": "4",
+    "object_id": 4,
+    "object_repr": "Fonts",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "sort_order": [
+        "None",
+        "0"
+      ],
+      "created_at": [
+        "None",
+        "2025-12-04 18:54:23.319275"
+      ],
+      "updated_at": [
+        "None",
+        "2025-12-04 18:54:23.319292"
+      ],
+      "assets": [
+        "None",
+        "assets.Asset.None"
+      ],
+      "children": [
+        "None",
+        "assets.Collection.None"
+      ],
+      "id": [
+        "None",
+        "4"
+      ],
+      "title": [
+        "None",
+        "Fonts"
+      ],
+      "slug": [
+        "None",
+        "fonts"
+      ],
+      "visibility_mode": [
+        "None",
+        "public"
+      ],
+      "description": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-04T18:54:23.329Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 141,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "17",
+    "object_id": 17,
+    "object_repr": "Digita",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "collection": [
+        "None",
+        "4"
+      ],
+      "title": [
+        "None",
+        "Digita"
+      ],
+      "slug": [
+        "None",
+        "digita"
+      ],
+      "visibility": [
+        "None",
+        "inherit"
+      ],
+      "description": [
+        "None",
+        ""
+      ],
+      "file": [
+        "None",
+        "assets/fonts/Digita.ttf"
+      ],
+      "text_content": [
+        "None",
+        ""
+      ],
+      "appears_on": [
+        "None",
+        ""
+      ],
+      "mime_type": [
+        "None",
+        "font/ttf"
+      ],
+      "kind": [
+        "None",
+        "font"
+      ],
+      "size_bytes": [
+        "None",
+        "63796"
+      ],
+      "created_at": [
+        "None",
+        "2025-12-04 18:56:08.409160"
+      ],
+      "updated_at": [
+        "None",
+        "2025-12-04 18:56:08.409172"
+      ],
+      "id": [
+        "None",
+        "17"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-04T18:56:08.417Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 142,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "18",
+    "object_id": 18,
+    "object_repr": "grunge",
+    "serialized_data": null,
+    "action": 0,
+    "changes_text": "",
+    "changes": {
+      "collection": [
+        "None",
+        "4"
+      ],
+      "title": [
+        "None",
+        "grunge"
+      ],
+      "slug": [
+        "None",
+        "grunge"
+      ],
+      "visibility": [
+        "None",
+        "inherit"
+      ],
+      "description": [
+        "None",
+        ""
+      ],
+      "file": [
+        "None",
+        "assets/fonts/grunge.otf"
+      ],
+      "text_content": [
+        "None",
+        ""
+      ],
+      "appears_on": [
+        "None",
+        ""
+      ],
+      "mime_type": [
+        "None",
+        "font/otf"
+      ],
+      "kind": [
+        "None",
+        "font"
+      ],
+      "size_bytes": [
+        "None",
+        "1113888"
+      ],
+      "created_at": [
+        "None",
+        "2025-12-04 18:56:40.114105"
+      ],
+      "updated_at": [
+        "None",
+        "2025-12-04 18:56:40.114119"
+      ],
+      "id": [
+        "None",
+        "18"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-04T18:56:40.122Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 143,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ],
+      "org_name": [
+        "Bar OS - Local Dev",
+        "Bar Underbelly"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-06T14:56:17.546Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 144,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_hhlXj5H.svg",
+        "assets/site-branding/ACME_KtJ11VZ_DVhly9e.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-06T14:56:17.554Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 145,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_WsB4eZf.png",
+        "assets/site-branding/CME_with_Text2_87xFcEW.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-06T14:56:17.557Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 146,
+  "fields": {
+    "content_type": [
+      "setup",
+      "sitesettings"
+    ],
+    "object_pk": "1",
+    "object_id": 1,
+    "object_repr": "Site Settings (Venue / Club)",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "smoking_allowed": [
+        "None",
+        ""
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-06T15:17:27.648Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 147,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "16",
+    "object_id": 16,
+    "object_repr": "Primary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/ACME_KtJ11VZ_DVhly9e.svg",
+        "assets/site-branding/ACME_KtJ11VZ_8LeQo2T.svg"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-06T15:17:27.656Z",
+    "additional_data": null
+  }
+},
+{
+  "model": "auditlog.logentry",
+  "pk": 148,
+  "fields": {
+    "content_type": [
+      "assets",
+      "asset"
+    ],
+    "object_pk": "15",
+    "object_id": 15,
+    "object_repr": "Secondary logo",
+    "serialized_data": null,
+    "action": 1,
+    "changes_text": "",
+    "changes": {
+      "file": [
+        "assets/site-branding/CME_with_Text2_87xFcEW.png",
+        "assets/site-branding/CME_with_Text2_UIZprlG.png"
+      ]
+    },
+    "actor": [
+      "admin"
+    ],
+    "cid": null,
+    "remote_addr": "127.0.0.1",
+    "timestamp": "2025-12-06T15:17:27.659Z",
+    "additional_data": null
+  }
+},
+{
   "model": "pages.page",
   "pk": 1,
   "fields": {
@@ -10507,189 +13443,323 @@
     "body_fr": "",
     "blocks": [
       {
-        "id": "c972271f-6ac8-4cef-87f9-c52acccd0239",
+        "id": "3c60a2bb-1ed5-48ca-a4ab-c8484f9263f4",
         "type": "navigation",
         "props": {
           "enabled": true,
           "show_logo": true,
           "logo_text": "",
+          "logo_text_auto": false,
+          "logo_image": "http://127.0.0.1:8000/media/assets/site-branding/CME_with_Text2_WsB4eZf.png",
+          "logo_width": 334,
           "show_language_switcher": true,
           "layout": "center",
-          "links": []
+          "links": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "b8239107-b3b8-4c22-a1c5-46963ca5d454",
+        "id": "323a4398-5412-4a5d-8c53-c57060db0d77",
         "type": "hero",
         "props": {
-          "kicker": "",
-          "title": "Welcome to our space",
-          "subtitle": "Introduce the vibe of your venue or collective here.",
+          "kicker": "Welcome to",
+          "title": "Our Community <span style=\"text-decoration: underline; color: rgb(186, 55, 42)\">Space</span>",
+          "subtitle": "A local venue <span style=\"font-family: CMSInlineFont-17r\">bringing </span>people <span style=\"font-family: 'arial black', 'avant garde'\">together</span> through music, art, <span style=\"text-decoration: underline\">and </span>great drinks. Experience the vibrant atmosphere of our neighborhood gathering spot.",
           "background_image": "",
           "overlay": 0.45,
           "alignment": "center",
-          "actions": []
+          "actions": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {},
+          "inline_fonts": [
+            {
+              "family": "CMSInlineFont-17r",
+              "url": "http://127.0.0.1:8000/media/assets/fonts/grunge.otf",
+              "format": "opentype"
+            }
+          ]
         }
       },
       {
-        "id": "6916d417-643b-43a9-9006-62f0c88e14f6",
-        "type": "rich_text",
+        "id": "50249da0-a80a-4242-b9ff-03d08f54dcaa",
+        "type": "contact",
         "props": {
-          "html": "<p>Write your story here. This block accepts standard HTML.</p>"
+          "contact_fields": null,
+          "social_fields": null,
+          "show_social": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "6b17d569-67b8-4b25-b531-8b05cba9ae52",
-        "type": "events",
-        "props": {
-          "title": "Upcoming events",
-          "subtitle": "",
-          "limit": 4,
-          "include_internal": false,
-          "layout": "grid",
-          "show_actions": true,
-          "open_mode": "link"
-        }
-      },
-      {
-        "id": "b191d9f0-b29e-4294-b27b-683b72296925",
+        "id": "efcad5d3-7731-4bf8-9596-23fafd4f21c6",
         "type": "menu",
         "props": {
-          "title": "Menu highlights",
-          "subtitle": "",
-          "category_slugs": []
+          "title": "Menu Highlights",
+          "subtitle": "Check out our selection of drinks and snacks",
+          "category_slugs": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "d87d40f7-4610-4e3a-934a-c3ca87920d8d",
-        "type": "opening_hours",
+        "id": "790b5ccd-72da-42ab-8018-d389c8c2b6cd",
+        "type": "map",
         "props": {
-          "title": "Opening hours",
-          "subtitle": "",
-          "show_contact": true
+          "title": "Find us",
+          "subtitle": "Plan your visit or share directions.",
+          "latitude": null,
+          "longitude": null,
+          "zoom": 15,
+          "auto_location": true,
+          "address_override": "",
+          "show_transport": true,
+          "transport_heading": "Public transport",
+          "transport_items": [
+            {
+              "label": "Bus 5 — Stadtgarten",
+              "details": "2 min walk"
+            },
+            {
+              "label": "Train — Hauptbahnhof",
+              "details": "10 min walk"
+            }
+          ],
+          "show_parking": true,
+          "parking_heading": "Parking",
+          "parking_items": [
+            {
+              "label": "City Garage",
+              "details": "24/7 · first hour free"
+            },
+            {
+              "label": "Harbour lot",
+              "details": "Evenings / weekends"
+            }
+          ],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "c4869333-fc3e-4644-9ead-9a174fd94c5c",
+        "id": "214f2243-6f37-4f4a-bba2-ef132a1072c6",
         "type": "footer",
         "props": {
           "brand_name": "",
           "brand_tagline": "",
           "brand_logo": "",
+          "brand_logo_width": null,
           "address_html": "",
+          "links_heading": "Explore",
+          "legal_heading": "Legal",
+          "social_heading": "Connect",
           "links": [],
           "legal": [],
-          "social_links": []
-        }
-      },
-      {
-        "id": "6705278d-5653-4e6c-a6ba-0d48dd1310ae",
-        "type": "contact",
-        "props": {
-          "contact_fields": null,
-          "social_fields": null,
-          "show_social": true
+          "social_links": [],
+          "show_language_switcher": true,
+          "show_social": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       }
     ],
     "blocks_en": [
       {
-        "id": "c972271f-6ac8-4cef-87f9-c52acccd0239",
+        "id": "3c60a2bb-1ed5-48ca-a4ab-c8484f9263f4",
         "type": "navigation",
         "props": {
           "enabled": true,
           "show_logo": true,
           "logo_text": "",
+          "logo_text_auto": false,
+          "logo_image": "http://127.0.0.1:8000/media/assets/site-branding/CME_with_Text2_WsB4eZf.png",
+          "logo_width": 334,
           "show_language_switcher": true,
           "layout": "center",
-          "links": []
+          "links": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "b8239107-b3b8-4c22-a1c5-46963ca5d454",
+        "id": "323a4398-5412-4a5d-8c53-c57060db0d77",
         "type": "hero",
         "props": {
-          "kicker": "",
-          "title": "Welcome to our space",
-          "subtitle": "Introduce the vibe of your venue or collective here.",
+          "kicker": "Welcome to",
+          "title": "Our Community <span style=\"text-decoration: underline; color: rgb(186, 55, 42)\">Space</span>",
+          "subtitle": "A local venue <span style=\"font-family: CMSInlineFont-17r\">bringing </span>people <span style=\"font-family: 'arial black', 'avant garde'\">together</span> through music, art, <span style=\"text-decoration: underline\">and </span>great drinks. Experience the vibrant atmosphere of our neighborhood gathering spot.",
           "background_image": "",
           "overlay": 0.45,
           "alignment": "center",
-          "actions": []
+          "actions": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {},
+          "inline_fonts": [
+            {
+              "family": "CMSInlineFont-17r",
+              "url": "http://127.0.0.1:8000/media/assets/fonts/grunge.otf",
+              "format": "opentype"
+            }
+          ]
         }
       },
       {
-        "id": "6916d417-643b-43a9-9006-62f0c88e14f6",
-        "type": "rich_text",
+        "id": "50249da0-a80a-4242-b9ff-03d08f54dcaa",
+        "type": "contact",
         "props": {
-          "html": "<p>Write your story here. This block accepts standard HTML.</p>"
+          "contact_fields": null,
+          "social_fields": null,
+          "show_social": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "6b17d569-67b8-4b25-b531-8b05cba9ae52",
-        "type": "events",
-        "props": {
-          "title": "Upcoming events",
-          "subtitle": "",
-          "limit": 4,
-          "include_internal": false,
-          "layout": "grid",
-          "show_actions": true,
-          "open_mode": "link"
-        }
-      },
-      {
-        "id": "b191d9f0-b29e-4294-b27b-683b72296925",
+        "id": "efcad5d3-7731-4bf8-9596-23fafd4f21c6",
         "type": "menu",
         "props": {
-          "title": "Menu highlights",
-          "subtitle": "",
-          "category_slugs": []
+          "title": "Menu Highlights",
+          "subtitle": "Check out our selection of drinks and snacks",
+          "category_slugs": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "d87d40f7-4610-4e3a-934a-c3ca87920d8d",
-        "type": "opening_hours",
+        "id": "790b5ccd-72da-42ab-8018-d389c8c2b6cd",
+        "type": "map",
         "props": {
-          "title": "Opening hours",
-          "subtitle": "",
-          "show_contact": true
+          "title": "Find us",
+          "subtitle": "Plan your visit or share directions.",
+          "latitude": null,
+          "longitude": null,
+          "zoom": 15,
+          "auto_location": true,
+          "address_override": "",
+          "show_transport": true,
+          "transport_heading": "Public transport",
+          "transport_items": [
+            {
+              "label": "Bus 5 — Stadtgarten",
+              "details": "2 min walk"
+            },
+            {
+              "label": "Train — Hauptbahnhof",
+              "details": "10 min walk"
+            }
+          ],
+          "show_parking": true,
+          "parking_heading": "Parking",
+          "parking_items": [
+            {
+              "label": "City Garage",
+              "details": "24/7 · first hour free"
+            },
+            {
+              "label": "Harbour lot",
+              "details": "Evenings / weekends"
+            }
+          ],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
-        "id": "c4869333-fc3e-4644-9ead-9a174fd94c5c",
+        "id": "214f2243-6f37-4f4a-bba2-ef132a1072c6",
         "type": "footer",
         "props": {
           "brand_name": "",
           "brand_tagline": "",
           "brand_logo": "",
+          "brand_logo_width": null,
           "address_html": "",
+          "links_heading": "Explore",
+          "legal_heading": "Legal",
+          "social_heading": "Connect",
           "links": [],
           "legal": [],
-          "social_links": []
-        }
-      },
-      {
-        "id": "6705278d-5653-4e6c-a6ba-0d48dd1310ae",
-        "type": "contact",
-        "props": {
-          "contact_fields": null,
-          "social_fields": null,
-          "show_social": true
+          "social_links": [],
+          "show_language_switcher": true,
+          "show_social": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       }
     ],
     "blocks_es": [
-      {
-        "id": "cb8f7ce6-2cb9-45f3-b082-1f593b006f96",
-        "type": "navigation",
-        "props": {
-          "show_logo": true,
-          "logo_text": "",
-          "show_language_switcher": true,
-          "layout": "center"
-        }
-      },
       {
         "id": "323a4398-5412-4a5d-8c53-c57060db0d77",
         "type": "hero",
@@ -10707,8 +13777,6 @@
         "id": "50249da0-a80a-4242-b9ff-03d08f54dcaa",
         "type": "contact",
         "props": {
-          "contact_fields": null,
-          "social_fields": null,
           "show_social": true
         }
       },
@@ -10738,16 +13806,6 @@
     ],
     "blocks_de": [
       {
-        "id": "eab2987f-2e7c-4ede-9ab5-64a2d850d13e",
-        "type": "navigation",
-        "props": {
-          "show_logo": true,
-          "logo_text": "",
-          "show_language_switcher": true,
-          "layout": "center"
-        }
-      },
-      {
         "id": "323a4398-5412-4a5d-8c53-c57060db0d77",
         "type": "hero",
         "props": {
@@ -10764,8 +13822,6 @@
         "id": "50249da0-a80a-4242-b9ff-03d08f54dcaa",
         "type": "contact",
         "props": {
-          "contact_fields": null,
-          "social_fields": null,
           "show_social": true
         }
       },
@@ -10795,16 +13851,6 @@
     ],
     "blocks_fr": [
       {
-        "id": "1e43b005-2823-45b3-96b1-638af21a0045",
-        "type": "navigation",
-        "props": {
-          "show_logo": true,
-          "logo_text": "",
-          "show_language_switcher": true,
-          "layout": "center"
-        }
-      },
-      {
         "id": "323a4398-5412-4a5d-8c53-c57060db0d77",
         "type": "hero",
         "props": {
@@ -10821,8 +13867,6 @@
         "id": "50249da0-a80a-4242-b9ff-03d08f54dcaa",
         "type": "contact",
         "props": {
-          "contact_fields": null,
-          "social_fields": null,
           "show_social": true
         }
       },
@@ -10850,6 +13894,22 @@
         }
       }
     ],
+    "theme": {
+      "body": {
+        "font_family": "",
+        "font_size": "",
+        "text_color": "",
+        "background_color": "",
+        "font_asset": null
+      },
+      "sections": {
+        "font_family": "",
+        "font_size": "",
+        "text_color": "",
+        "background_color": "",
+        "font_asset": null
+      }
+    },
     "status": "published",
     "is_visible": true,
     "navigation_order": 0,
@@ -10857,9 +13917,9 @@
     "custom_nav_items": [],
     "layout_overrides": [],
     "hero_image": "",
-    "published_at": "2025-11-20T14:58:27.706Z",
+    "published_at": "2025-12-02T11:49:29.075Z",
     "created_at": "2025-11-20T14:58:27.708Z",
-    "updated_at": "2025-11-26T18:20:32.389Z",
+    "updated_at": "2025-12-06T12:53:45.156Z",
     "created_by": [
       "admin"
     ],
@@ -10895,26 +13955,53 @@
     "body_fr": "",
     "blocks": [
       {
-        "id": "635bcdb5-851b-495c-a80f-600b07166420",
+        "id": "4252ea2b-5601-47a0-a36e-8d8113b15377",
         "type": "navigation",
         "props": {
+          "enabled": true,
           "show_logo": true,
           "logo_text": "",
+          "logo_text_auto": false,
+          "logo_image": "http://127.0.0.1:8000/media/assets/site-branding/CME_with_Text2_WsB4eZf.png",
+          "logo_width": 334,
           "show_language_switcher": true,
-          "layout": "center"
+          "layout": "center",
+          "links": [
+            "home",
+            "menu",
+            "about",
+            "contact",
+            "events"
+          ],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
         "id": "e74a4217-32ce-4cad-bc85-638cb1ac6f77",
         "type": "hero",
         "props": {
-          "kicker": "Food & Drinks",
+          "kicker": "Food &amp; Drinks",
           "title": "Our Menu",
-          "subtitle": "From craft beers to signature cocktails and tasty bites, we've got something for everyone",
+          "subtitle": "From craft beers to signature cocktails and tasty bites, we've got <span style=\"color: rgb(224, 62, 45)\">something </span>for everyone",
           "background_image": "",
           "overlay": 0.45,
           "alignment": "center",
-          "actions": []
+          "actions": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
@@ -10923,32 +14010,127 @@
         "props": {
           "title": "Menu Highlights",
           "subtitle": "Featured items from our kitchen and bar",
-          "category_slugs": []
+          "category_slugs": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
+        }
+      },
+      {
+        "id": "04382151-eb50-4ae5-89e6-7dd88367d7d5",
+        "type": "contact",
+        "props": {
+          "contact_fields": null,
+          "social_fields": null,
+          "show_social": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
+        }
+      },
+      {
+        "id": "b294aae8-9dfd-4884-ba29-fa28a798e6dc",
+        "type": "opening_hours",
+        "props": {
+          "title": "Opening hours",
+          "subtitle": "",
+          "show_contact": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
+        }
+      },
+      {
+        "id": "0bea64d5-1eec-4ea9-bcfe-0511231f81bc",
+        "type": "footer",
+        "props": {
+          "brand_name": "",
+          "brand_tagline": "",
+          "brand_logo": "",
+          "brand_logo_width": null,
+          "address_html": "",
+          "links_heading": "Explore",
+          "legal_heading": "Legal",
+          "social_heading": "Connect",
+          "links": [],
+          "legal": [],
+          "social_links": [],
+          "show_language_switcher": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       }
     ],
     "blocks_en": [
       {
-        "id": "635bcdb5-851b-495c-a80f-600b07166420",
+        "id": "4252ea2b-5601-47a0-a36e-8d8113b15377",
         "type": "navigation",
         "props": {
+          "enabled": true,
           "show_logo": true,
           "logo_text": "",
+          "logo_text_auto": false,
+          "logo_image": "http://127.0.0.1:8000/media/assets/site-branding/CME_with_Text2_WsB4eZf.png",
+          "logo_width": 334,
           "show_language_switcher": true,
-          "layout": "center"
+          "layout": "center",
+          "links": [
+            "home",
+            "menu",
+            "about",
+            "contact",
+            "events"
+          ],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
         "id": "e74a4217-32ce-4cad-bc85-638cb1ac6f77",
         "type": "hero",
         "props": {
-          "kicker": "Food & Drinks",
+          "kicker": "Food &amp; Drinks",
           "title": "Our Menu",
-          "subtitle": "From craft beers to signature cocktails and tasty bites, we've got something for everyone",
+          "subtitle": "From craft beers to signature cocktails and tasty bites, we've got <span style=\"color: rgb(224, 62, 45)\">something </span>for everyone",
           "background_image": "",
           "overlay": 0.45,
           "alignment": "center",
-          "actions": []
+          "actions": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       },
       {
@@ -10957,21 +14139,79 @@
         "props": {
           "title": "Menu Highlights",
           "subtitle": "Featured items from our kitchen and bar",
-          "category_slugs": []
+          "category_slugs": [],
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
+        }
+      },
+      {
+        "id": "04382151-eb50-4ae5-89e6-7dd88367d7d5",
+        "type": "contact",
+        "props": {
+          "contact_fields": null,
+          "social_fields": null,
+          "show_social": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
+        }
+      },
+      {
+        "id": "b294aae8-9dfd-4884-ba29-fa28a798e6dc",
+        "type": "opening_hours",
+        "props": {
+          "title": "Opening hours",
+          "subtitle": "",
+          "show_contact": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
+        }
+      },
+      {
+        "id": "0bea64d5-1eec-4ea9-bcfe-0511231f81bc",
+        "type": "footer",
+        "props": {
+          "brand_name": "",
+          "brand_tagline": "",
+          "brand_logo": "",
+          "brand_logo_width": null,
+          "address_html": "",
+          "links_heading": "Explore",
+          "legal_heading": "Legal",
+          "social_heading": "Connect",
+          "links": [],
+          "legal": [],
+          "social_links": [],
+          "show_language_switcher": true,
+          "style": {
+            "font_family": "",
+            "font_size": "",
+            "text_color": "",
+            "background_color": "",
+            "font_asset": {}
+          },
+          "style_targets": {}
         }
       }
     ],
     "blocks_es": [
-      {
-        "id": "6d4652c5-cebe-4d2b-897e-d1377bb7950a",
-        "type": "navigation",
-        "props": {
-          "show_logo": true,
-          "logo_text": "",
-          "show_language_switcher": true,
-          "layout": "center"
-        }
-      },
       {
         "id": "e74a4217-32ce-4cad-bc85-638cb1ac6f77",
         "type": "hero",
@@ -11043,16 +14283,23 @@
         }
       }
     ],
+    "theme": {},
     "status": "published",
     "is_visible": true,
     "navigation_order": 1,
     "show_navigation_bar": true,
-    "custom_nav_items": [],
+    "custom_nav_items": [
+      "home",
+      "menu",
+      "about",
+      "contact",
+      "events"
+    ],
     "layout_overrides": [],
     "hero_image": "",
-    "published_at": "2025-11-20T14:58:27.709Z",
+    "published_at": "2025-12-02T11:49:29.079Z",
     "created_at": "2025-11-20T14:58:27.711Z",
-    "updated_at": "2025-11-26T12:27:29.418Z",
+    "updated_at": "2025-12-04T18:40:29.615Z",
     "created_by": [
       "admin"
     ],
@@ -11091,6 +14338,7 @@
     "blocks_es": [],
     "blocks_de": [],
     "blocks_fr": [],
+    "theme": {},
     "status": "published",
     "is_visible": true,
     "navigation_order": 2,
@@ -11098,9 +14346,9 @@
     "custom_nav_items": [],
     "layout_overrides": [],
     "hero_image": "",
-    "published_at": "2025-11-20T14:58:27.711Z",
+    "published_at": "2025-12-02T11:49:29.082Z",
     "created_at": "2025-11-20T14:58:27.714Z",
-    "updated_at": "2025-11-20T14:58:27.714Z",
+    "updated_at": "2025-12-02T11:49:29.085Z",
     "created_by": [
       "admin"
     ],
@@ -11139,6 +14387,7 @@
     "blocks_es": [],
     "blocks_de": [],
     "blocks_fr": [],
+    "theme": {},
     "status": "published",
     "is_visible": true,
     "navigation_order": 3,
@@ -11146,9 +14395,9 @@
     "custom_nav_items": [],
     "layout_overrides": [],
     "hero_image": "",
-    "published_at": "2025-11-20T14:58:27.714Z",
+    "published_at": "2025-12-02T11:49:29.085Z",
     "created_at": "2025-11-20T14:58:27.716Z",
-    "updated_at": "2025-11-20T14:58:27.716Z",
+    "updated_at": "2025-12-02T11:49:29.087Z",
     "created_by": [
       "admin"
     ],
@@ -11187,6 +14436,7 @@
     "blocks_es": [],
     "blocks_de": [],
     "blocks_fr": [],
+    "theme": {},
     "status": "published",
     "is_visible": true,
     "navigation_order": 4,
@@ -11194,9 +14444,9 @@
     "custom_nav_items": [],
     "layout_overrides": [],
     "hero_image": "",
-    "published_at": "2025-11-20T14:58:27.716Z",
+    "published_at": "2025-12-02T11:49:29.088Z",
     "created_at": "2025-11-20T14:58:27.718Z",
-    "updated_at": "2025-11-20T14:58:27.718Z",
+    "updated_at": "2025-12-02T11:49:29.090Z",
     "created_by": [
       "admin"
     ],
@@ -11235,6 +14485,7 @@
     "blocks_es": [],
     "blocks_de": [],
     "blocks_fr": [],
+    "theme": {},
     "status": "published",
     "is_visible": true,
     "navigation_order": 99,
@@ -11242,9 +14493,9 @@
     "custom_nav_items": [],
     "layout_overrides": [],
     "hero_image": "",
-    "published_at": "2025-11-20T14:58:27.719Z",
+    "published_at": "2025-12-02T11:49:29.091Z",
     "created_at": "2025-11-20T14:58:27.721Z",
-    "updated_at": "2025-11-20T14:58:27.721Z",
+    "updated_at": "2025-12-02T11:49:29.093Z",
     "created_by": [
       "admin"
     ],
@@ -11286,9 +14537,9 @@
     "description_internal_es": null,
     "description_internal_de": null,
     "description_internal_fr": null,
-    "doors_at": "2025-11-26T10:28:27.927Z",
-    "starts_at": "2025-11-26T10:58:27.927Z",
-    "ends_at": "2025-11-26T13:58:27.927Z",
+    "doors_at": "2025-12-08T07:19:29.099Z",
+    "starts_at": "2025-12-08T07:49:29.099Z",
+    "ends_at": "2025-12-08T10:49:29.099Z",
     "curfew_at": null,
     "recurrence_frequency": "none",
     "recurrence_parent": null,
@@ -11328,7 +14579,7 @@
     "created_by": null,
     "updated_by": null,
     "created_at": "2025-11-20T14:58:27.929Z",
-    "updated_at": "2025-11-20T14:58:27.929Z",
+    "updated_at": "2025-12-02T11:49:29.103Z",
     "categories": [
       1
     ],
@@ -11367,9 +14618,9 @@
     "description_internal_es": null,
     "description_internal_de": null,
     "description_internal_fr": null,
-    "doors_at": "2025-11-28T12:28:27.927Z",
-    "starts_at": "2025-11-28T12:58:27.927Z",
-    "ends_at": "2025-11-28T16:58:27.927Z",
+    "doors_at": "2025-12-10T09:19:29.099Z",
+    "starts_at": "2025-12-10T09:49:29.099Z",
+    "ends_at": "2025-12-10T13:49:29.099Z",
     "curfew_at": null,
     "recurrence_frequency": "none",
     "recurrence_parent": null,
@@ -11409,7 +14660,7 @@
     "created_by": null,
     "updated_by": null,
     "created_at": "2025-11-20T14:58:27.933Z",
-    "updated_at": "2025-11-20T14:58:27.933Z",
+    "updated_at": "2025-12-02T11:49:29.106Z",
     "categories": [
       2
     ],
@@ -11448,9 +14699,9 @@
     "description_internal_es": null,
     "description_internal_de": null,
     "description_internal_fr": null,
-    "doors_at": "2025-11-24T09:28:27.927Z",
-    "starts_at": "2025-11-24T09:58:27.927Z",
-    "ends_at": "2025-11-24T12:58:27.927Z",
+    "doors_at": "2025-12-06T06:19:29.099Z",
+    "starts_at": "2025-12-06T06:49:29.099Z",
+    "ends_at": "2025-12-06T09:49:29.099Z",
     "curfew_at": null,
     "recurrence_frequency": "none",
     "recurrence_parent": null,
@@ -11490,11 +14741,382 @@
     "created_by": null,
     "updated_by": null,
     "created_at": "2025-11-20T14:58:27.935Z",
-    "updated_at": "2025-11-20T14:58:27.935Z",
+    "updated_at": "2025-12-02T11:49:29.107Z",
     "categories": [
       3
     ],
     "standard_shifts": []
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 1,
+  "fields": {
+    "category": 2,
+    "name": "House Lager",
+    "slug": "house-lager",
+    "kind": "ingredient",
+    "description": "Crisp and refreshing local lager",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:34.981Z",
+    "updated_at": "2025-11-26T21:44:34.981Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [
+      1
+    ],
+    "merch_products": []
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 2,
+  "fields": {
+    "category": 2,
+    "name": "IPA",
+    "slug": "ipa",
+    "kind": "ingredient",
+    "description": "Hoppy India Pale Ale",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:34.995Z",
+    "updated_at": "2025-11-26T21:44:34.995Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [
+      2
+    ],
+    "merch_products": []
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 3,
+  "fields": {
+    "category": 3,
+    "name": "Margarita",
+    "slug": "margarita",
+    "kind": "ingredient",
+    "description": "Fresh lime margarita on the rocks",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:35.008Z",
+    "updated_at": "2025-11-26T21:44:35.008Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [
+      4
+    ],
+    "merch_products": []
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 4,
+  "fields": {
+    "category": 5,
+    "name": "Nachos",
+    "slug": "nachos",
+    "kind": "ingredient",
+    "description": "Tortilla chips with cheese, jalapeños, and salsa",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:35.021Z",
+    "updated_at": "2025-11-26T21:44:35.021Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [
+      5
+    ],
+    "merch_products": []
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 5,
+  "fields": {
+    "category": 3,
+    "name": "Old Fashioned",
+    "slug": "old-fashioned",
+    "kind": "ingredient",
+    "description": "Classic whiskey cocktail",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:35.035Z",
+    "updated_at": "2025-11-26T21:44:35.035Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [
+      3
+    ],
+    "merch_products": []
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 6,
+  "fields": {
+    "category": 5,
+    "name": "Wings",
+    "slug": "wings",
+    "kind": "ingredient",
+    "description": "Buffalo wings with ranch dressing",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:35.050Z",
+    "updated_at": "2025-11-26T21:44:35.050Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [
+      6
+    ],
+    "merch_products": []
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 7,
+  "fields": {
+    "category": 6,
+    "name": "Hoodie",
+    "slug": "hoodie",
+    "kind": "product",
+    "description": "Cozy hoodie perfect for cold nights",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:35.064Z",
+    "updated_at": "2025-11-26T21:44:35.064Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [],
+    "merch_products": [
+      2
+    ]
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 8,
+  "fields": {
+    "category": 7,
+    "name": "Sticker Pack",
+    "slug": "sticker-pack",
+    "kind": "product",
+    "description": "Set of 5 vinyl stickers",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": "2025-12-05T20:58:59.481Z",
+    "created_at": "2025-11-26T21:44:35.091Z",
+    "updated_at": "2025-11-26T21:44:35.091Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [],
+    "merch_products": [
+      3
+    ]
+  }
+},
+{
+  "model": "inventory.inventoryitem",
+  "pk": 9,
+  "fields": {
+    "category": 6,
+    "name": "Venue T-Shirt",
+    "slug": "venue-t-shirt",
+    "kind": "product",
+    "description": "Classic black t-shirt with venue logo",
+    "location": "",
+    "unit": null,
+    "unit_label": "",
+    "pack_quantity": "1.000",
+    "pack_unit": null,
+    "current_stock": "0.000",
+    "desired_stock": "0.000",
+    "reorder_point": "0.000",
+    "needs_reorder": false,
+    "auto_track_sales": false,
+    "public_visible": false,
+    "public_description": "",
+    "public_url": "",
+    "is_active": true,
+    "last_reorder_at": null,
+    "created_at": "2025-11-26T21:44:35.105Z",
+    "updated_at": "2025-11-26T21:44:35.105Z",
+    "created_by": null,
+    "updated_by": null,
+    "menu_items": [],
+    "merch_products": [
+      1
+    ]
+  }
+},
+{
+  "model": "setup.sitesettings",
+  "pk": 1,
+  "fields": {
+    "mode": "VENUE",
+    "org_name": "Bar Underbelly",
+    "logo": "logos/ACME_KtJ11VZ.svg",
+    "logo_secondary": "logos/CME_with_Text2.png",
+    "icon_pack_filename": "favicon(5).zip",
+    "address_street": "Joseph-Belli-Weg",
+    "address_number": "11",
+    "address_postal_code": "78467",
+    "address_city": "Constance",
+    "address_country": "Germany",
+    "address_autocomplete": false,
+    "contact_email": "test@web.de",
+    "contact_phone": "07531 64984134",
+    "website_url": "https://www.zeit.de/index",
+    "social_facebook": "https://www.zeit.de/index",
+    "social_instagram": "https://www.zeit.de/index",
+    "social_twitter": "https://www.zeit.de/index",
+    "social_tiktok": "https://www.zeit.de/index",
+    "social_youtube": "https://www.zeit.de/index",
+    "social_spotify": "https://www.zeit.de/index",
+    "social_soundcloud": "https://www.zeit.de/index",
+    "social_bandcamp": "https://www.zeit.de/index",
+    "social_linkedin": "https://www.zeit.de/index",
+    "social_mastodon": "https://www.zeit.de/index",
+    "same_as": "",
+    "geo_lat": "47.679120",
+    "geo_lng": "9.163437",
+    "price_range": "$$",
+    "default_currency": "€",
+    "membership_enabled": false,
+    "membership_hint": "",
+    "public_pages_enabled": true,
+    "dev_login_enabled": true,
+    "pos_show_discounts": true,
+    "pos_apply_discounts": true,
+    "pos_show_tax": false,
+    "pos_apply_tax": false,
+    "pos_tax_rate": "19.00",
+    "enabled_languages": [],
+    "required_pages": "",
+    "created_at": "2025-11-20T14:58:27.955Z",
+    "updated_at": "2025-12-06T15:17:27.650Z",
+    "smoking_allowed": null,
+    "pets_allowed_text": "",
+    "typical_age_range": "",
+    "acc_step_free": false,
+    "acc_wheelchair": false,
+    "acc_accessible_wc": false,
+    "acc_visual_aid": false,
+    "acc_service_animals": false,
+    "accessibility_summary": "",
+    "lgbtq_friendly": false,
+    "minors_policy_note": "",
+    "maximum_attendee_capacity": 180,
+    "awareness_team_available": false,
+    "awareness_contact": "",
+    "publish_opening_times": false,
+    "inventory_notification_groups": [],
+    "inventory_dashboard_groups": []
   }
 },
 {
@@ -11647,6 +15269,255 @@
     "updated_at": "2025-11-20T15:48:06.729Z",
     "allowed_groups": [],
     "tags": []
+  }
+},
+{
+  "model": "assets.collection",
+  "pk": 4,
+  "fields": {
+    "title": "Fonts",
+    "slug": "fonts",
+    "parent": null,
+    "visibility_mode": "public",
+    "description": "",
+    "sort_order": 0,
+    "created_at": "2025-12-04T18:54:23.319Z",
+    "updated_at": "2025-12-04T18:54:23.319Z",
+    "allowed_groups": [],
+    "tags": []
+  }
+},
+{
+  "model": "comms.message",
+  "pk": 3,
+  "fields": {
+    "thread": 3,
+    "direction": "internal",
+    "account": null,
+    "sender_user": [
+      "admin"
+    ],
+    "sender_display": "",
+    "received_at": null,
+    "sent_at": "2025-12-04T22:09:03.372Z",
+    "created_at": "2025-12-04T22:09:03.372Z",
+    "message_id": "",
+    "in_reply_to": "",
+    "references": "",
+    "headers": null,
+    "body_text": "Sticker Pack is flagged for reorder.\n\nCurrent stock: 0.000\nDesired stock: 0.000",
+    "body_html_sanitized": "",
+    "has_trackers": false,
+    "size_bytes": null
+  }
+},
+{
+  "model": "comms.message",
+  "pk": 4,
+  "fields": {
+    "thread": 4,
+    "direction": "internal",
+    "account": null,
+    "sender_user": [
+      "admin"
+    ],
+    "sender_display": "",
+    "received_at": null,
+    "sent_at": "2025-12-04T22:53:50.922Z",
+    "created_at": "2025-12-04T22:53:50.922Z",
+    "message_id": "",
+    "in_reply_to": "",
+    "references": "",
+    "headers": null,
+    "body_text": "Sticker Pack is flagged for reorder.\n\nCurrent stock: 0.000\nDesired stock: 0.000",
+    "body_html_sanitized": "",
+    "has_trackers": false,
+    "size_bytes": null
+  }
+},
+{
+  "model": "comms.message",
+  "pk": 5,
+  "fields": {
+    "thread": 5,
+    "direction": "internal",
+    "account": null,
+    "sender_user": [
+      "admin"
+    ],
+    "sender_display": "",
+    "received_at": null,
+    "sent_at": "2025-12-05T20:58:59.491Z",
+    "created_at": "2025-12-05T20:58:59.491Z",
+    "message_id": "",
+    "in_reply_to": "",
+    "references": "",
+    "headers": null,
+    "body_text": "Sticker Pack is flagged for reorder.\n\nCurrent stock: 0.000\nDesired stock: 0.000",
+    "body_html_sanitized": "",
+    "has_trackers": false,
+    "size_bytes": null
+  }
+},
+{
+  "model": "comms.readreceipt",
+  "pk": 3,
+  "fields": {
+    "message": 3,
+    "user": [
+      "admin"
+    ],
+    "read_at": "2025-12-04T22:53:43.029Z"
+  }
+},
+{
+  "model": "comms.audiencelink",
+  "pk": 7,
+  "fields": {
+    "thread": 3,
+    "badge": null,
+    "group": null,
+    "user": [
+      "admin"
+    ],
+    "source": "author"
+  }
+},
+{
+  "model": "comms.audiencelink",
+  "pk": 8,
+  "fields": {
+    "thread": 3,
+    "badge": null,
+    "group": null,
+    "user": [
+      "cliadmin"
+    ],
+    "source": "manual"
+  }
+},
+{
+  "model": "comms.audiencelink",
+  "pk": 9,
+  "fields": {
+    "thread": 4,
+    "badge": null,
+    "group": null,
+    "user": [
+      "admin"
+    ],
+    "source": "author"
+  }
+},
+{
+  "model": "comms.audiencelink",
+  "pk": 10,
+  "fields": {
+    "thread": 4,
+    "badge": null,
+    "group": null,
+    "user": [
+      "cliadmin"
+    ],
+    "source": "manual"
+  }
+},
+{
+  "model": "comms.audiencelink",
+  "pk": 11,
+  "fields": {
+    "thread": 5,
+    "badge": null,
+    "group": null,
+    "user": [
+      "admin"
+    ],
+    "source": "author"
+  }
+},
+{
+  "model": "comms.audiencelink",
+  "pk": 12,
+  "fields": {
+    "thread": 5,
+    "badge": null,
+    "group": null,
+    "user": [
+      "cliadmin"
+    ],
+    "source": "manual"
+  }
+},
+{
+  "model": "comms.internaltarget",
+  "pk": 5,
+  "fields": {
+    "thread": 3,
+    "badge": null,
+    "group": null,
+    "user": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "comms.internaltarget",
+  "pk": 6,
+  "fields": {
+    "thread": 3,
+    "badge": null,
+    "group": null,
+    "user": [
+      "cliadmin"
+    ]
+  }
+},
+{
+  "model": "comms.internaltarget",
+  "pk": 7,
+  "fields": {
+    "thread": 4,
+    "badge": null,
+    "group": null,
+    "user": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "comms.internaltarget",
+  "pk": 8,
+  "fields": {
+    "thread": 4,
+    "badge": null,
+    "group": null,
+    "user": [
+      "cliadmin"
+    ]
+  }
+},
+{
+  "model": "comms.internaltarget",
+  "pk": 9,
+  "fields": {
+    "thread": 5,
+    "badge": null,
+    "group": null,
+    "user": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "comms.internaltarget",
+  "pk": 10,
+  "fields": {
+    "thread": 5,
+    "badge": null,
+    "group": null,
+    "user": [
+      "cliadmin"
+    ]
   }
 }
 ]

@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import activate
@@ -25,12 +27,14 @@ def set_language(request):
     if lang_code and lang_code in dict(settings.LANGUAGES):
         activate(lang_code)
 
-        # If we're on a public page (language-prefixed), redirect to home in new language
-        if next_url and any(f"/{lang}/" in next_url for lang, _ in settings.LANGUAGES):
-            # Redirect to home page in the selected language
+        # Determine whether the target URL is a public page by inspecting its path.
+        parsed = urlparse(next_url or "")
+        path = parsed.path or ""
+        first_segment = path.strip("/").split("/", 1)[0] if path else ""
+        public_languages = {code for code, _ in settings.LANGUAGES}
+        if first_segment in public_languages:
             response = HttpResponseRedirect(f"/{lang_code}/")
         else:
-            # For CMS/admin pages, stay on same page (no language prefix in URL)
             response = HttpResponseRedirect(next_url or "/")
 
         # Set language cookie

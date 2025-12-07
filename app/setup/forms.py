@@ -44,6 +44,13 @@ def _update_widget(field: forms.Field, **attrs) -> None:
 class SettingsForm(ModelForm):
     """Primary form for global site settings."""
 
+    enabled_languages = forms.MultipleChoiceField(
+        required=False,
+        choices=dj_settings.LANGUAGES,
+        widget=forms.CheckboxSelectMultiple,
+        label="Enabled languages",
+        help_text="Uncheck a language to hide it from both the public site and the CMS language switcher.",
+    )
     currency_text = forms.CharField(
         required=False,
         help_text="Pick from list or type your own.",
@@ -99,6 +106,7 @@ class SettingsForm(ModelForm):
             "publish_opening_times",
             "public_pages_enabled",
             "dev_login_enabled",
+            "enabled_languages",
             "pos_show_discounts",
             "pos_apply_discounts",
             "pos_show_tax",
@@ -228,6 +236,14 @@ class SettingsForm(ModelForm):
         if getattr(self.instance, "icon_pack_filename", ""):
             self.fields["icon_pack"].widget.attrs["data-current"] = self.instance.icon_pack_filename
 
+        if "enabled_languages" in self.fields:
+            if getattr(self.instance, "enabled_languages", None):
+                initial_langs = list(getattr(self.instance, "enabled_languages", []))
+            else:
+                initial_langs = [code for code, _ in dj_settings.LANGUAGES]
+            self.initial["enabled_languages"] = initial_langs
+            self.fields["enabled_languages"].initial = initial_langs
+
         self.fields["currency_text"].initial = (
             self.instance.default_currency or guess_default_currency()
         )
@@ -292,6 +308,18 @@ class SettingsForm(ModelForm):
             return self._quantize_coord(value)
         except Exception:
             raise forms.ValidationError("Enter a valid longitude with up to 6 decimals.")
+
+    def clean_enabled_languages(self):
+        """
+        Persist selected languages as a list. Returning [] signals that all languages are allowed.
+        If the user keeps every language selected, collapse back to [] so new languages appear automatically.
+        """
+        values = self.cleaned_data.get("enabled_languages") or []
+        selected = set(values)
+        all_codes = {code for code, _ in dj_settings.LANGUAGES}
+        if all_codes and selected == all_codes:
+            return []
+        return list(values)
 
     def clean(self):
         data = super().clean()

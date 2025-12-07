@@ -42,6 +42,7 @@ urlpatterns = [
     path("cms/assets/", include("app.assets.urls")),
     path("cms/inbox/", include(("app.comms.urls", "comms"), namespace="comms")),
     path("cms/pos/", include("app.pos.urls", namespace="pos")),
+    path("", include(("app.bands.urls", "bands"), namespace="bands")),
 ]
 
 # Language-prefixed URLs (public-facing content)
@@ -51,8 +52,6 @@ urlpatterns += i18n_patterns(
     path("", include(("app.pages.urls_public", "public"), namespace="public")),
     # Public merch (e.g. /en/shop/…, /es/tienda/…)
     path("", include(("app.merch.urls_public", "merch_public"), namespace="merch_public")),
-    # Public bands pages
-    path("", include("app.bands.urls", namespace="bands")),
     path("", include("app.bands.public_urls", namespace="bands_pub")),
     prefix_default_language=True,  # Include /en/ prefix for English too
 )

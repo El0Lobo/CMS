@@ -4,40 +4,101 @@
 
 .page-builder {
   border: 1px solid var(--line, #233040);
-  border-radius: 14px;
-  background: rgba(15, 20, 25, 0.7);
-  backdrop-filter: blur(10px);
-  padding: 0;
-  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(13, 17, 24, 0.75);
+  backdrop-filter: blur(16px);
+  padding: 1.25rem;
   color: inherit;
 }
 
-.page-builder__columns {
+.page-builder__layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 280px;
-  min-height: 520px;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1.5fr) minmax(240px, 300px);
+  gap: 1.25rem;
+  align-items: start;
 }
 
-.page-builder__library,
-.page-builder__settings {
-  padding: 1.5rem;
-  background: rgba(17, 24, 32, 0.92);
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
+@media (max-width: 1400px) {
+  .page-builder__layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+
+  .builder-column--settings {
+    grid-column: span 2;
+  }
+}
+
+.builder-column {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 100%;
 }
 
-.page-builder__settings {
-  border-right: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.04);
-  background: rgba(17, 24, 32, 0.85);
+.builder-panel {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(15, 23, 42, 0.58);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-.page-builder__library h2,
-.page-builder__settings h2 {
+.builder-panel--library {
+  max-height: 380px;
+  overflow: hidden;
+}
+
+.builder-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.builder-panel__header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+}
+
+.builder-panel__header .muted {
+  margin: 0;
+}
+
+.builder-panel--structure {
+  min-height: 320px;
+}
+
+.builder-panel--settings {
+  min-height: 320px;
+}
+
+.builder-panel--library .builder-library-list {
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.builder-panel--structure .builder-blocks__list {
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.builder-column--center .builder-preview {
+  height: 100%;
+}
+
+[data-scroll-target] {
+  white-space: nowrap;
+}
+
+.builder-column--settings {
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+  padding-right: 0.35rem;
 }
 
 .builder-library-list {
@@ -55,6 +116,7 @@
   border: 1px dashed rgba(255, 255, 255, 0.12);
   cursor: pointer;
   transition: background 0.15s ease, border 0.15s ease, transform 0.1s ease;
+  color: antiquewhite;
 }
 
 .builder-library-item:hover {
@@ -65,36 +127,6 @@
 
 .builder-library-item__icon {
   font-size: 1.35rem;
-}
-
-.page-builder__workspace {
-  padding: 1.5rem;
-  display: grid;
-  grid-template-rows: min-content 1fr;
-  gap: 1.5rem;
-  overflow: hidden;
-}
-
-.builder-blocks {
-  background: rgba(12, 17, 23, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.builder-blocks__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.9rem;
-}
-
-.builder-blocks__header h2 {
-  margin: 0;
-  font-size: 1.05rem;
 }
 
 .builder-blocks__list {
@@ -208,7 +240,6 @@
 }
 
 .builder-preview__canvas {
-  padding: 1.25rem;
   background: rgba(6, 12, 18, 0.55);
 }
 
@@ -217,7 +248,6 @@
   max-width: 100%;
   background: #050a0f;
   border-radius: 18px;
-  padding: 1rem;
   overflow: hidden;
   aspect-ratio: 16 / 10;
   display: flex;
@@ -296,22 +326,9 @@
 }
 
 .builder-theme-panel {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  margin-bottom: 1rem;
-}
-
-.builder-theme-panel h3 {
-  margin: 0;
-}
-
-.builder-theme-panel p.muted {
-  margin: 0;
 }
 
 .builder-theme-section {
@@ -468,6 +485,24 @@
 }
 
 .builder-style-popover__color .btn {
+  flex: 0 0 auto;
+}
+
+.builder-style-popover__font-asset,
+.builder-font-asset-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.builder-style-popover__font-asset select,
+.builder-font-asset-controls select {
+  flex: 1 1 160px;
+}
+
+.builder-style-popover__font-asset .btn,
+.builder-font-asset-controls .btn {
   flex: 0 0 auto;
 }
 

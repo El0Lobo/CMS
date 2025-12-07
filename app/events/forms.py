@@ -8,6 +8,7 @@ from django import forms
 from django.db import models
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
 
 from app.bands.models import Band
@@ -111,7 +112,7 @@ class EventForm(forms.ModelForm):
             ]:
                 if field_name in self.fields:
                     self.fields[field_name].disabled = True
-                    self.fields[field_name].help_text = "Managed by the recurring series."
+            self.fields[field_name].help_text = _("Managed by the recurring series.")
             if "recurrence_frequency" in self.fields:
                 self.initial.setdefault("recurrence_frequency", Event.RecurrenceFrequency.NONE)
 
@@ -175,7 +176,7 @@ class EventForm(forms.ModelForm):
             self.initial.setdefault("curfew_at", to_naive(default_curfew))
 
         # Provide nicer help-text for empty slug
-        self.fields["slug"].help_text = "Leave blank to auto-generate from the title."
+        self.fields["slug"].help_text = _("Leave blank to auto-generate from the title.")
         if "categories" in self.fields:
             self.fields["categories"].queryset = EventCategory.objects.order_by("name")
             self.fields["categories"].widget.attrs.update({"data-allow-search": "true"})
@@ -784,7 +785,7 @@ class HolidayWindowForm(forms.ModelForm):
         start = cleaned.get("starts_at")
         end = cleaned.get("ends_at")
         if start and end and end <= start:
-            self.add_error("ends_at", "End must be after the start.")
+            self.add_error("ends_at", _("End must be after the start."))
         return cleaned
 
     def save(self, commit: bool = True):
@@ -800,18 +801,18 @@ class HolidayWindowForm(forms.ModelForm):
 
 class EventFilterForm(forms.Form):
     class Timeframe(models.TextChoices):
-        WEEK = "week", "This week"
-        MONTH = "month", "This month"
-        YEAR = "year", "This year"
-        ALL = "all", "All"
+        WEEK = "week", _("This week")
+        MONTH = "month", _("This month")
+        YEAR = "year", _("This year")
+        ALL = "all", _("All")
 
-    q = forms.CharField(required=False, label="Search title")
+    q = forms.CharField(required=False, label=_("Search title"))
     timeframe = forms.ChoiceField(choices=Timeframe.choices, initial=Timeframe.MONTH)
-    include_past = forms.BooleanField(required=False, initial=False, label="Include past events")
+    include_past = forms.BooleanField(required=False, initial=False, label=_("Include past events"))
     period_offset = forms.IntegerField(required=False, widget=forms.HiddenInput(), initial=0)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "q" in self.fields:
-            self.fields["q"].widget.attrs.setdefault("placeholder", "Search title...")
+            self.fields["q"].widget.attrs.setdefault("placeholder", _("Search title..."))
             self.fields["q"].widget.attrs.setdefault("type", "search")
