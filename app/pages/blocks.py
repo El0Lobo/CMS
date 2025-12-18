@@ -4,10 +4,14 @@ import hashlib
 import os
 import re
 from copy import deepcopy
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from django.conf import settings
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.text import slugify
 
 from app.setup.models import SiteSettings
 
@@ -15,6 +19,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 from . import data_sources
+from .structured_data import (
+    build_event_structured_data,
+    build_map_structured_data,
+    build_menu_structured_data,
+)
 
 Block = dict[str, Any]
 Context = dict[str, Any]
@@ -26,6 +35,15 @@ STYLE_FONT_STACKS = {
     "serif": 'Georgia, "Times New Roman", serif',
     "mono": 'ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace',
     "display": '"Oswald", "Archivo Black", "Arial Narrow", sans-serif',
+    "press_start": '"Press Start 2P", cursive, "Courier New", monospace',
+    "archivo_black": '"Archivo Black", "Arial Black", sans-serif',
+    "glass_antiqua": '"Glass Antiqua", "Comic Sans MS", cursive',
+    "im_fell": '"IM Fell DW Pica", Georgia, serif',
+    "orbitron": '"Orbitron", "Segoe UI", sans-serif',
+    "pathway_extreme": '"Pathway Extreme", "Raleway", sans-serif',
+    "raleway": '"Raleway", "Helvetica Neue", sans-serif',
+    "special_elite": '"Special Elite", "Courier New", monospace',
+    "staatliches": '"Staatliches", "Archivo Black", sans-serif',
 }
 
 STYLE_FONT_SIZES = {
@@ -60,6 +78,50 @@ def _resolve_media(request, url: str | None) -> str | None:
     if request and url.startswith("/"):
         return request.build_absolute_uri(url)
     return url
+
+
+def _format_file_size(value: Any) -> str:
+    try:
+        size = int(value)
+    except (TypeError, ValueError):
+        return ""
+    if size <= 0:
+        return ""
+    if size < 1024:
+        return f"{size} B"
+    units = ["KB", "MB", "GB", "TB"]
+    result = float(size)
+    unit = "KB"
+    for label in units:
+        result /= 1024
+        unit = label
+        if result < 1024:
+            break
+    return f"{result:.1f} {unit}" if result < 10 else f"{int(result)} {unit}"
+
+
+def _format_duration(value: Any) -> str:
+    try:
+        seconds = int(float(value))
+    except (TypeError, ValueError):
+        return ""
+    if seconds <= 0:
+        return ""
+    hours, remainder = divmod(seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours:
+        return f"{hours:d}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:d}:{secs:02d}"
+
+
+def _block_element_id(block: Block | None, prefix: str) -> str:
+    raw = ""
+    if isinstance(block, dict):
+        raw = str(block.get("id") or block.get("pk") or "")
+    if not raw:
+        raw = "block"
+    safe = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw).strip("-") or "block"
+    return f"{prefix}-{safe}"
 
 
 def _clean_hex_color(value: Any) -> str:
@@ -275,6 +337,32 @@ def render_block(
     return renderer(context=context, request=request)
 
 
+def _prepare_asset_entries(items: Any) -> tuple[list[dict[str, Any]], list[int]]:
+    entries: list[dict[str, Any]] = []
+    ids: list[int] = []
+    for raw in items or []:
+        if not isinstance(raw, dict):
+            continue
+        asset_meta = raw.get("asset")
+        if not isinstance(asset_meta, dict):
+            asset_meta = {}
+        asset_id = asset_meta.get("id") or raw.get("asset_id")
+        try:
+            asset_id_int = int(asset_id)
+        except (TypeError, ValueError):
+            asset_id_int = None
+        if asset_id_int:
+            ids.append(asset_id_int)
+        entries.append(
+            {
+                "asset_id": asset_id_int,
+                "asset_meta": asset_meta,
+                "data": raw,
+            }
+        )
+    return entries, ids
+
+
 def _render_template(template_name: str, context: Context, request=None) -> str:
     return render_to_string(template_name, context, request=request)
 
@@ -302,13 +390,63 @@ def _events_renderer(*, context: Context, request=None) -> str:
         event["hero_image"] = _resolve_media(request, event.get("hero_image"))
         if request and event.get("url") and event["url"].startswith("/"):
             event["url"] = request.build_absolute_uri(event["url"])
+    structured_data_list = context.get("structured_data")
+    if isinstance(structured_data_list, list) and events:
+        site_context = data_sources.get_site_context()
+        structured_data_list.extend(
+            build_event_structured_data(events, site_context=site_context)
+        )
     context = {**context, "events": events}
     return _render_template("pages/blocks/events.html", context, request=request)
+
+
+def _news_latest_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    posts = data_sources.get_recent_news(
+        limit=int(props.get("limit") or 3),
+        category=(props.get("category") or "").strip() or None,
+    )
+    for post in posts:
+        if request and post.get("url", "").startswith("/"):
+            post["url"] = request.build_absolute_uri(post["url"])
+    default_link = reverse("news_public:public_news_index")
+    link_href = props.get("link_href") or default_link
+    if request and link_href.startswith("/"):
+        link_href = request.build_absolute_uri(link_href)
+    context = {**context, "posts": posts, "cta_url": link_href}
+    return _render_template("pages/blocks/news_latest.html", context, request=request)
+
+
+def _news_archive_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    posts = data_sources.get_recent_news(
+        limit=int(props.get("limit") or 6),
+        category=(props.get("category") or "").strip() or None,
+    )
+    for post in posts:
+        if request and post.get("url", "").startswith("/"):
+            post["url"] = request.build_absolute_uri(post["url"])
+    categories = data_sources.get_news_categories()
+    news_url = reverse("news_public:public_news_index")
+    if request and news_url.startswith("/"):
+        news_url = request.build_absolute_uri(news_url)
+    context = {**context, "posts": posts, "categories": categories, "news_url": news_url}
+    return _render_template("pages/blocks/news_archive.html", context, request=request)
 
 
 def _menu_renderer(*, context: Context, request=None) -> str:
     props = context["props"]
     categories = data_sources.get_menu_structure(props.get("category_slugs"))
+    structured_data_list = context.get("structured_data")
+    if isinstance(structured_data_list, list):
+        site_context = data_sources.get_site_context()
+        menu_ld = build_menu_structured_data(
+            categories,
+            site_context=site_context,
+            title=(props.get("title") or "").strip() or None,
+        )
+        if menu_ld:
+            structured_data_list.append(menu_ld)
     context = {**context, "categories": categories}
     return _render_template("pages/blocks/menu.html", context, request=request)
 
@@ -574,6 +712,132 @@ def _gallery_renderer(*, context: Context, request=None) -> str:
     return _render_template("pages/blocks/gallery.html", context, request=request)
 
 
+def _media_carousel_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    entries, asset_ids = _prepare_asset_entries(props.get("items"))
+    asset_map = data_sources.get_public_assets_by_ids(asset_ids)
+    resolved: list[dict[str, Any]] = []
+    for entry in entries:
+        asset_id = entry["asset_id"]
+        if asset_id and asset_id not in asset_map:
+            continue
+        asset_data = asset_map.get(asset_id) if asset_id else entry["asset_meta"]
+        if not asset_data:
+            continue
+        url = _resolve_media(request, asset_data.get("url"))
+        if not url:
+            continue
+        payload = entry["data"]
+        resolved.append(
+            {
+                "id": asset_id or f"slide-{len(resolved)}",
+                "url": url,
+                "kind": asset_data.get("kind") or "other",
+                "title": asset_data.get("title") or payload.get("caption") or "Media",
+                "caption": (payload.get("caption") or "").strip(),
+                "description": (payload.get("description") or "").strip(),
+                "cta_label": (payload.get("cta_label") or "").strip(),
+                "cta_url": (payload.get("cta_url") or "").strip(),
+                "width": asset_data.get("width"),
+                "height": asset_data.get("height"),
+            }
+        )
+    try:
+        interval = int(props.get("autoplay_interval") or 6)
+        interval = max(3, min(interval, 60))
+    except (TypeError, ValueError):
+        interval = 6
+    carousel_id = _block_element_id(context.get("block"), "carousel")
+    context = {
+        **context,
+        "items": resolved,
+        "carousel_id": carousel_id,
+        "autoplay": bool(props.get("autoplay")),
+        "autoplay_interval": interval,
+        "show_thumbnails": bool(props.get("show_thumbnails", True)),
+    }
+    return _render_template("pages/blocks/media_carousel.html", context, request=request)
+
+
+def _media_player_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    entries, asset_ids = _prepare_asset_entries(props.get("items"))
+    asset_map = data_sources.get_public_assets_by_ids(asset_ids)
+    resolved: list[dict[str, Any]] = []
+    for entry in entries:
+        asset_id = entry["asset_id"]
+        if asset_id and asset_id not in asset_map:
+            continue
+        asset_data = asset_map.get(asset_id) if asset_id else entry["asset_meta"]
+        if not asset_data:
+            continue
+        url = _resolve_media(request, asset_data.get("url"))
+        if not url:
+            continue
+        payload = entry["data"]
+        kind = asset_data.get("kind") or "other"
+        resolved.append(
+            {
+                "id": asset_id or f"media-{len(resolved)}",
+                "url": url,
+                "kind": kind,
+                "kind_label": kind.capitalize(),
+                "display_title": (payload.get("title") or asset_data.get("title") or "Media").strip(),
+                "description": (payload.get("description") or asset_data.get("description") or "").strip(),
+                "size_label": _format_file_size(asset_data.get("size_bytes")),
+                "duration_label": _format_duration(asset_data.get("duration_seconds")),
+            }
+        )
+    layout = props.get("layout") if props.get("layout") in {"grid", "list"} else "list"
+    context = {
+        **context,
+        "items": resolved,
+        "layout": layout,
+        "show_downloads": bool(props.get("show_downloads")),
+    }
+    return _render_template("pages/blocks/media_player.html", context, request=request)
+
+
+def _download_list_renderer(*, context: Context, request=None) -> str:
+    props = context["props"]
+    entries, asset_ids = _prepare_asset_entries(props.get("items"))
+    asset_map = data_sources.get_public_assets_by_ids(asset_ids)
+    resolved: list[dict[str, Any]] = []
+    for entry in entries:
+        asset_id = entry["asset_id"]
+        if asset_id and asset_id not in asset_map:
+            continue
+        asset_data = asset_map.get(asset_id) if asset_id else entry["asset_meta"]
+        if not asset_data:
+            continue
+        url = _resolve_media(request, asset_data.get("url"))
+        if not url:
+            continue
+        payload = entry["data"]
+        label = (payload.get("label") or asset_data.get("title") or "Download").strip()
+        resolved.append(
+            {
+                "id": asset_id or f"download-{len(resolved)}",
+                "url": url,
+                "kind": asset_data.get("kind") or "other",
+                "label": label or "Download",
+                "description": (payload.get("description") or asset_data.get("description") or "").strip(),
+                "size_label": _format_file_size(asset_data.get("size_bytes")),
+                "duration_label": _format_duration(asset_data.get("duration_seconds")),
+                "button_label": (payload.get("button_label") or "Download").strip() or "Download",
+                "mime_type": asset_data.get("mime_type"),
+                "width": asset_data.get("width"),
+                "height": asset_data.get("height"),
+            }
+        )
+    context = {
+        **context,
+        "items": resolved,
+        "show_icons": bool(props.get("show_icons", True)),
+    }
+    return _render_template("pages/blocks/download_list.html", context, request=request)
+
+
 def _inventory_renderer(*, context: Context, request=None) -> str:
     props = context["props"]
     categories = props.get("category_slugs")
@@ -634,6 +898,21 @@ def _map_renderer(*, context: Context, request=None) -> str:
             cleaned.append({"label": label, "details": details})
         return cleaned
 
+    structured_data_list = context.get("structured_data")
+    if isinstance(structured_data_list, list):
+        map_url = None
+        page_url = context.get("page_url")
+        if page_url:
+            map_url = f"{page_url}#{map_id}"
+        place_payload = build_map_structured_data(
+            site_context=site,
+            address_override=address_override or None,
+            latitude=lat_value,
+            longitude=lon_value,
+            map_url=map_url,
+        )
+        if place_payload:
+            structured_data_list.append(place_payload)
     context = {
         **context,
         "map_id": map_id,
@@ -648,6 +927,25 @@ def _map_renderer(*, context: Context, request=None) -> str:
     return _render_template("pages/blocks/map.html", context, request=request)
 
 
+def _list_theme_media(subdir: str) -> list[dict[str, str]]:
+    media_root = getattr(settings, "MEDIA_ROOT", "")
+    media_url = getattr(settings, "MEDIA_URL", "")
+    if not media_root or not media_url:
+        return []
+    directory = Path(media_root) / subdir
+    if not directory.exists():
+        return []
+    options: list[dict[str, str]] = []
+    for path in sorted(directory.iterdir()):
+        if not path.is_file():
+            continue
+        slug = slugify(path.stem) or path.stem
+        url = f"{media_url.rstrip('/')}/{subdir.strip('/')}/{path.name}"
+        label = path.stem.replace("_", " ").title()
+        options.append({"value": f"{subdir}-{slug}", "label": label, "url": url})
+    return options
+
+
 def _navigation_renderer(*, context: Context, request=None) -> str:
     props = context["props"]
     from .navigation import build_nav_payload, get_navigation_entries, serialize_nav_entries
@@ -657,9 +955,12 @@ def _navigation_renderer(*, context: Context, request=None) -> str:
     site = data_sources.get_site_context()
     logo_source = props.get("logo_image") or site.get("logo")
     logo = _resolve_media(request, logo_source)
-    override_links = props.get("links") or context.get("nav_override") or []
-    if override_links:
+    override_links = props.get("links")
+    context_override = context.get("nav_override") or []
+    if isinstance(override_links, list) and any(override_links):
         nav_entries = build_nav_payload(override_links)
+    elif context_override:
+        nav_entries = build_nav_payload(context_override)
     else:
         nav_entries = serialize_nav_entries(get_navigation_entries())
     enabled_languages = SiteSettings.get_solo().get_enabled_languages()
@@ -670,6 +971,8 @@ def _navigation_renderer(*, context: Context, request=None) -> str:
         "logo": logo,
         "nav_items": nav_entries,
         "enabled_languages": enabled_languages,
+        "theme_backgrounds": _list_theme_media("bg-images"),
+        "theme_textures": _list_theme_media("textures"),
     }
     return _render_template("pages/blocks/navigation.html", context, request=request)
 
@@ -678,11 +981,16 @@ BLOCK_RENDERERS = {
     "hero": _hero_renderer,
     "rich_text": _rich_text_renderer,
     "events": _events_renderer,
+    "news_latest": _news_latest_renderer,
+    "news_archive": _news_archive_renderer,
     "menu": _menu_renderer,
     "opening_hours": _opening_hours_renderer,
     "contact": _contact_renderer,
     "footer": _footer_renderer,
     "gallery": _gallery_renderer,
+    "media_carousel": _media_carousel_renderer,
+    "media_player": _media_player_renderer,
+    "download_list": _download_list_renderer,
     "inventory": _inventory_renderer,
     "navigation": _navigation_renderer,
     "map": _map_renderer,

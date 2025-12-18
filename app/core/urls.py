@@ -26,7 +26,7 @@ urlpatterns = [
     path("cms/", include("app.cms.urls")),
     path("cms/pages/", include("app.pages.urls")),
     path("cms/ckeditor5/", include("django_ckeditor_5.urls")),
-    path("cms/blog/", include("app.blog.urls")),
+    path("cms/news/", include("app.news.urls")),
     path("cms/events/", include("app.events.urls")),
     path("cms/shifts/", include("app.shifts.urls")),
     path("cms/door/", include("app.door.urls")),
@@ -52,6 +52,7 @@ urlpatterns += i18n_patterns(
     path("", include(("app.pages.urls_public", "public"), namespace="public")),
     # Public merch (e.g. /en/shop/…, /es/tienda/…)
     path("", include(("app.merch.urls_public", "merch_public"), namespace="merch_public")),
+    path("", include(("app.news.public_urls", "news_public"), namespace="news_public")),
     path("", include("app.bands.public_urls", namespace="bands_pub")),
     prefix_default_language=True,  # Include /en/ prefix for English too
 )

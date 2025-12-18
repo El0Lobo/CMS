@@ -14,7 +14,7 @@ They read data from the `SiteSettings` context processor:
 Suggested URL mapping (adjust to your apps):
 - /               -> public/home.html
 - /events/        -> public/events.html   (expects `events` in context)
-- /blog/          -> public/blog.html     (expects `posts` in context)
+- /news/          -> news/public_index.html     (expects `page_obj` in context)
 - /about/         -> public/about.html
 - /contact/       -> public/contact.html
 - /menu/          -> public/menu.html     (expects `menu_sections`)

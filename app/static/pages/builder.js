@@ -20,6 +20,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "hero",
     icon: "🌄",
     label: "Hero banner",
+    category: "story",
     description: "Large hero with background image and primary call-to-actions.",
     defaults: {
       kicker: "",
@@ -92,6 +93,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "navigation",
     icon: "🧭",
     label: "Navigation bar",
+    category: "navigation",
     description: "Configure the main site navigation (brand link + menu).",
     defaults: {
       enabled: true,
@@ -101,6 +103,7 @@ const DEFAULT_BLOCK_LIBRARY = [
       logo_image: "",
       logo_width: null,
       show_language_switcher: true,
+      show_theme_switcher: false,
       layout: "center",
       links: [],
     },
@@ -147,6 +150,12 @@ const DEFAULT_BLOCK_LIBRARY = [
       },
       { key: "show_language_switcher", type: "toggle", label: "Show language switcher" },
       {
+        key: "show_theme_switcher",
+        type: "toggle",
+        label: "Show theme switcher",
+        help: "Adds a visitor theme selector (Standard look, 80s, Neobrutalism).",
+      },
+      {
         key: "links",
         type: "navlinks",
         label: "Navigation links",
@@ -162,6 +171,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "rich_text",
     icon: "✍️",
     label: "Rich text",
+    category: "content",
     description: "Free-form HTML section for detailed copy.",
     defaults: {
       html: "<p>Write your story here. This block accepts standard HTML.</p>",
@@ -180,6 +190,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "events",
     icon: "🎟️",
     label: "Events",
+    category: "data",
     description: "Showcase upcoming events pulled from the CMS schedule.",
     defaults: {
       title: "Upcoming events",
@@ -222,9 +233,74 @@ const DEFAULT_BLOCK_LIBRARY = [
     ],
   },
   {
+    type: "news_latest",
+    icon: "📰",
+    label: "Latest news",
+    category: "data",
+    description: "Compact teaser of recent public news posts.",
+    defaults: {
+      title: "Latest news",
+      subtitle: "",
+      limit: 3,
+      category: "",
+      link_label: "View all news",
+      link_href: "/news/",
+    },
+    fields: [
+      { key: "title", type: "text", label: "Section title" },
+      { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
+      { key: "limit", type: "number", label: "Items to show", min: 1, max: 6 },
+      {
+        key: "category",
+        type: "text",
+        label: "Category filter",
+        help: "Optional category name to filter posts.",
+      },
+      { key: "link_label", type: "text", label: "CTA label" },
+      { key: "link_href", type: "url", label: "CTA link" },
+    ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Subtitle" },
+    ],
+  },
+  {
+    type: "news_archive",
+    icon: "🗂️",
+    label: "News archive",
+    category: "data",
+    description: "Large module listing public news with filters and search.",
+    defaults: {
+      title: "News & updates",
+      subtitle: "",
+      show_search: true,
+      show_filters: true,
+      category: "",
+      limit: 6,
+    },
+    fields: [
+      { key: "title", type: "text", label: "Section title" },
+      { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
+      { key: "limit", type: "number", label: "Initial items", min: 3, max: 12 },
+      { key: "show_search", type: "toggle", label: "Enable search input" },
+      { key: "show_filters", type: "toggle", label: "Show category filters" },
+      {
+        key: "category",
+        type: "text",
+        label: "Restrict to category",
+        help: "Leave blank to include all categories.",
+      },
+    ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Subtitle" },
+    ],
+  },
+  {
     type: "menu",
     icon: "🍹",
     label: "Menu",
+    category: "data",
     description: "Highlight menu categories or dishes from the POS menu.",
     defaults: {
       title: "Menu highlights",
@@ -250,6 +326,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "opening_hours",
     icon: "⏰",
     label: "Opening hours",
+    category: "contact",
     description: "Display the structured opening hours from site settings.",
     defaults: {
       title: "Opening hours",
@@ -270,6 +347,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "contact",
     icon: "☎️",
     label: "Contact",
+    category: "contact",
     description: "Contact details and social links sourced from site settings.",
     defaults: {
       contact_fields: null,
@@ -299,6 +377,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "inventory",
     icon: "📦",
     label: "Inventory list",
+    category: "data",
     description: "List publicly visible inventory items such as board games or gear.",
     defaults: {
       title: "Available gear",
@@ -324,6 +403,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "map",
     icon: "🗺️",
     label: "OpenStreetMap",
+    category: "contact",
     description: "Embed an interactive OpenStreetMap with directions and nearby options.",
     defaults: {
       title: "Find us",
@@ -434,6 +514,7 @@ const DEFAULT_BLOCK_LIBRARY = [
     type: "gallery",
     icon: "🖼️",
     label: "Gallery",
+    category: "media",
     description: "Grid of images with optional captions.",
     defaults: {
       title: "Gallery",
@@ -464,9 +545,170 @@ const DEFAULT_BLOCK_LIBRARY = [
     ],
   },
   {
+    type: "media_carousel",
+    icon: "📽️",
+    label: "Media carousel",
+    category: "media",
+    description: "Full-bleed carousel for images or videos from digital assets.",
+    defaults: {
+      title: "Featured media",
+      subtitle: "",
+      autoplay: false,
+      autoplay_interval: 6,
+      show_thumbnails: true,
+      items: [],
+    },
+    fields: [
+      { key: "title", type: "text", label: "Section title" },
+      { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
+      { key: "autoplay", type: "toggle", label: "Autoplay slides" },
+      {
+        key: "autoplay_interval",
+        type: "number",
+        label: "Autoplay interval (seconds)",
+        min: 3,
+        max: 30,
+        step: 1,
+        disabledWhen: { key: "autoplay", value: false },
+      },
+      { key: "show_thumbnails", type: "toggle", label: "Show thumbnails" },
+      {
+        key: "items",
+        type: "list",
+        label: "Slides",
+        itemLabel: "Slide",
+        itemDefaults: {
+          asset: null,
+          caption: "",
+          description: "",
+          cta_label: "",
+          cta_url: "",
+        },
+        itemFields: [
+          {
+            key: "asset",
+            type: "asset",
+            label: "Media asset",
+            assetKinds: ["image", "video"],
+            allowUpload: true,
+          },
+          { key: "caption", type: "text", label: "Caption" },
+          { key: "description", type: "textarea", label: "Description", rows: 2 },
+          { key: "cta_label", type: "text", label: "Button label" },
+          { key: "cta_url", type: "url", label: "Button link" },
+        ],
+      },
+    ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
+    ],
+  },
+  {
+    type: "media_player",
+    icon: "🎧",
+    label: "Media player",
+    category: "media",
+    description: "Playlist of uploaded audio or video assets with inline players.",
+    defaults: {
+      title: "Listen & watch",
+      subtitle: "",
+      layout: "list",
+      show_downloads: false,
+      items: [],
+    },
+    fields: [
+      { key: "title", type: "text", label: "Section title" },
+      { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
+      {
+        key: "layout",
+        type: "select",
+        label: "Layout",
+        options: [
+          { value: "list", label: "Stacked list" },
+          { value: "grid", label: "Grid" },
+        ],
+      },
+      { key: "show_downloads", type: "toggle", label: "Show download links" },
+      {
+        key: "items",
+        type: "list",
+        label: "Tracks",
+        itemLabel: "Track",
+        itemDefaults: {
+          asset: null,
+          title: "",
+          description: "",
+        },
+        itemFields: [
+          {
+            key: "asset",
+            type: "asset",
+            label: "Audio or video asset",
+            assetKinds: ["audio", "video"],
+            allowUpload: true,
+          },
+          { key: "title", type: "text", label: "Display title" },
+          { key: "description", type: "textarea", label: "Description", rows: 2 },
+        ],
+      },
+    ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
+    ],
+  },
+  {
+    type: "download_list",
+    icon: "⬇️",
+    label: "Download list",
+    category: "media",
+    description: "Curated list of downloadable assets with optional previews.",
+    defaults: {
+      title: "Downloads",
+      subtitle: "",
+      show_icons: true,
+      items: [],
+    },
+    fields: [
+      { key: "title", type: "text", label: "Section title" },
+      { key: "subtitle", type: "textarea", label: "Subtitle", rows: 2 },
+      { key: "show_icons", type: "toggle", label: "Show file type icons" },
+      {
+        key: "items",
+        type: "list",
+        label: "Downloads",
+        itemLabel: "Asset",
+        itemDefaults: {
+          asset: null,
+          label: "",
+          description: "",
+          button_label: "Download",
+        },
+        itemFields: [
+          {
+            key: "asset",
+            type: "asset",
+            label: "Asset",
+            assetKinds: [],
+            allowUpload: true,
+          },
+          { key: "label", type: "text", label: "Title override" },
+          { key: "description", type: "textarea", label: "Description", rows: 2 },
+          { key: "button_label", type: "text", label: "Button label" },
+        ],
+      },
+    ],
+    styleTargets: [
+      { key: "title", label: "Section title" },
+      { key: "subtitle", label: "Section subtitle" },
+    ],
+  },
+  {
     type: "footer",
     icon: "🦶",
     label: "Footer",
+    category: "navigation",
     description: "Layered footer with brand story, navigation, legal, and social links.",
     defaults: {
       brand_name: "",
@@ -584,6 +826,15 @@ const STYLE_FONT_OPTIONS = [
   { value: "serif", label: "Serif" },
   { value: "mono", label: "Monospace" },
   { value: "display", label: "Display / All caps" },
+  { value: "press_start", label: "Press Start 2P" },
+  { value: "archivo_black", label: "Archivo Black" },
+  { value: "glass_antiqua", label: "Glass Antiqua" },
+  { value: "im_fell", label: "IM Fell DW Pica" },
+  { value: "orbitron", label: "Orbitron" },
+  { value: "pathway_extreme", label: "Pathway Extreme" },
+  { value: "raleway", label: "Raleway" },
+  { value: "special_elite", label: "Special Elite" },
+  { value: "staatliches", label: "Staatliches" },
 ];
 
 const STYLE_FONT_SIZE_OPTIONS = [
@@ -866,6 +1117,110 @@ function buildFontAssetControls(options = {}) {
   return controls;
 }
 
+function formatFileSize(bytes) {
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size <= 0) {
+    return "";
+  }
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  const units = ["KB", "MB", "GB", "TB"];
+  let value = size / 1024;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function formatDuration(seconds) {
+  const total = Number(seconds);
+  if (!Number.isFinite(total) || total <= 0) {
+    return "";
+  }
+  const hrs = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = Math.floor(total % 60);
+  const parts = [];
+  if (hrs) {
+    parts.push(String(hrs).padStart(2, "0"));
+  }
+  parts.push(String(hrs ? mins : mins).padStart(2, "0"));
+  parts.push(String(secs).padStart(2, "0"));
+  return parts.join(":");
+}
+
+function normaliseBuilderAsset(asset) {
+  if (!asset || (!asset.id && !asset.url)) {
+    return null;
+  }
+  return {
+    id: asset.id ?? null,
+    title: asset.title || asset.slug || "Asset",
+    slug: asset.slug || "",
+    kind: asset.kind || "other",
+    description: asset.description || "",
+    url: asset.url || "",
+    mime_type: asset.mime_type || "",
+    size_bytes: Number.isFinite(asset.size_bytes) ? asset.size_bytes : null,
+    width: Number.isFinite(asset.width) ? asset.width : null,
+    height: Number.isFinite(asset.height) ? asset.height : null,
+    duration_seconds: Number.isFinite(asset.duration_seconds) ? asset.duration_seconds : null,
+    collection: asset.collection || null,
+    is_external: Boolean(asset.is_external),
+    external_domain: asset.external_domain || "",
+  };
+}
+
+function buildAssetPreviewCard(asset) {
+  const card = document.createElement("div");
+  card.className = "builder-asset-card";
+  const thumb = document.createElement("div");
+  thumb.className = `builder-asset-card__thumb builder-asset-card__thumb--${asset.kind || "other"}`;
+  if (asset.kind === "image" && asset.url) {
+    thumb.style.backgroundImage = `url(\"${cssUrl(asset.url)}\")`;
+  } else {
+    const icon = document.createElement("span");
+    icon.textContent =
+      {
+        video: "▶",
+        audio: "♫",
+        pdf: "📄",
+        doc: "📑",
+        archive: "🗂",
+        font: "𝐀",
+      }[asset.kind] || "⬇";
+    thumb.appendChild(icon);
+  }
+  card.appendChild(thumb);
+
+  const meta = document.createElement("div");
+  meta.className = "builder-asset-card__meta";
+  const title = document.createElement("strong");
+  title.textContent = asset.title || "Selected asset";
+  meta.appendChild(title);
+  const details = document.createElement("span");
+  const bits = [];
+  if (asset.kind) {
+    bits.push(asset.kind.toUpperCase());
+  }
+  const sizeLabel = formatFileSize(asset.size_bytes);
+  if (sizeLabel) {
+    bits.push(sizeLabel);
+  }
+  const durationLabel = formatDuration(asset.duration_seconds);
+  if (durationLabel) {
+    bits.push(durationLabel);
+  }
+  details.textContent = bits.join(" · ");
+  meta.appendChild(details);
+  card.appendChild(meta);
+
+  return card;
+}
+
 function getDefaultBrandText() {
   return (state.siteContext && state.siteContext.name) || "";
 }
@@ -909,7 +1264,10 @@ function fetchFontAssets(force = false) {
   const params = new URLSearchParams();
   params.append("kind", "font");
   const url = `${config.urls.assets}?${params.toString()}`;
-  fontState.promise = fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+  fontState.promise = fetch(url, {
+    headers: { "X-Requested-With": "XMLHttpRequest" },
+    credentials: "same-origin",
+  })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`Failed to load fonts (${response.status})`);
@@ -986,6 +1344,15 @@ const DEFAULT_FONT_FORMATS = [
   "Verdana=verdana,geneva",
   "Webdings=webdings",
   "Wingdings=wingdings,zapf dingbats",
+  "Archivo Black='Archivo Black','Arial Black',sans-serif",
+  "Glass Antiqua='Glass Antiqua','Comic Sans MS',cursive",
+  "IM Fell DW Pica='IM Fell DW Pica',Georgia,serif",
+  "Orbitron='Orbitron','Segoe UI',sans-serif",
+  "Pathway Extreme='Pathway Extreme','Raleway',sans-serif",
+  "Press Start 2P='Press Start 2P',cursive",
+  "Raleway='Raleway','Helvetica Neue',sans-serif",
+  "Special Elite='Special Elite','Courier New',monospace",
+  "Staatliches='Staatliches','Archivo Black',sans-serif",
 ].join(";");
 
 const dom = {};
@@ -1098,6 +1465,7 @@ function uploadBuilderAsset(file, { kind } = {}) {
   return fetch(config.urls.asset_upload, {
     method: "POST",
     headers: { "X-CSRFToken": getCsrfToken(), "X-Requested-With": "XMLHttpRequest" },
+    credentials: "same-origin",
     body: formData,
   }).then((response) => {
     if (!response.ok) {
@@ -1153,6 +1521,7 @@ async function loadAssets(kinds) {
     try {
       const response = await fetch(url, {
         headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "same-origin",
       });
       if (!response.ok) {
         throw new Error(`Failed to load assets (${response.status})`);
@@ -1803,9 +2172,10 @@ function applyInlineEditValue(blockId, key, value) {
   if (typeof value === "string") {
     updateBlockInlineFonts(block, key, value);
   }
-  block.props = { ...block.props, [key]: value };
-  state.dirty = true;
-  persistBlocks();
+  updateBlockProp(blockId, key, value, {
+    skipPreview: inlineState.enabled,
+    forceRenderSettings: inlineState.enabled,
+  });
 }
 
 function loadTinyMCE(frame, callback) {
@@ -2115,6 +2485,9 @@ function activateInlineEditors(frame) {
               editor.on("Blur", pushValue);
             },
           };
+          if (window.cmsTinyMCEAssets) {
+            Object.assign(initConfig, window.cmsTinyMCEAssets());
+          }
           tinymce.init(initConfig).then((editors) => {
             if (!Array.isArray(editors)) {
               return;
@@ -2186,13 +2559,27 @@ function bindInlineFrame(frame) {
 
 
 function setInlineEditMode(enabled) {
+  const wasEnabled = inlineState.enabled;
   inlineState.enabled = enabled;
   if (dom.inlineEditButton) {
     dom.inlineEditButton.classList.toggle("is-active", enabled);
     dom.inlineEditButton.setAttribute("aria-pressed", enabled ? "true" : "false");
     dom.inlineEditButton.textContent = enabled ? "Stop inline edit" : "Inline edit";
   }
+  if (enabled) {
+    if (previewTimer) {
+      window.clearTimeout(previewTimer);
+      previewTimer = null;
+    }
+    if (previewInflight) {
+      previewInflight.abort();
+      previewInflight = null;
+    }
+  }
   syncInlineEditState();
+  if (wasEnabled && !enabled) {
+    schedulePreview(true);
+  }
 }
 
 function openAssetBrowser({ kinds = [], onSelect }) {
@@ -2227,6 +2614,19 @@ function clone(value) {
 
 function getBlueprint(type) {
   return DEFAULT_BLOCK_LIBRARY.find((b) => b.type === type);
+}
+
+function normaliseListItemValues(item, blueprintFields = []) {
+  const clean = { ...item };
+  blueprintFields.forEach((subField) => {
+    if (!(subField.key in clean)) {
+      return;
+    }
+    if (subField.type === "asset") {
+      clean[subField.key] = normaliseBuilderAsset(clean[subField.key]);
+    }
+  });
+  return clean;
 }
 
 function normaliseBlock(block) {
@@ -2280,6 +2680,9 @@ function normaliseBlock(block) {
             ...clone(field.itemDefaults || {}),
             ...item,
           }));
+        }
+        if (Array.isArray(props[key]) && Array.isArray(field.itemFields)) {
+          props[key] = props[key].map((item) => normaliseListItemValues(item, field.itemFields));
         }
         break;
       default:
@@ -2359,6 +2762,9 @@ function schedulePreview(immediate = false) {
   if (!config.urls || !config.urls.preview) {
     return;
   }
+  if (inlineState.enabled && !immediate) {
+    return;
+  }
   if (immediate) {
     return fetchPreview();
   }
@@ -2384,6 +2790,7 @@ function setPreviewHTML(html) {
   });
 }
 
+
 function getCsrfToken() {
   const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
   return input ? input.value : "";
@@ -2407,13 +2814,15 @@ async function fetchPreview() {
   const navBlock = state.blocks.find((block) => block.type === "navigation");
   if (navBlock) {
     showNav = navBlock.props.enabled !== false;
-    navItems = Array.isArray(navBlock.props.links) && navBlock.props.links.length
-      ? navBlock.props.links
-      : navItems;
+    if (Array.isArray(navBlock.props.links)) {
+      navItems = navBlock.props.links.slice();
+    }
   } else if (showNavField) {
     showNav = false;
   }
   const bodyField = document.getElementById("id_body");
+  const cssField = document.getElementById("id_custom_css");
+  const jsField = document.getElementById("id_custom_js");
   const renderRawField = document.getElementById("id_render_body_only");
   const payload = {
     blocks: serialiseBlocks(state.blocks),
@@ -2421,6 +2830,8 @@ async function fetchPreview() {
     show_navigation_bar: showNav,
     render_body_only: renderRawField ? !!renderRawField.checked : false,
     body: bodyField ? bodyField.value : "",
+    custom_css: cssField ? cssField.value : "",
+    custom_js: jsField ? jsField.value : "",
     theme: getPageTheme(),
   };
   if (previewInflight) {
@@ -2453,28 +2864,75 @@ async function fetchPreview() {
   }
 }
 
+function renderLibraryFilters(container, categories, selected, onSelect) {
+  if (!container) {
+    return;
+  }
+  container.className = "builder-library-filters";
+  container.innerHTML = "";
+  const allBtn = document.createElement("button");
+  allBtn.type = "button";
+  allBtn.className = `builder-library-filter${selected === "all" ? " is-active" : ""}`;
+  allBtn.textContent = "All";
+  allBtn.addEventListener("click", () => onSelect("all"));
+  container.appendChild(allBtn);
+  categories.forEach((category) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `builder-library-filter${selected === category ? " is-active" : ""}`;
+    button.dataset.category = category;
+    button.textContent = category.replace(/_/g, " ");
+    button.addEventListener("click", () => onSelect(category));
+    container.appendChild(button);
+  });
+}
+
+function renderLibraryList(container, blocks, selectedCategory) {
+  if (!container) {
+    return;
+  }
+  container.innerHTML = "";
+  blocks
+    .filter((block) => selectedCategory === "all" || block.category === selectedCategory)
+    .forEach((block) => {
+      const button = document.createElement("button");
+      button.className = "builder-library-item";
+      button.type = "button";
+      button.dataset.blockType = block.type;
+      button.innerHTML = `
+        <span class="builder-library-item__icon">${block.icon}</span>
+        <span>
+          <strong>${block.label}</strong>
+          <small class="muted">${block.description}</small>
+        </span>
+      `;
+      button.addEventListener("click", () => addBlock(block.type));
+      container.appendChild(button);
+    });
+}
+
 function renderLibrary() {
   if (!dom.library) {
     return;
   }
   dom.library.innerHTML = "";
-  DEFAULT_BLOCK_LIBRARY.forEach((block) => {
-    const button = document.createElement("button");
-    button.className = "builder-library-item";
-    button.type = "button";
-    button.dataset.blockType = block.type;
-    button.innerHTML = `
-      <span class="builder-library-item__icon">${block.icon}</span>
-      <span>
-        <strong>${block.label}</strong>
-        <small class="muted">${block.description}</small>
-      </span>
-    `;
-    button.addEventListener("click", () => {
-      addBlock(block.type);
-    });
-    dom.library.appendChild(button);
-  });
+  const categories = Array.from(
+    new Set(DEFAULT_BLOCK_LIBRARY.map((block) => block.category).filter(Boolean))
+  );
+  const filters = document.createElement("div");
+  const listContainer = document.createElement("div");
+  listContainer.className = "builder-library-list";
+  let selectedCategory = "all";
+
+  const handleSelect = (category) => {
+    selectedCategory = category;
+    renderLibraryFilters(filters, categories, selectedCategory, handleSelect);
+    renderLibraryList(listContainer, DEFAULT_BLOCK_LIBRARY, selectedCategory);
+  };
+
+  dom.library.appendChild(filters);
+  dom.library.appendChild(listContainer);
+  handleSelect(selectedCategory);
 }
 
 function renderBlockList() {
@@ -2540,7 +2998,6 @@ function renderSettings() {
     });
   }
   closeStylePopover();
-  dom.settings.appendChild(renderThemePanel());
   const block = getSelectedBlock();
   if (!block) {
     const message = document.createElement("p");
@@ -3217,6 +3674,85 @@ function renderCheckboxField(block, field, container) {
   return container;
 }
 
+function renderAssetSelector({ value, kinds = [], allowUpload = false, onChange }) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "builder-asset-field";
+  const preview = document.createElement("div");
+  preview.className = "builder-asset-field__preview";
+  if (value && value.url) {
+    preview.appendChild(buildAssetPreviewCard(value));
+  } else {
+    const empty = document.createElement("p");
+    empty.className = "muted";
+    empty.textContent = "No asset selected.";
+    preview.appendChild(empty);
+  }
+  wrapper.appendChild(preview);
+
+  const actions = document.createElement("div");
+  actions.className = "builder-asset-field__actions";
+  const chooseBtn = document.createElement("button");
+  chooseBtn.type = "button";
+  chooseBtn.className = "btn btn-sm";
+  chooseBtn.textContent = value ? "Replace asset" : "Choose asset";
+  chooseBtn.addEventListener("click", () => {
+    openAssetBrowser({
+      kinds,
+      onSelect(asset) {
+        const normalised = normaliseBuilderAsset(asset);
+        if (!normalised) {
+          alert("Could not use that asset.");
+          return;
+        }
+        onChange(normalised);
+      },
+    });
+  });
+  actions.appendChild(chooseBtn);
+
+  if (allowUpload && config.urls && config.urls.asset_upload) {
+    const uploadBtn = document.createElement("button");
+    uploadBtn.type = "button";
+    uploadBtn.className = "btn btn-sm btn-outline-secondary";
+    uploadBtn.textContent = "Upload";
+    uploadBtn.addEventListener("click", () => {
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "Uploading…";
+      const accept =
+        kinds.length === 1 && kinds[0] === "image"
+          ? "image/*"
+          : kinds.length === 1 && kinds[0] === "audio"
+          ? "audio/*"
+          : kinds.length === 1 && kinds[0] === "video"
+          ? "video/*"
+          : "";
+      promptAssetUpload({ accept, kind: kinds[0] || null }, (asset) => {
+        const normalised = normaliseBuilderAsset(asset);
+        if (normalised) {
+          onChange(normalised);
+        }
+      }).finally(() => {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "Upload";
+      });
+    });
+    actions.appendChild(uploadBtn);
+  }
+
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "btn btn-sm btn-outline-secondary";
+  clearBtn.textContent = "Clear";
+  clearBtn.disabled = !value;
+  clearBtn.addEventListener("click", () => {
+    onChange(null);
+  });
+  actions.appendChild(clearBtn);
+
+  wrapper.appendChild(actions);
+  return wrapper;
+}
+
 function renderListField(block, field) {
   const container = document.createElement("div");
   container.className = "builder-actions";
@@ -3254,6 +3790,24 @@ function renderListField(block, field) {
       subContainer.appendChild(label);
 
       const currentValue = item[subField.key];
+      if (subField.type === "asset") {
+        const selector = renderAssetSelector({
+          value: currentValue,
+          kinds: subField.assetKinds || [],
+          allowUpload: Boolean(subField.allowUpload),
+          onChange(nextAsset) {
+            const next = clone(items);
+            next[index][subField.key] = nextAsset;
+            updateBlockProp(block.id, field.key, next);
+            renderSettings();
+            schedulePreview(true);
+          },
+        });
+        subContainer.appendChild(selector);
+        itemCard.appendChild(subContainer);
+        return;
+      }
+
       let input;
       if (subField.type === "toggle") {
         input = document.createElement("input");
@@ -3273,10 +3827,35 @@ function renderListField(block, field) {
           opt.textContent = option.label;
           input.appendChild(opt);
         });
-        input.value = currentValue || (subField.options && subField.options[0] && subField.options[0].value) || "";
+        input.value =
+          currentValue || (subField.options && subField.options[0] && subField.options[0].value) || "";
         input.addEventListener("change", (event) => {
           const next = clone(items);
           next[index][subField.key] = event.target.value;
+          updateBlockProp(block.id, field.key, next);
+          schedulePreview();
+        });
+      } else if (subField.type === "textarea") {
+        input = document.createElement("textarea");
+        input.rows = subField.rows || 3;
+        input.value = currentValue || "";
+        input.addEventListener("input", (event) => {
+          const next = clone(items);
+          next[index][subField.key] = event.target.value;
+          updateBlockProp(block.id, field.key, next);
+          schedulePreview();
+        });
+      } else if (subField.type === "number") {
+        input = document.createElement("input");
+        input.type = "number";
+        if (subField.min !== undefined) input.min = subField.min;
+        if (subField.max !== undefined) input.max = subField.max;
+        if (subField.step !== undefined) input.step = subField.step;
+        input.value = currentValue ?? "";
+        input.addEventListener("input", (event) => {
+          const next = clone(items);
+          const raw = event.target.value;
+          next[index][subField.key] = raw === "" ? null : Number(raw);
           updateBlockProp(block.id, field.key, next);
           schedulePreview();
         });
@@ -3292,27 +3871,6 @@ function renderListField(block, field) {
         });
       }
       subContainer.appendChild(input);
-      if (subField.assetKinds && subField.assetKinds.length) {
-        const picker = document.createElement("button");
-        picker.type = "button";
-        picker.className = "btn btn-sm builder-field__asset-btn";
-        picker.textContent = "Choose from library";
-        picker.addEventListener("click", (event) => {
-          event.preventDefault();
-          openAssetBrowser({
-            kinds: subField.assetKinds,
-            onSelect: (asset) => {
-              const url = asset.url || "";
-              input.value = url;
-              const next = clone(items);
-              next[index][subField.key] = url;
-              updateBlockProp(block.id, field.key, next);
-              schedulePreview(true);
-            },
-          });
-        });
-        subContainer.appendChild(picker);
-      }
       itemCard.appendChild(subContainer);
     });
 
@@ -3350,10 +3908,32 @@ function renderNavLinksField(block, field, container) {
   const legacyToggle = document.getElementById("id_show_navigation_bar");
   if (legacyToggle) legacyToggle.value = "True";
 
-  const stored = Array.isArray(block.props[field.key]) ? block.props[field.key].slice() : null;
-  let selectedOrder = Array.isArray(stored) && stored.length
-    ? stored.slice()
+  const rawStored = Array.isArray(block.props[field.key]) ? block.props[field.key].slice() : null;
+  const stored = Array.isArray(rawStored)
+    ? rawStored
+        .map((entry) => {
+          if (typeof entry === "string") {
+            return entry;
+          }
+          if (entry && typeof entry === "object") {
+            if (typeof entry.slug === "string") {
+              return entry.slug;
+            }
+            if (typeof entry.value === "string") {
+              return entry.value;
+            }
+          }
+          return null;
+        })
+        .filter(Boolean)
+    : null;
+  const hasExplicitSelection = Array.isArray(rawStored);
+  let selectedOrder = hasExplicitSelection
+    ? (stored ? stored.slice() : [])
     : items.filter((item) => item.checked).map((item) => item.slug);
+  if (!hasExplicitSelection && !selectedOrder.length) {
+    selectedOrder = items.map((item) => item.slug);
+  }
   selectedOrder = Array.from(new Set(selectedOrder));
   const allOrder = selectedOrder.concat(
     items.map((item) => item.slug).filter((slug) => !selectedOrder.includes(slug))
@@ -3386,6 +3966,8 @@ function renderNavLinksField(block, field, container) {
     updateSelection();
   }
 
+  const selectedSet = new Set(selectedOrder);
+
   allOrder.forEach((slug) => {
     const meta = items.find((item) => item.slug === slug) || { slug, title: slug };
     const row = document.createElement("div");
@@ -3394,8 +3976,7 @@ function renderNavLinksField(block, field, container) {
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
-    checkbox.checked =
-      (stored && stored.length ? stored.includes(slug) : undefined) ?? Boolean(meta.checked);
+    checkbox.checked = selectedSet.has(slug);
     checkbox.addEventListener("change", updateSelection);
 
     const name = document.createElement("span");
@@ -3452,11 +4033,13 @@ function renderNavLinksField(block, field, container) {
   return container;
 }
 
-function updateBlockProp(blockId, key, value) {
+function updateBlockProp(blockId, key, value, options = {}) {
   const block = state.blocks.find((item) => item.id === blockId);
   if (!block) {
     return;
   }
+  const skipPreview = Boolean(options.skipPreview);
+  const forceRenderSettings = Boolean(options.forceRenderSettings);
   let needsRefresh = false;
   if (block.type === "navigation" && block.props) {
     if (key === "logo_text" && block.props.logo_text_auto) {
@@ -3475,8 +4058,10 @@ function updateBlockProp(blockId, key, value) {
   block.props = { ...block.props, [key]: value };
   state.dirty = true;
   persistBlocks();
-  schedulePreview();
-  if (needsRefresh) {
+  if (!skipPreview) {
+    schedulePreview();
+  }
+  if (needsRefresh || forceRenderSettings) {
     renderSettings();
   }
 }

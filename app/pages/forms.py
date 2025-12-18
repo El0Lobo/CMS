@@ -4,8 +4,6 @@ from django import forms
 from django.conf import settings
 from django.utils import translation
 from django.utils.text import slugify
-from django_ckeditor_5.widgets import CKEditor5Widget
-
 from .blocks import normalise_theme
 from .models import Page
 
@@ -13,11 +11,39 @@ from .models import Page
 class PageForm(forms.ModelForm):
     body = forms.CharField(
         required=False,
-        widget=CKEditor5Widget(config_name="advanced"),
-        help_text=(
-            "Rich text editor with font, color, and layout controls. When 'render body only' is enabled, "
-            "this replaces the block builder output."
+        widget=forms.Textarea(
+            attrs={
+                "rows": 18,
+                "class": "code-field",
+                "spellcheck": "false",
+                "data-code-field": "html",
+            }
         ),
+        help_text="Full HTML document fragment rendered when custom code mode is enabled.",
+    )
+    custom_css = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 12,
+                "class": "code-field",
+                "spellcheck": "false",
+                "data-code-field": "css",
+            }
+        ),
+        help_text="Optional CSS overrides injected into the public page when custom code mode is enabled.",
+    )
+    custom_js = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 12,
+                "class": "code-field",
+                "spellcheck": "false",
+                "data-code-field": "js",
+            }
+        ),
+        help_text="Optional inline JavaScript executed at the end of the page.",
     )
     blocks = forms.CharField(
         required=False,
@@ -50,6 +76,8 @@ class PageForm(forms.ModelForm):
             "custom_nav_items",
             "hero_image",
             "body",
+            "custom_css",
+            "custom_js",
             "blocks",
             "theme",
         ]

@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.models import Group
 
+from app.setup.models import SiteSettings
+
 from .models import BadgeDefinition, UserProfile  # GroupMeta for hierarchy
 
 User = get_user_model()
@@ -221,6 +223,13 @@ class BadgeDefinitionForm(forms.ModelForm):
         model = BadgeDefinition
         fields = ["name", "emoji", "description"]
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+
+
+class MembershipSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SiteSettings
+        fields = ["membership_enabled", "membership_hint"]
+        widgets = {"membership_hint": forms.Textarea(attrs={"rows": 3})}
 
 
 # =====================================

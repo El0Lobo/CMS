@@ -20,4 +20,6 @@ urlpatterns = [
     path("impersonate/<int:user_id>/", ImpersonateStartView.as_view(), name="impersonate"),
     path("impersonate/stop/", ImpersonateStopView.as_view(), name="impersonate_stop"),
     path("groups/hierarchy/", views.group_hierarchy, name="group_hierarchy"),
+    path("membership/settings/", views.membership_settings, name="membership_settings"),
+    path("roles/settings/", views.roles_settings, name="roles_settings"),
 ]

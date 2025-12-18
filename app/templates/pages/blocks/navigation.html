@@ -9,6 +9,64 @@
 <section class="page-block page-block--navigation" data-builder-nav {% if props.style_inline %}style="{{ props.style_inline }}"{% endif %}>
   <div class="page-block__container">
     <header class="page-nav page-nav--{{ props.layout|default:'center' }}">
+      {% if props.show_theme_switcher %}
+        {% with nav_id=block.id|default:'nav' %}
+          <div class="page-nav__themes">
+            <details class="theme-switcher" data-theme-dropdown>
+              <summary class="theme-switcher__toggle">
+                <span>{% trans "Style" %}</span>
+                <span class="theme-switcher__chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div class="theme-switcher__panel">
+                <div class="theme-switcher__group">
+                  <label class="sr-only" for="theme-switcher-{{ nav_id }}">{% trans "Theme" %}</label>
+                  <select class="theme-switcher__select" id="theme-switcher-{{ nav_id }}" data-theme-switcher>
+                    <option value="standard">{% trans "Standard look" %}</option>
+                    <option value="80s">80s</option>
+                    <option value="neobrutalism">{% trans "Neobrutalism" %}</option>
+                    <option value="glass">{% trans "Glassmorphism" %}</option>
+                    <option value="grunge">{% trans "Grunge" %}</option>
+                    <option value="tales">{% trans "Weird Tales" %}</option>
+                    <option value="y2k">Y2K</option>
+                    <option value="70s">70s</option>
+                  </select>
+                </div>
+                <div class="theme-switcher__group">
+                  <label class="sr-only" for="background-switcher-{{ nav_id }}">{% trans "Background" %}</label>
+                  <select class="theme-switcher__select" id="background-switcher-{{ nav_id }}" data-theme-background>
+                    {% if theme_backgrounds %}
+                      <option value="default">{% trans "Default background" %}</option>
+                      <option value="lowpoly">{% trans "Low poly (animated)" %}</option>
+                      <optgroup label="{% trans 'Uploaded backgrounds' %}">
+                        {% for bg in theme_backgrounds %}
+                          <option value="{{ bg.value }}" data-bg-url="{{ bg.url }}">{{ bg.label }}</option>
+                        {% endfor %}
+                      </optgroup>
+                    {% else %}
+                      <option value="lowpoly">{% trans "Low poly (animated)" %}</option>
+                    {% endif %}
+                  </select>
+                </div>
+                <div class="theme-switcher__group">
+                  <label class="sr-only" for="texture-switcher-{{ nav_id }}">{% trans "Texture overlay" %}</label>
+                  <select class="theme-switcher__select" id="texture-switcher-{{ nav_id }}" data-theme-texture>
+                    {% if theme_textures %}
+                      <option value="none">{% trans "No texture" %}</option>
+                      <optgroup label="{% trans 'Uploaded textures' %}">
+                        {% for tex in theme_textures %}
+                          <option value="{{ tex.value }}" data-texture-url="{{ tex.url }}">{{ tex.label }}</option>
+                        {% endfor %}
+                      </optgroup>
+                    {% else %}
+                      <option value="none">{% trans "No texture" %}</option>
+                    {% endif %}
+                  </select>
+                </div>
+              </div>
+            </details>
+          </div>
+        {% endwith %}
+      {% endif %}
       <div class="page-nav__brand">
         {% if props.show_logo and logo %}
           <img src="{{ logo }}" alt="{{ site.name }}" {% inline_image_attrs block 'logo_width' %} data-inline-image-min="40" data-inline-image-max="600"{% if props.logo_width %} style="width:{{ props.logo_width }}px"{% endif %}>

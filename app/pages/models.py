@@ -39,6 +39,8 @@ class Page(models.Model):
         blank=True,
         help_text="Global styling tokens (fonts/colors) applied to this page.",
     )
+    custom_css = models.TextField(blank=True, default="")
+    custom_js = models.TextField(blank=True, default="")
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.DRAFT)
     is_visible = models.BooleanField(
         default=True,
@@ -171,12 +173,21 @@ class Page(models.Model):
         lang = translation.get_language() or settings.MODELTRANSLATION_DEFAULT_LANGUAGE
         blocks_source = self.get_blocks_for_language(lang)
 
-        if self.render_body_only or not blocks_source:
-            html = self.body or ""
-            return mark_safe(html), mark_safe(""), mark_safe("")
-
         extra = dict(extra_context or {})
         extra.setdefault("nav_override", list(self.custom_nav_items or []))
+        extra.setdefault("request", request)
+        structured_data: list[dict] = extra.setdefault("structured_data", [])
+        page_url = None
+        if request:
+            try:
+                page_url = request.build_absolute_uri(self.get_absolute_url())
+            except Exception:
+                page_url = None
+        extra.setdefault("page_url", page_url)
+
+        if self.render_body_only or not blocks_source:
+            html = self.body or ""
+            return mark_safe(html), mark_safe(""), mark_safe(""), structured_data
 
         nav_blocks = [block for block in blocks_source if block.get("type") == "navigation"]
         footer_blocks = [block for block in blocks_source if block.get("type") == "footer"]
@@ -198,14 +209,14 @@ class Page(models.Model):
                 "props": {**DEFAULT_NAV_PROPS},
             }
             nav_html = render_blocks([auto_block], request=request, extra_context=extra)
-        return main_html, footer_html, nav_html
+        return main_html, footer_html, nav_html, structured_data
 
     def render_content(self, *, request=None, extra_context=None) -> str:
         """
         Render the page blocks to HTML. Falls back to legacy body if flagged or empty.
         """
 
-        main_html, footer_html, nav_html = self.render_content_segments(
+        main_html, footer_html, nav_html, _ = self.render_content_segments(
             request=request, extra_context=extra_context
         )
         return mark_safe(f"{nav_html}{main_html}{footer_html}")

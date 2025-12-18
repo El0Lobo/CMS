@@ -3,7 +3,13 @@
 {% get_current_language as LANGUAGE_CODE %}
 <form action="{% url 'set_language' %}" method="post" class="lang-switcher {{ switcher_class }}">
   {% if request %}{% csrf_token %}{% endif %}
-  <input type="hidden" name="next" value="{{ next_url|default:request.get_full_path|default:'/' }}">
+  {% if next_url %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+  {% elif request %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% else %}
+    <input type="hidden" name="next" value="/">
+  {% endif %}
   <label class="sr-only" for="{{ switcher_id|default:'lang-switcher' }}">{% trans "Choose language" %}</label>
   <select id="{{ switcher_id|default:'lang-switcher' }}"
           name="language"

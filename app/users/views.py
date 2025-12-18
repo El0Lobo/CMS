@@ -9,9 +9,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 
+from app.setup.forms import GroupFormSet, TierFormSet
+from app.setup.models import SiteSettings
+
 from .forms import (
     BadgeDefinitionForm,
     GroupRankForm,  # for the hierarchy page
+    MembershipSettingsForm,
     ProfileForm,
     UserCreateForm,
 )
@@ -173,6 +177,60 @@ def profile_edit(request, user_id):
         {
             "form": form,
             "title": f"Edit Profile: {target_user.username}",
+        },
+    )
+
+
+@login_required
+@user_passes_test(staff_or_super)
+def membership_settings(request):
+    settings_obj = SiteSettings.get_solo()
+    if request.method == "POST":
+        form = MembershipSettingsForm(request.POST, instance=settings_obj)
+        tiers = TierFormSet(request.POST, instance=settings_obj, prefix="tiers")
+        form_valid = form.is_valid()
+        tiers_valid = tiers.is_valid()
+        if form_valid and tiers_valid:
+            form.save()
+            tiers.save()
+            messages.success(request, "Membership settings updated.")
+            return redirect("users:membership_settings")
+        if not form_valid:
+            messages.error(request, "Fix the highlighted membership settings errors.")
+        if not tiers_valid:
+            messages.error(request, "Check the membership tiers before saving.")
+    else:
+        form = MembershipSettingsForm(instance=settings_obj)
+        tiers = TierFormSet(instance=settings_obj, prefix="tiers")
+    return render(
+        request,
+        "users/membership_settings.html",
+        {
+            "form": form,
+            "tiers": tiers,
+        },
+    )
+
+
+@login_required
+@user_passes_test(staff_or_super)
+def roles_settings(request):
+    formset = GroupFormSet(
+        request.POST or None,
+        queryset=Group.objects.all().order_by("name"),
+        prefix="roles",
+    )
+    if request.method == "POST":
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, "Roles updated.")
+            return redirect("users:roles_settings")
+        messages.error(request, "Fix the highlighted errors before saving roles.")
+    return render(
+        request,
+        "users/roles_settings.html",
+        {
+            "roles": formset,
         },
     )
 

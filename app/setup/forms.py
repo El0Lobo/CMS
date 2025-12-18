@@ -140,9 +140,6 @@ class SettingsForm(ModelForm):
             "social_mastodon",
             # SameAs
             "same_as",
-            # Membership
-            "membership_enabled",
-            "membership_hint",
             # Policies & accessibility
             "smoking_allowed",
             "pets_allowed_text",
@@ -158,8 +155,6 @@ class SettingsForm(ModelForm):
             "maximum_attendee_capacity",
             "awareness_team_available",
             "awareness_contact",
-            "inventory_notification_groups",
-            "inventory_dashboard_groups",
         ]
         widgets = {
             "same_as": forms.Textarea(

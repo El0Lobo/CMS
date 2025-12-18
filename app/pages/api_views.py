@@ -12,6 +12,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.http import require_POST
 
 from app.assets.models import Asset, Collection
+from app.assets.selectors import filter_assets_for_user, asset_base_queryset
+
 from . import data_sources
 from .blocks import normalise_theme
 from .models import Page
@@ -57,10 +59,38 @@ def site_context(request):
 @login_required
 def assets_library(request):
     kinds = request.GET.getlist("kind") or None
-    assets = data_sources.get_public_assets(kinds)
-    for asset in assets:
-        asset["url"] = _absolute_media(request, asset.get("url"))
-    return JsonResponse({"assets": assets})
+    qs = filter_assets_for_user(asset_base_queryset(), request.user).select_related("collection")
+    if kinds:
+        qs = qs.filter(kind__in=kinds)
+
+    payload: list[dict[str, Any]] = []
+    for asset in qs:
+        url = asset.file.url if asset.file else asset.url
+        if not url:
+            continue
+        payload.append(
+            {
+                "id": asset.pk,
+                "title": asset.title,
+                "slug": asset.slug,
+                "kind": asset.kind,
+                "description": asset.description,
+                "url": _absolute_media(request, url),
+                "mime_type": asset.mime_type,
+                "size_bytes": asset.size_bytes,
+                "width": asset.width,
+                "height": asset.height,
+                "duration_seconds": asset.duration_seconds,
+                "collection": {
+                    "id": asset.collection.pk if asset.collection_id else None,
+                    "title": asset.collection.title if asset.collection_id else None,
+                },
+                "effective_visibility": asset.effective_visibility,
+                "is_external": asset.is_external,
+                "external_domain": asset.external_domain,
+            }
+        )
+    return JsonResponse({"assets": payload})
 
 
 def _get_or_create_font_collection() -> Collection:
@@ -298,9 +328,11 @@ def preview_html(request):
         show_navigation_bar=payload.get("show_navigation_bar", True),
         render_body_only=payload.get("render_body_only", False),
         custom_nav_items=nav_override,
+        custom_css=payload.get("custom_css") or "",
+        custom_js=payload.get("custom_js") or "",
     )
 
-    main_html, footer_html, nav_html = preview_page.render_content_segments(
+    main_html, footer_html, nav_html, _ = preview_page.render_content_segments(
         request=request,
         extra_context={"preview": True, "nav_override": nav_override},
     )
@@ -318,7 +350,17 @@ def preview_html(request):
         "public_pages": nav_payload,
         "page_show_nav": bool(nav_payload),
         "page_theme_css": preview_page.get_theme_css(),
+        "page_custom_css": preview_page.custom_css,
+        "page_custom_js": preview_page.custom_js,
     }
 
     html = render_to_string("public/page_detail.html", context, request=request)
-    return JsonResponse({"html": html, "content_html": main_html})
+    return JsonResponse(
+        {
+            "html": html,
+            "content_html": main_html,
+            "theme_css": context.get("page_theme_css") or "",
+            "custom_css": preview_page.custom_css or "",
+            "custom_js": preview_page.custom_js or "",
+        }
+    )

@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -9,13 +9,37 @@ from django.views.decorators.http import require_POST
 
 from app.setup.models import SiteSettings
 
-from .forms import InventoryCategoryForm, InventoryItemForm, InventoryPackageFormSet
+from .forms import (
+    InventoryAlertSettingsForm,
+    InventoryCategoryForm,
+    InventoryItemForm,
+    InventoryPackageFormSet,
+)
 from .models import InventoryCategory, InventoryItem, InventoryLog
 from .utils import notify_reorder
 
 
+def _inventory_settings_access(user):
+    return user.is_staff or user.is_superuser
+
+
 @login_required
 def manage(request):
+    settings_obj = SiteSettings.get_solo()
+    alerts_form = None
+    if _inventory_settings_access(request.user):
+        if request.method == "POST" and request.POST.get("form_name") == "inventory_alerts":
+            alerts_form = InventoryAlertSettingsForm(request.POST, instance=settings_obj)
+            if alerts_form.is_valid():
+                alerts_form.save()
+                messages.success(request, "Inventory alert preferences updated.")
+                return redirect("inventory:inventory_manage")
+        else:
+            alerts_form = InventoryAlertSettingsForm(instance=settings_obj)
+    if request.method == "POST":
+        # If POST without alerts form (e.g., invalid access), redirect to avoid falling through
+        return redirect("inventory:inventory_manage")
+
     search = request.GET.get("q", "").strip()
     kind_filter = request.GET.get("kind", "")
     status_filter = request.GET.get("status", "")
@@ -64,6 +88,7 @@ def manage(request):
             "category_filter": category_filter,
             "category_choices": categories_for_filter,
             "category_items": items_by_category,
+            "alerts_form": alerts_form,
         },
     )
 

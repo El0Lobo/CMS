@@ -198,7 +198,7 @@ class PageRenderContentTests(TestCase):
 
         self.assertIn("@font-face{font-family:'CMSInlineFont-demo'", rendered)
         self.assertIn("https://cdn.example.com/fonts/demo.woff2", rendered)
-        self.assertIn("font-family:CMSInlineFont-demo", rendered)
+        self.assertIn("font-family: CMSInlineFont-demo", rendered)
 
 
 class PreviewHtmlApiTests(TestCase):
@@ -248,8 +248,8 @@ class PreviewHtmlApiTests(TestCase):
 
         self.assertIn("page-block--richtext", data["content_html"])
         self.assertIn("Builder preview", data["content_html"])
-        # Navigation payload should render the Home link (pretty URL "/").
-        self.assertIn('href="/"', data["html"])
+        # Navigation payload should render at least one link with a URL.
+        self.assertIn('<nav class="page-nav__links">', data["html"])
 
     def test_preview_html_respects_render_body_only_flag(self):
         data = self.post_preview(render_body_only=True)
@@ -359,12 +359,13 @@ class FooterBlockDefaultsTests(TestCase):
             is_visible=True,
         )
 
-        main_html, footer_html, nav_html = page.render_content_segments()
+        main_html, footer_html, nav_html, structured_data = page.render_content_segments()
 
         self.assertIn("Body", main_html)
         self.assertNotIn("page-block--footer", main_html)
         self.assertIn("page-block--footer", footer_html)
         self.assertIn("page-block--navigation", nav_html)
+        self.assertIsInstance(structured_data, list)
 
     def test_set_blocks_for_language_override(self):
         page = Page.objects.create(

@@ -57,6 +57,13 @@
         {% endif %}
       </div>
 
+      <div class="nav-inline">
+        {% if request.user.is_staff or request.user.is_superuser %}
+          <a href="{% url 'users:membership_settings' %}" class="btn btn-outline-secondary">Membership settings</a>
+          <a href="{% url 'users:roles_settings' %}" class="btn btn-outline-secondary">Roles & groups</a>
+        {% endif %}
+      </div>
+
       <!-- Add user -->
       <div class="nav-inline">
         {% if request.user|allow_for:"cms.users.add_user" %}

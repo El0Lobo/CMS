@@ -75,9 +75,38 @@
   min-height: 320px;
 }
 
-.builder-panel--library .builder-library-list {
+.builder-panel--library .builder-library {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.builder-library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.builder-library-filter {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border 0.15s ease;
+}
+
+.builder-library-filter.is-active,
+.builder-library-filter:hover {
+  background: rgba(99, 179, 255, 0.18);
+  border-color: rgba(99, 179, 255, 0.65);
+}
+
+.builder-panel--library .builder-library > div:last-child {
   max-height: 280px;
-  overflow: auto;
+  overflow-y: auto;
   padding-right: 0.25rem;
 }
 
@@ -641,6 +670,71 @@
 .builder-field__asset-btn {
   margin-top: 0.5rem;
   align-self: flex-start;
+}
+
+.builder-asset-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.builder-asset-field__preview {
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 0.75rem;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 17, 25, 0.7);
+}
+
+.builder-asset-field__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.builder-asset-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.builder-asset-card__thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.builder-asset-card__thumb span {
+  line-height: 1;
+}
+
+.builder-asset-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.builder-asset-card__meta strong {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.builder-asset-card__meta span {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.82rem;
 }
 
 .asset-browser {

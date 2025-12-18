@@ -2,7 +2,7 @@
   "profile_type": "venue",
   "public_theme": "theme_a",
   "feature_flags": {
-    "blog": true,
+    "news": true,
     "events": true,
     "merch": true,
     "pos": false,

@@ -22,11 +22,9 @@ from django.contrib.auth import get_user_model
 from app.pos.models import POSQuickButton
 
 from .forms import (
-    GroupFormSet,
     HourFormSet,
     POSQuickButtonFormSet,
     SettingsForm,
-    TierFormSet,
     VisibilityRuleForm,
 )
 from .helpers import is_allowed
@@ -78,11 +76,7 @@ def setup_view(request):
         scope = request.POST.get("save_scope") or "all"
         logger.info("Setup POST received (scope=%s) by %s", scope, request.user)
         form = SettingsForm(request.POST, request.FILES, instance=settings_obj)
-        tiers = TierFormSet(request.POST, instance=settings_obj, prefix="tiers")
         hours = HourFormSet(request.POST, instance=settings_obj, prefix="hours")
-        roles = GroupFormSet(
-            request.POST, queryset=Group.objects.all().order_by("name"), prefix="roles"
-        )
         quickbuttons = POSQuickButtonFormSet(
             request.POST,
             queryset=POSQuickButton.objects.all().order_by("sort_order", "id"),
@@ -91,9 +85,7 @@ def setup_view(request):
 
         # Partial-save: save what validates, warn on the rest
         main_ok = form.is_valid()
-        tiers_ok = tiers.is_valid()
         hours_ok = hours.is_valid()
-        roles_ok = roles.is_valid()
         quickbuttons_ok = quickbuttons.is_valid()
 
         if main_ok:
@@ -131,23 +123,11 @@ def setup_view(request):
                     messages.error(request, f"Icon pack not processed: {exc}")
                     logger.exception("Icon pack upload failed")
 
-            if tiers_ok:
-                tiers.save()
-            else:
-                skipped.append("Membership tiers")
-                logger.warning("Membership tiers form invalid: %s", tiers.errors if hasattr(tiers, "errors") else "unknown")
-
             if hours_ok:
                 hours.save()
             else:
                 skipped.append("Opening times")
                 logger.warning("Opening hours form invalid: %s", hours.errors if hasattr(hours, "errors") else "unknown")
-
-            if roles_ok:
-                roles.save()
-            else:
-                skipped.append("Roles")
-                logger.warning("Roles form invalid: %s", roles.errors if hasattr(roles, "errors") else "unknown")
 
             if quickbuttons_ok:
                 quickbuttons.save()
@@ -177,9 +157,7 @@ def setup_view(request):
             )
     else:
         form = SettingsForm(instance=settings_obj)
-        tiers = TierFormSet(instance=settings_obj, prefix="tiers")
         hours = HourFormSet(instance=settings_obj, prefix="hours")
-        roles = GroupFormSet(queryset=Group.objects.all().order_by("name"), prefix="roles")
         quickbuttons = POSQuickButtonFormSet(
             queryset=POSQuickButton.objects.all().order_by("sort_order", "id"),
             prefix="quickbuttons",
@@ -190,9 +168,7 @@ def setup_view(request):
         "setup/setup.html",
         {
             "form": form,
-            "tiers": tiers,
             "hours": hours,
-            "roles": roles,
             "quickbuttons": quickbuttons,
             "tunnel_url": tunnel_manager.current_url(),
             "tunnel_running": tunnel_manager.is_running(),

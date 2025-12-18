@@ -79,7 +79,7 @@ def _nav_builder_items(form: PageForm):
 
 
 def _render_preview_html(page: Page, request) -> str:
-    main_html, footer_html, nav_html = page.render_content_segments(request=request)
+    main_html, footer_html, nav_html, _ = page.render_content_segments(request=request)
     context = {
         "page": page,
         "nav_label": page.title,
@@ -90,6 +90,8 @@ def _render_preview_html(page: Page, request) -> str:
         "public_pages": [],
         "page_show_nav": False,
         "page_theme_css": page.get_theme_css(),
+        "page_custom_css": page.custom_css,
+        "page_custom_js": page.custom_js,
     }
     return render_to_string("public/page_detail.html", context, request=request)
 
@@ -274,7 +276,7 @@ def preview(request):
             _ = page.hero_image.url
     except Exception:
         page.hero_image = None
-    rendered_main, rendered_footer, nav_html = page.render_content_segments(request=request)
+    rendered_main, rendered_footer, nav_html, _ = page.render_content_segments(request=request)
 
     return render(
         request,

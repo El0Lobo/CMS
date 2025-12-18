@@ -91,6 +91,34 @@
       </div>
     </section>
   {% endif %}
+  {% if news_digest %}
+    <section class="dash-card news-card">
+      <h2>{% trans "News & polls" %}</h2>
+      <ul class="news-card__list">
+        {% for item in news_digest %}
+          <li>
+            <div>
+              <div class="news-card__title">
+                <span class="badge badge--muted">{{ item.badge }}</span>
+                <strong>{{ item.title }}</strong>
+              </div>
+              {% if item.description %}
+                <p class="text-muted small">{{ item.description }}</p>
+              {% endif %}
+              <small class="text-muted">
+                {{ item.timestamp|date:"M d, H:i" }}
+                {% if item.closing_label %} · {{ item.closing_label }}{% endif %}
+              </small>
+            </div>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ item.url }}">{% trans "View" %}</a>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="news-card__footer">
+        <a class="btn btn-primary btn-sm" href="{{ news_feed_url }}">{% trans "Open news" %}</a>
+      </div>
+    </section>
+  {% endif %}
   {% if cards %}
     {% for c in cards %}
       <section class="dash-card">

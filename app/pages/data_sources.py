@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING, Any
 from django.db.models import DateTimeField, Prefetch
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from django.utils.html import strip_tags
 
 from app.assets.models import Asset
 from app.events.models import Event
 from app.inventory.models import InventoryItem
 from app.menu.models import Category, Item
 from app.setup.models import SiteSettings
+from app.news.models import NewsPost
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -164,6 +166,44 @@ def get_menu_structure(category_slugs: Sequence[str] | None = None) -> list[dict
     return [_serialize_menu_category(cat, depth=0) for cat in base_qs]
 
 
+def get_recent_news(limit: int = 3, category: str | None = None) -> list[dict[str, Any]]:
+    queryset = NewsPost.objects.published().public()
+    if category:
+        queryset = queryset.filter(category__iexact=category)
+    posts: list[dict[str, Any]] = []
+    for post in queryset[: max(1, min(limit, 12))]:
+        summary = post.summary or strip_tags(post.body or "")
+        timestamp = post.display_timestamp
+        iso_value = _iso_datetime(timestamp)
+        if timestamp and timezone.is_naive(timestamp):
+            timestamp = timezone.make_aware(timestamp)
+        display_label = (
+            timezone.localtime(timestamp).strftime("%b %d, %Y") if timestamp else ""
+        )
+        posts.append(
+            {
+                "title": post.title,
+                "summary": summary[:220],
+                "category": post.category,
+                "published_at": iso_value,
+                "display_date": display_label,
+                "url": post.get_absolute_url(),
+            }
+        )
+    return posts
+
+
+def get_news_categories() -> list[str]:
+    return list(
+        NewsPost.objects.published()
+        .public()
+        .exclude(category="")
+        .values_list("category", flat=True)
+        .distinct()
+        .order_by("category")
+    )
+
+
 def _serialize_opening_hours(settings: SiteSettings) -> list[dict[str, Any]]:
     hours = []
     for entry in settings.hours.order_by("weekday"):
@@ -255,6 +295,32 @@ def get_public_inventory(category_slugs: list[str] | None = None) -> list[dict[s
     return items
 
 
+def _serialise_asset(asset: Asset) -> dict[str, Any] | None:
+    url = asset.file.url if asset.file else asset.url
+    if not url:
+        return None
+    collection = asset.collection
+    return {
+        "id": asset.pk,
+        "title": asset.title,
+        "slug": asset.slug,
+        "kind": asset.kind,
+        "description": asset.description,
+        "url": url,
+        "mime_type": asset.mime_type,
+        "size_bytes": asset.size_bytes,
+        "width": asset.width,
+        "height": asset.height,
+        "duration_seconds": asset.duration_seconds,
+        "collection": {
+            "id": collection.pk if collection else None,
+            "title": collection.title if collection else None,
+        },
+        "is_external": asset.is_external,
+        "external_domain": asset.external_domain,
+    }
+
+
 def get_public_assets(kinds: Sequence[str] | None = None) -> list[dict[str, Any]]:
     """
     Return public assets filtered by kind for use in page builder blocks.
@@ -271,36 +337,26 @@ def get_public_assets(kinds: Sequence[str] | None = None) -> list[dict[str, Any]
         if effective_visibility != "public":
             continue
 
-        url = None
-        if asset.file:
-            url = asset.file.url
-        elif asset.url:
-            url = asset.url
-        elif asset.text_content:
-            url = None
-        if not url:
+        payload = _serialise_asset(asset)
+        if payload:
+            results.append(payload)
+
+    return results
+
+
+def get_public_assets_by_ids(ids: Sequence[int] | None) -> dict[int, dict[str, Any]]:
+    """
+    Return a mapping of asset ID -> payload for the requested public assets.
+    """
+
+    if not ids:
+        return {}
+    qs = Asset.objects.select_related("collection").filter(pk__in=ids)
+    results: dict[int, dict[str, Any]] = {}
+    for asset in qs:
+        if asset.effective_visibility != "public":
             continue
-
-        results.append(
-            {
-                "id": asset.pk,
-                "title": asset.title,
-                "slug": asset.slug,
-                "kind": asset.kind,
-                "description": asset.description,
-                "url": url,
-                "mime_type": asset.mime_type,
-                "size_bytes": asset.size_bytes,
-                "width": asset.width,
-                "height": asset.height,
-                "duration_seconds": asset.duration_seconds,
-                "collection": {
-                    "id": collection.pk if collection else None,
-                    "title": collection.title if collection else None,
-                },
-                "is_external": asset.is_external,
-                "external_domain": asset.external_domain,
-            }
-        )
-
+        payload = _serialise_asset(asset)
+        if payload:
+            results[asset.pk] = payload
     return results

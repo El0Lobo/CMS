@@ -8,7 +8,7 @@
   <select name="profile_type">
     <option value="venue" {% if cfg.profile_type == 'venue' %}selected{% endif %}>Venue</option>
     <option value="band" {% if cfg.profile_type == 'band' %}selected{% endif %}>Band</option>
-    <option value="blog" {% if cfg.profile_type == 'blog' %}selected{% endif %}>Blog</option>
+    <option value="news" {% if cfg.profile_type == 'news' %}selected{% endif %}>News</option>
   </select>
 
   <label>Public theme</label>
@@ -20,7 +20,7 @@
 
   <fieldset style="margin-top:1rem;">
     <legend>Feature visibility</legend>
-    <label><input type="checkbox" name="ff_blog" {% if cfg.feature_flags.blog %}checked{% endif %}> Blog</label>
+    <label><input type="checkbox" name="ff_news" {% if cfg.feature_flags.news %}checked{% endif %}> News</label>
     <label><input type="checkbox" name="ff_events" {% if cfg.feature_flags.events %}checked{% endif %}> Events</label>
     <label><input type="checkbox" name="ff_merch" {% if cfg.feature_flags.merch %}checked{% endif %}> Merch</label>
     <label><input type="checkbox" name="ff_pos" {% if cfg.feature_flags.pos %}checked{% endif %}> POS</label>

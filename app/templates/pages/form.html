@@ -43,53 +43,6 @@
       pointer-events: none;
       filter: grayscale(.2);
     }
-    .raw-html-editor textarea {
-      font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      min-height: 280px;
-      background: rgba(0,0,0,0.25);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 1rem;
-      color: inherit;
-    }
-    .raw-html-editor.is-disabled {
-      opacity: .55;
-    }
-    .raw-html-editor.is-disabled textarea {
-      pointer-events: none;
-      filter: grayscale(.2);
-    }
-    .raw-html-editor__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .raw-html-editor__actions {
-      display: flex;
-      gap: .5rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .raw-html-editor__body {
-      margin-top: .5rem;
-    }
-    .raw-html-editor [data-builder-collapse] {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-    }
-    .raw-html-editor [data-builder-collapse] span {
-      display: none;
-    }
-    .raw-html-editor [data-builder-collapse][aria-expanded="true"] [data-text-when="open"],
-    .raw-html-editor [data-builder-collapse][aria-expanded="false"] [data-text-when="closed"] {
-      display: inline;
-    }
-    [data-builder-collapsible][aria-expanded="false"] .raw-html-editor__body {
-      display: none;
-    }
     .card-collapsible {
       padding: 1rem 1.2rem;
     }
@@ -124,6 +77,50 @@
     }
     .card-collapsible[aria-expanded="false"] .card-collapsible__body {
       display: none;
+    }
+    .custom-code-editor {
+      margin-bottom: 1.5rem;
+    }
+    .custom-code-editor__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .custom-code-editor__actions {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .custom-code-editor__body details {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      background: rgba(15, 23, 42, 0.55);
+      margin-top: 0.75rem;
+    }
+    .custom-code-editor__body summary {
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .custom-code-editor__field {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .custom-code-editor textarea {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+      min-height: 160px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(5,10,20,0.45);
+      color: inherit;
+    }
+    .custom-code-editor.is-disabled textarea {
+      opacity: 0.5;
+      pointer-events: none;
     }
   </style>
 {% endblock %}
@@ -220,7 +217,7 @@
                 <p class="muted">Click to add sections</p>
               </div>
             </header>
-            <div class="builder-library-list" id="builder-library"></div>
+            <div class="builder-library" id="builder-library"></div>
           </section>
           <section class="builder-panel builder-panel--structure">
             <header class="builder-panel__header">
@@ -298,55 +295,66 @@
       </div>
     </div>
     {% with raw_enabled=form.render_body_only.value %}
-    <section id="raw-html-editor"
-             class="card raw-html-editor"
-             data-builder-collapsible
-             aria-expanded="{{ raw_enabled|yesno:'true,false' }}"
-             style="margin-bottom:1.5rem;">
-      <div class="raw-html-editor__header">
+    <section id="custom-code-editor"
+             class="card custom-code-editor"
+             aria-expanded="{{ raw_enabled|yesno:'true,false' }}">
+      <div class="custom-code-editor__header">
         <div>
-          <h2 style="margin:0;">Raw HTML mode</h2>
-          <p class="muted" style="margin:.25rem 0 0;">Use this when you need full control over the markup instead of the block builder.</p>
+          <h2 style="margin:0;">Custom code mode</h2>
+          <p class="muted" style="margin:.25rem 0 0;">Author the entire page with HTML, CSS, and JavaScript. When enabled the block builder is ignored.</p>
         </div>
-        <div class="raw-html-editor__actions">
+        <div class="custom-code-editor__actions">
           <label class="form-label checkbox" style="margin:0;">
-            {{ form.render_body_only }} Render raw HTML body only (ignore builder)
+            {{ form.render_body_only }} Use custom code instead of the builder
           </label>
-          <button type="button"
-                  class="btn btn-xs btn-outline-secondary"
-                  data-builder-collapse
-                  aria-expanded="{{ raw_enabled|yesno:'true,false' }}">
-            <span data-text-when="open">Hide editor</span>
-            <span data-text-when="closed">Show editor</span>
-          </button>
           <button type="button" class="btn btn-xs btn-outline-secondary" id="capture-html-from-builder">Copy current layout into HTML</button>
         </div>
       </div>
-      <div class="raw-html-editor__body">
-        <p class="hint" style="margin:.25rem 0 0;">When enabled, the block builder is disabled and only the “Body” field below is rendered publicly.</p>
-        <div style="margin-top:1rem;">
-          <label class="form-label" for="{{ form.body.id_for_label }}">HTML</label>
-          {{ form.body }}
-          {% if form.body.help_text %}
-            <p class="hint">{{ form.body.help_text }}</p>
-          {% endif %}
-          {% if form.body.errors %}
-            <div class="field-error">{{ form.body.errors|join:", " }}</div>
-          {% endif %}
-        </div>
+      <div class="custom-code-editor__body">
+        <details>
+          <summary>HTML</summary>
+          <div class="custom-code-editor__field">
+            {{ form.body }}
+            {% if form.body.help_text %}
+              <p class="hint">{{ form.body.help_text }}</p>
+            {% endif %}
+            {% if form.body.errors %}
+              <div class="field-error">{{ form.body.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </details>
+        <details>
+          <summary>CSS</summary>
+          <div class="custom-code-editor__field">
+            {{ form.custom_css }}
+            <p class="hint">Overrides are injected after the site theme. Leave blank to rely entirely on the theme.</p>
+            {% if form.custom_css.errors %}
+              <div class="field-error">{{ form.custom_css.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </details>
+        <details>
+          <summary>JavaScript</summary>
+          <div class="custom-code-editor__field">
+            {{ form.custom_js }}
+            <p class="hint">Executed at the end of the page. Avoid document.write or blocking calls.</p>
+            {% if form.custom_js.errors %}
+              <div class="field-error">{{ form.custom_js.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </details>
       </div>
     </section>
     {% endwith %}
     <div class="form-actions" style="margin-top:1.5rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
       <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
         <button type="submit" class="btn btn-primary" id="builder-save-btn">Save</button>
-        <button type="button" class="btn btn-secondary" id="builder-preview-btn">Preview in place</button>
-        <a class="btn" href="{% url 'pages_index' %}">Cancel</a>
+        <a class="btn btn-outline-secondary" href="{% url 'pages_index' %}">Cancel</a>
       </div>
       {% if page %}
         <form method="post" action="{% url 'pages_delete' slug=page.slug %}" onsubmit="return confirm('Delete this page?');">
           {% csrf_token %}
-          <button type="submit" class="btn btn-danger btn-outline">Delete page</button>
+          <button type="submit" class="btn btn-danger">Delete page</button>
         </form>
       {% endif %}
     </div>
@@ -361,35 +369,24 @@
   (function(){
     const toggle = document.getElementById('{{ form.render_body_only.id_for_label }}') || document.getElementById('id_render_body_only');
     const builder = document.getElementById('page-builder');
-    const htmlSection = document.getElementById('raw-html-editor');
-    const htmlField = document.getElementById('id_body');
-    const collapseBtn = htmlSection ? htmlSection.querySelector('[data-builder-collapse]') : null;
-
-    function setCollapse(open){
-      if (!htmlSection || !collapseBtn) return;
-      htmlSection.setAttribute('aria-expanded', open ? 'true' : 'false');
-      collapseBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
+    const editorCard = document.getElementById('custom-code-editor');
+    const codeFields = Array.from(document.querySelectorAll('.code-field'));
 
     function apply(){
-      const rawEnabled = !!(toggle && toggle.checked);
+      const enabled = !!(toggle && toggle.checked);
       if (builder){
-        builder.classList.toggle('is-disabled', rawEnabled);
+        builder.classList.toggle('is-disabled', enabled);
       }
-      if (htmlSection){
-        htmlSection.classList.toggle('is-disabled', !rawEnabled);
-        setCollapse(rawEnabled);
+      if (editorCard){
+        editorCard.classList.toggle('is-disabled', !enabled);
+        editorCard.setAttribute('aria-expanded', enabled ? 'true' : 'false');
       }
-      if (htmlField){
-        htmlField.readOnly = !rawEnabled;
-        htmlField.setAttribute('aria-disabled', (!rawEnabled).toString());
-      }
+      codeFields.forEach((field) => {
+        if (!field) return;
+        field.readOnly = !enabled;
+        field.setAttribute('aria-disabled', (!enabled).toString());
+      });
     }
-
-    collapseBtn?.addEventListener('click', function(){
-      const next = collapseBtn.getAttribute('aria-expanded') !== 'true';
-      setCollapse(next);
-    });
 
     toggle?.addEventListener('change', apply);
     apply();
@@ -398,35 +395,31 @@
 
   <script>
   (function(){
-    const cols = document.querySelectorAll('[data-page-collapse]');
-    cols.forEach(section => {
-      const key = `pages:collapse:${section.dataset.pageCollapse || ''}`;
-      let expanded = section.getAttribute('aria-expanded') !== 'false';
-      try {
-        const saved = localStorage.getItem(key);
-        if (saved !== null) expanded = saved === '1';
-      } catch (e) {}
-      const button = section.querySelector('[data-page-collapse-toggle]');
-      const setState = (next) => {
-        section.setAttribute('aria-expanded', next ? 'true' : 'false');
-        button?.setAttribute('aria-expanded', next ? 'true' : 'false');
-        try { localStorage.setItem(key, next ? '1' : '0'); } catch (e) {}
-      };
-      setState(expanded);
-      button?.addEventListener('click', () => {
-        const next = section.getAttribute('aria-expanded') !== 'true';
-        setState(next);
-      });
-    });
-  })();
-  </script>
-
-  <script>
-  (function(){
     const copyBtn = document.getElementById('capture-html-from-builder');
     const htmlField = document.getElementById('id_body');
+    const cssField = document.getElementById('id_custom_css');
+    const jsField = document.getElementById('id_custom_js');
     const toggle = document.getElementById('id_render_body_only') || document.getElementById('{{ form.render_body_only.id_for_label }}');
-    const config = window.__PAGE_BUILDER__ || {};
+    const SITE_CSS_URL = "{% static 'public/site.css' %}";
+    let siteCssCache = null;
+
+    function getBuilderConfig(){
+      if (window.__PAGE_BUILDER__) {
+        return window.__PAGE_BUILDER__;
+      }
+      const configEl = document.getElementById('page-builder-config');
+      if (!configEl) {
+        return {};
+      }
+      try {
+        return JSON.parse(configEl.textContent || '{}');
+      } catch (error) {
+        console.warn('Unable to parse builder config JSON', error);
+        return {};
+      }
+    }
+
+    const config = getBuilderConfig();
 
     if (!copyBtn || !config.urls || !config.urls.preview) {
       return;
@@ -448,6 +441,23 @@
         console.warn(`Could not parse ${fieldId}`, error);
         return fallback;
       }
+    }
+
+    async function getSiteCss(){
+      if (siteCssCache !== null){
+        return siteCssCache;
+      }
+      try {
+        const response = await fetch(SITE_CSS_URL, { headers: { Accept: 'text/css' } });
+        if (!response.ok){
+          throw new Error('Failed to load site CSS');
+        }
+        siteCssCache = await response.text();
+      } catch (error) {
+        console.warn('Could not fetch default site CSS', error);
+        siteCssCache = '';
+      }
+      return siteCssCache;
     }
 
     copyBtn.addEventListener('click', async () => {
@@ -477,12 +487,33 @@
           throw new Error(`Preview failed with status ${response.status}`);
         }
         const data = await response.json();
-        if (data.content_html && htmlField){
-          htmlField.value = data.content_html.trim();
+        const fullHtml = data && (data.html || data.content_html) ? (data.html || data.content_html) : '';
+        if (fullHtml && htmlField){
+          htmlField.value = fullHtml.trim();
           if (toggle && !toggle.checked){
             toggle.checked = true;
             toggle.dispatchEvent(new Event('change', { bubbles: true }));
           }
+        }
+        const themeCss = typeof data.theme_css === 'string' ? data.theme_css : '';
+        const existingCustomCss = typeof data.custom_css === 'string' ? data.custom_css : '';
+        if (cssField){
+          const cssChunks = [];
+          const siteCss = await getSiteCss();
+          if (siteCss){
+            cssChunks.push(`/* --- Default site styles (site.css) --- */\n${siteCss.trim()}`);
+          }
+          if (themeCss){
+            cssChunks.push(`/* --- Page theme overrides --- */\n${themeCss.trim()}`);
+          }
+          if (existingCustomCss){
+            cssChunks.push(`/* --- Custom CSS from builder --- */\n${existingCustomCss.trim()}`);
+          }
+          cssField.value = cssChunks.join("\n\n").trim();
+        }
+        const customJs = typeof data.custom_js === 'string' ? data.custom_js : '';
+        if (jsField && (customJs || jsField.value)){
+          jsField.value = customJs.trim();
         }
       } catch (error) {
         console.error(error);

@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 
 from app.menu.models import Item as MenuItem
 from app.merch.models import Product as MerchProduct
+from app.setup.models import SiteSettings
 
 from .models import InventoryCategory, InventoryItem, InventoryPackage
 
@@ -95,3 +96,17 @@ InventoryPackageFormSet = inlineformset_factory(
         "notes": forms.TextInput(attrs={"class": "form-control", "placeholder": "Notes"}),
     },
 )
+
+
+class InventoryAlertSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SiteSettings
+        fields = ["inventory_notification_groups", "inventory_dashboard_groups"]
+        widgets = {
+            "inventory_notification_groups": forms.CheckboxSelectMultiple,
+            "inventory_dashboard_groups": forms.CheckboxSelectMultiple,
+        }
+        labels = {
+            "inventory_notification_groups": "Notify these groups when items need reordering",
+            "inventory_dashboard_groups": "Allow these groups to see dashboard alerts",
+        }

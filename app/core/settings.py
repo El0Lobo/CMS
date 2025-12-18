@@ -74,7 +74,7 @@ INSTALLED_APPS = [
     "app.api",
     "app.pages",
     "app.cms",
-    "app.blog",
+    "app.news",
     "app.events",
     "app.shifts",
     "app.door",

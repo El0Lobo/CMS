@@ -10,7 +10,7 @@
       {% elif site_settings.mode == 'BAND' %}
         Check our latest <a href="/shows/">shows</a>, stream <a href="/music/">music</a>, and watch <a href="/videos/">videos</a>.
       {% else %}
-        Read the <a href="/posts/">blog</a>, or learn more <a href="/about/">about</a> the author.
+        Catch up on our latest <a href="{% url 'news_public:public_news_index' %}">news</a>, or learn more <a href="/about/">about</a> the author.
       {% endif %}
     </p>
   </div>

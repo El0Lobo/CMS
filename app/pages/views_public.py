@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from types import SimpleNamespace
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
@@ -12,8 +15,10 @@ from django.views.decorators.http import require_POST
 
 from app.setup.models import SiteSettings
 
+from . import data_sources
 from .models import Page
 from .navigation import build_nav_payload
+from .structured_data import build_base_structured_data
 
 
 def _public_enabled_or_404() -> SiteSettings:
@@ -49,8 +54,17 @@ def _nav_payload_for(page: Page):
 
 
 def _render_page(request, page: Page) -> HttpResponse:
-    rendered, footer, nav_html = page.render_content_segments(request=request)
+    rendered, footer, nav_html, block_structured_data = page.render_content_segments(request=request)
     nav_entries = _nav_payload_for(page)
+    site_context = data_sources.get_site_context()
+    structured_payloads = block_structured_data + build_base_structured_data(
+        page=page, request=request, site_context=site_context
+    )
+    structured_data = [
+        json.dumps(item, ensure_ascii=False, separators=(",", ":"))
+        for item in structured_payloads
+        if item
+    ]
     context = {
         "page": page,
         "page_rendered": rendered,
@@ -60,6 +74,9 @@ def _render_page(request, page: Page) -> HttpResponse:
         "page_show_nav": bool(nav_entries),
         "navigation_html": nav_html,
         "page_theme_css": page.get_theme_css(),
+        "page_custom_css": page.custom_css,
+        "page_custom_js": page.custom_js,
+        "structured_data": structured_data,
     }
     return render(request, "public/page_detail.html", context)
 
@@ -121,7 +138,7 @@ class CMSLoginView(LoginView):
         ).first()
         if page:
             context["page"] = page
-            main_html, footer_html, nav_html = page.render_content_segments(request=self.request)
+            main_html, footer_html, nav_html, _ = page.render_content_segments(request=self.request)
             context["page_rendered"] = main_html
             context["page_footer"] = footer_html
             if page.show_navigation_bar:
@@ -133,13 +150,18 @@ class CMSLoginView(LoginView):
             context["nav_label"] = page.title
             context["navigation_html"] = nav_html
             context["page_theme_css"] = page.get_theme_css()
+            context["page_custom_css"] = page.custom_css
+            context["page_custom_js"] = page.custom_js
         else:
+            context.setdefault("page", SimpleNamespace(custom_css="", custom_js=""))
             context.setdefault("public_pages", [])
             context.setdefault("page_show_nav", False)
             context.setdefault("nav_label", "Login")
             context["page_rendered"] = ""
             context["page_footer"] = ""
             context.setdefault("page_theme_css", "")
+            context.setdefault("page_custom_css", "")
+            context.setdefault("page_custom_js", "")
         try:
             context["password_reset_url"] = reverse("password_reset")
         except NoReverseMatch:

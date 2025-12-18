@@ -6,10 +6,10 @@ CONFIG_DIR = BASE_DIR / "config"
 CONFIG_FILE = CONFIG_DIR / "site.json"
 
 DEFAULTS = {
-    "profile_type": "venue",  # 'venue' | 'band' | 'blog'
+    "profile_type": "venue",  # 'venue' | 'band' | 'news'
     "public_theme": "theme_a",  # 'theme_a' | 'theme_b' | 'theme_c'
     "feature_flags": {
-        "blog": True,
+        "news": True,
         "events": True,
         "merch": True,
         "pos": False,

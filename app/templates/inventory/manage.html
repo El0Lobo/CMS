@@ -38,6 +38,38 @@
   </form>
 </div>
 
+{% if alerts_form %}
+  <section class="card" style="margin-top:1rem;">
+    <div class="card__body stack">
+      <h2>Inventory alerts</h2>
+      <p class="text-muted small mb-2">Choose which groups receive reorder emails and who sees dashboard warnings.</p>
+      <form method="post" class="stack">
+        {% csrf_token %}
+        <input type="hidden" name="form_name" value="inventory_alerts">
+        <div class="grid-2">
+          <div class="field">
+            {{ alerts_form.inventory_notification_groups.label_tag }} {{ alerts_form.inventory_notification_groups }}
+            {% if alerts_form.inventory_notification_groups.help_text %}
+              <p class="text-muted small mb-0">{{ alerts_form.inventory_notification_groups.help_text }}</p>
+            {% endif %}
+            {{ alerts_form.inventory_notification_groups.errors }}
+          </div>
+          <div class="field">
+            {{ alerts_form.inventory_dashboard_groups.label_tag }} {{ alerts_form.inventory_dashboard_groups }}
+            {% if alerts_form.inventory_dashboard_groups.help_text %}
+              <p class="text-muted small mb-0">{{ alerts_form.inventory_dashboard_groups.help_text }}</p>
+            {% endif %}
+            {{ alerts_form.inventory_dashboard_groups.errors }}
+          </div>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">Save alert settings</button>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endif %}
+
 {% if top_categories %}
   {% for cat in top_categories %}
     {% include "inventory/_category_tree.html" with node=cat currency=currency category_items=category_items %}
